@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 배경 (마스크 아이콘용 여백 포함) -->
+  <rect width="512" height="512" fill="#2c3e50"/>
+  <!-- 책 본체 -->
+  <g transform="translate(106, 120)">
+    <rect x="0" y="0" width="300" height="272" rx="14" fill="#3498db"/>
+    <rect x="0" y="0" width="32" height="272" fill="#1f6daf"/>
+    <!-- 줄들 -->
+    <line x1="60" y1="80" x2="270" y2="80" stroke="white" stroke-width="3" opacity="0.55" stroke-linecap="round"/>
+    <line x1="60" y1="110" x2="270" y2="110" stroke="white" stroke-width="3" opacity="0.55" stroke-linecap="round"/>
+    <line x1="60" y1="140" x2="230" y2="140" stroke="white" stroke-width="3" opacity="0.55" stroke-linecap="round"/>
+    <!-- 체크마크 -->
+    <circle cx="150" cy="198" r="30" fill="white" opacity="0.15"/>
+    <path d="M 135 198 L 148 212 L 168 186" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
