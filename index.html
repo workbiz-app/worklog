@@ -7,6 +7,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="application-name" content="업무일지">
+<meta name="apple-mobile-web-app-title" content="업무일지">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>업무일지 v2 (클라우드 싱크)</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -798,13 +803,152 @@
   .sync-bar button {
     padding: 6px 12px; font-size: 13px; border-radius: 6px;
     border: 1px solid #ddd; background: white; cursor: pointer;
+    color: #2c3e50;
   }
-  .sync-bar button:hover { background: #f5f7fa; }
+  .sync-bar button:hover { background: #f5f7fa; color: #1a73e8; border-color: #1a73e8; }
   .sync-bar button.primary {
     background: #1a73e8; color: white; border-color: #1a73e8;
   }
-  .sync-bar button.primary:hover { background: #1557b0; }
+  .sync-bar button.primary:hover { background: #1557b0; color: white; }
   .sync-bar button.danger-ghost { color: #c0392b; border-color: #e8d6d3; }
+  .sync-text { color: #2c3e50 !important; }
+
+  /* ===== 알림 예약 모달 (매끄러운 UI) ===== */
+  .reminder-sheet {
+    max-width: 480px !important;
+    padding: 0 !important;
+    overflow: hidden;
+    animation: rm-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes rm-slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .rm-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 22px 24px 18px;
+    background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
+    color: white;
+  }
+  .rm-icon {
+    width: 46px; height: 46px; flex-shrink: 0;
+    background: rgba(255,255,255,0.25);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .rm-headtext { flex: 1; min-width: 0; }
+  .rm-title { font-size: 18px; font-weight: bold; margin-bottom: 2px; }
+  .rm-task {
+    font-size: 13px; opacity: 0.95;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .rm-section {
+    padding: 18px 24px 4px;
+  }
+  .rm-section-label {
+    font-size: 13px; color: #7f8c8d; font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .rm-chips {
+    display: flex; gap: 6px;
+    overflow-x: auto; overflow-y: hidden;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+  }
+  .rm-chips.rm-chips-wrap { flex-wrap: wrap; overflow-x: visible; }
+  .rm-chips::-webkit-scrollbar { height: 4px; }
+  .rm-chips::-webkit-scrollbar-thumb { background: #dfe4ea; border-radius: 2px; }
+  .rm-chips button {
+    flex-shrink: 0;
+    padding: 8px 14px; font-size: 13px;
+    background: #f5f7fa;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    color: #2c3e50; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .rm-chips button:hover {
+    background: #e8f7f2;
+    color: #16a085;
+  }
+  .rm-chips button.active {
+    background: #16a085;
+    color: white;
+    border-color: #16a085;
+    box-shadow: 0 2px 6px rgba(22, 160, 133, 0.3);
+  }
+  .rm-input {
+    width: 100%; padding: 10px 14px;
+    font-size: 14px; font-family: inherit;
+    border: 1.5px solid #eef1f5;
+    border-radius: 10px;
+    background: #fafbfc;
+    color: #2c3e50;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .rm-input:focus {
+    outline: none;
+    border-color: #16a085;
+    background: white;
+  }
+  .rm-info {
+    margin: 14px 24px 0;
+    padding: 12px 14px;
+    background: #eaf6fb;
+    border-radius: 10px;
+    font-size: 12px; color: #21618c;
+    line-height: 1.5;
+  }
+  .rm-info-sub { display: block; font-size: 11px; color: #3498db; margin-top: 2px; }
+  .rm-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px;
+    padding: 16px 24px 22px;
+    margin-top: 12px;
+    border-top: 1px solid #f0f2f5;
+  }
+  .rm-actions-right { display: flex; gap: 8px; margin-left: auto; }
+  .rm-actions button {
+    padding: 10px 18px; font-size: 14px; font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+  }
+  .rm-btn-primary {
+    background: linear-gradient(135deg, #16a085, #1abc9c);
+    color: white;
+    box-shadow: 0 2px 8px rgba(22, 160, 133, 0.3);
+  }
+  .rm-btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(22, 160, 133, 0.4);
+    transform: translateY(-1px);
+  }
+  .rm-btn-primary:disabled {
+    background: #bdc3c7; box-shadow: none; cursor: not-allowed;
+  }
+  .rm-btn-secondary {
+    background: #f5f7fa;
+    color: #7f8c8d;
+  }
+  .rm-btn-secondary:hover { background: #eef1f5; color: #2c3e50; }
+  .rm-btn-danger {
+    background: #fff0f0;
+    color: #c0392b;
+    padding: 8px 14px; font-size: 13px;
+  }
+  .rm-btn-danger:hover { background: #ffe0e0; }
+
+  @media (max-width: 480px) {
+    .rm-header { padding: 18px 18px 14px; }
+    .rm-section { padding: 14px 18px 4px; }
+    .rm-actions { padding: 14px 18px 18px; flex-wrap: wrap; }
+    .rm-info { margin: 10px 18px 0; }
+    .rm-chips button { padding: 10px 16px; font-size: 14px; min-height: 40px; }
+    .rm-input { padding: 12px 14px; font-size: 16px; } /* iOS 자동 줌 방지 */
+  }
 
   .setup-modal-content { max-width: 640px; }
   .setup-modal-content ol { padding-left: 22px; line-height: 1.8; }
@@ -1184,46 +1328,65 @@
 </div>
 
 <div class="modal" id="reminderModal">
-  <div class="modal-content" style="max-width:480px;">
+  <div class="modal-content reminder-sheet">
     <button class="modal-close" onclick="closeReminderModal()">닫기</button>
-    <h2>⏰ 알림 설정</h2>
-    <p style="color:#7f8c8d;font-size:13px;margin-top:-4px;">
-      업무: <b id="reminderTaskTitle" style="color:#2c3e50;"></b>
-    </p>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
-      <div class="form-row">
-        <label>날짜</label>
-        <input type="date" id="reminderDate" />
+    <div class="rm-header">
+      <div class="rm-icon">⏰</div>
+      <div class="rm-headtext">
+        <div class="rm-title">알림 예약</div>
+        <div class="rm-task" id="reminderTaskTitle"></div>
       </div>
-      <div class="form-row">
-        <label>시간</label>
-        <input type="time" id="reminderTime" />
+    </div>
+
+    <div class="rm-section">
+      <div class="rm-section-label">📅 언제</div>
+      <div class="rm-chips" id="reminderDateChips">
+        <button type="button" data-dpreset="0" onclick="pickDatePreset(0)">오늘</button>
+        <button type="button" data-dpreset="1" onclick="pickDatePreset(1)">내일</button>
+        <button type="button" data-dpreset="2" onclick="pickDatePreset(2)">모레</button>
+        <button type="button" data-dpreset="7" onclick="pickDatePreset(7)">일주일 후</button>
       </div>
-      <div class="form-row">
-        <label>알림 (시간 전)</label>
-        <select id="reminderMinutes" style="padding:8px 10px;font-size:13px;border:1px solid #dfe4ea;border-radius:5px;">
-          <option value="0">정각</option>
-          <option value="5">5분 전</option>
-          <option value="10" selected>10분 전</option>
-          <option value="15">15분 전</option>
-          <option value="30">30분 전</option>
-          <option value="60">1시간 전</option>
-          <option value="120">2시간 전</option>
-          <option value="1440">1일 전</option>
-          <option value="-1">알림 없음</option>
-        </select>
+      <input type="date" id="reminderDate" class="rm-input" onchange="clearDatePresets()" />
+    </div>
+
+    <div class="rm-section">
+      <div class="rm-section-label">🕐 몇 시에</div>
+      <div class="rm-chips" id="reminderTimeChips">
+        <button type="button" data-tpreset="09:00" onclick="pickTimePreset('09:00')">09:00</button>
+        <button type="button" data-tpreset="10:00" onclick="pickTimePreset('10:00')">10:00</button>
+        <button type="button" data-tpreset="13:00" onclick="pickTimePreset('13:00')">13:00</button>
+        <button type="button" data-tpreset="14:00" onclick="pickTimePreset('14:00')">14:00</button>
+        <button type="button" data-tpreset="17:00" onclick="pickTimePreset('17:00')">17:00</button>
+        <button type="button" data-tpreset="18:00" onclick="pickTimePreset('18:00')">18:00</button>
       </div>
-      <div style="padding:10px 12px;background:#eaf6fb;border-radius:6px;font-size:12px;color:#21618c;line-height:1.5;">
-        📱 이 알림은 구글 캘린더(<b>📘 업무일지</b>)에 등록됩니다.<br/>
-        같은 구글 계정으로 로그인된 <b>핸드폰 · PC 등 모든 기기에서 알림</b>이 울립니다.<br/>
-        <span style="font-size:11px;color:#3498db;">※ 알림은 구글에서 전송됩니다</span>
+      <input type="time" id="reminderTime" class="rm-input" onchange="clearTimePresets()" />
+    </div>
+
+    <div class="rm-section">
+      <div class="rm-section-label">🔔 몇 분 전 알림</div>
+      <div class="rm-chips rm-chips-wrap" id="reminderMinuteChips">
+        <button type="button" data-mpreset="0" onclick="pickMinutesPreset(0)">정각</button>
+        <button type="button" data-mpreset="5" onclick="pickMinutesPreset(5)">5분</button>
+        <button type="button" data-mpreset="10" onclick="pickMinutesPreset(10)">10분</button>
+        <button type="button" data-mpreset="15" onclick="pickMinutesPreset(15)">15분</button>
+        <button type="button" data-mpreset="30" onclick="pickMinutesPreset(30)">30분</button>
+        <button type="button" data-mpreset="60" onclick="pickMinutesPreset(60)">1시간</button>
+        <button type="button" data-mpreset="1440" onclick="pickMinutesPreset(1440)">1일</button>
+        <button type="button" data-mpreset="-1" onclick="pickMinutesPreset(-1)">없음</button>
       </div>
-      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:6px;">
-        <button id="reminderRemoveBtn" class="danger small" onclick="removeReminder()" style="display:none;">🗑 알림 제거</button>
-        <div style="display:flex;gap:8px;margin-left:auto;">
-          <button class="secondary" onclick="closeReminderModal()">취소</button>
-          <button id="reminderSaveBtn" class="primary" onclick="saveReminder()">저장</button>
-        </div>
+      <input type="hidden" id="reminderMinutes" value="10" />
+    </div>
+
+    <div class="rm-info">
+      📱 구글 캘린더 <b>📘 업무일지</b>에 자동 등록 → <b>모든 기기 알림</b>
+      <span class="rm-info-sub">· 알림은 구글이 전송합니다</span>
+    </div>
+
+    <div class="rm-actions">
+      <button id="reminderRemoveBtn" class="rm-btn-danger" onclick="removeReminder()" style="display:none;">🗑 알림 제거</button>
+      <div class="rm-actions-right">
+        <button class="rm-btn-secondary" onclick="closeReminderModal()">취소</button>
+        <button id="reminderSaveBtn" class="rm-btn-primary" onclick="saveReminder()">저장</button>
       </div>
     </div>
   </div>
@@ -1460,7 +1623,7 @@
 // ║  예: "1234567890-abcdef.apps.googleusercontent.com"                     ║
 // ║  ⚠ Client ID는 공개되어도 안전합니다 (보안상 비밀이 아님)              ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-const GOOGLE_CLIENT_ID = "여기에_CLIENT_ID_붙여넣기.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "697322516062-phr2q736ftacuohvp1ldunaum0gfmqsa.apps.googleusercontent.com";
 
 // ===== 환경 설정 =====
 const DRIVE_SCOPE = [
@@ -2159,7 +2322,54 @@ function openReminderModal(taskId) {
   document.getElementById('reminderMinutes').value = String(reminderMin);
   document.getElementById('reminderTaskTitle').textContent = t.text || '';
   document.getElementById('reminderRemoveBtn').style.display = t.calendarEventId ? '' : 'none';
+  // 칩 활성화 상태 복원
+  syncDateChips(dateStr);
+  syncTimeChips(timeStr);
+  syncMinutesChips(reminderMin);
   document.getElementById('reminderModal').classList.add('show');
+}
+
+// ===== 알림 모달 칩 프리셋 =====
+function pickDatePreset(daysFromToday) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromToday);
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('reminderDate').value = dateStr;
+  syncDateChips(dateStr);
+}
+function clearDatePresets() {
+  document.querySelectorAll('#reminderDateChips button').forEach(b => b.classList.remove('active'));
+}
+function syncDateChips(dateStr) {
+  clearDatePresets();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + 'T00:00:00');
+  const diff = Math.round((target - today) / (24*60*60*1000));
+  const btn = document.querySelector(`#reminderDateChips button[data-dpreset="${diff}"]`);
+  if (btn) btn.classList.add('active');
+}
+
+function pickTimePreset(time) {
+  document.getElementById('reminderTime').value = time;
+  syncTimeChips(time);
+}
+function clearTimePresets() {
+  document.querySelectorAll('#reminderTimeChips button').forEach(b => b.classList.remove('active'));
+}
+function syncTimeChips(timeStr) {
+  clearTimePresets();
+  const btn = document.querySelector(`#reminderTimeChips button[data-tpreset="${timeStr}"]`);
+  if (btn) btn.classList.add('active');
+}
+
+function pickMinutesPreset(minutes) {
+  document.getElementById('reminderMinutes').value = String(minutes);
+  syncMinutesChips(minutes);
+}
+function syncMinutesChips(minutes) {
+  document.querySelectorAll('#reminderMinuteChips button').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`#reminderMinuteChips button[data-mpreset="${minutes}"]`);
+  if (btn) btn.classList.add('active');
 }
 
 function closeReminderModal() {
@@ -4061,6 +4271,13 @@ render();
 
 // ===== Drive 초기화 =====
 // GIS 스크립트 로드 후 Drive 초기화 (HTTPS 환경에서만 작동)
+// ===== PWA: Service Worker 등록 (오프라인 지원) =====
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW 등록 실패:', e));
+  });
+}
+
 window.addEventListener('load', () => {
   if (location.protocol === 'file:') {
     // file:// 환경에서도 게스트 모드 자동 진입 (이미 게스트였던 경우 포함)
