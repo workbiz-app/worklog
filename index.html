@@ -1747,6 +1747,7 @@ const Drive = {
             this.accessToken = t.accessToken;
             this.tokenExpiresAt = t.expiresAt;
             this.userEmail = t.email || '';
+            this._scheduleSilentRefresh();
             hideLoginGate();
             updateSyncUI('복원된 세션', 'synced');
             this.pullFromDrive(true);
@@ -1795,24 +1796,34 @@ const Drive = {
       updateSyncUI('로그인 실패: ' + resp.error, 'error');
       return;
     }
+    const isRefresh = !!this.accessToken; // 기존 토큰 있었으면 갱신
     this.accessToken = resp.access_token;
     this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
-    // 사용자 이메일 조회
-    try {
-      const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${this.accessToken}` }
-      });
-      const info = await r.json();
-      this.userEmail = info.email || '';
-    } catch (e) { this.userEmail = ''; }
+    this._scheduleSilentRefresh();
+
+    if (!isRefresh) {
+      // 사용자 이메일 조회 (첫 로그인 시에만)
+      try {
+        const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${this.accessToken}` }
+        });
+        const info = await r.json();
+        this.userEmail = info.email || '';
+      } catch (e) { this.userEmail = ''; }
+    }
 
     sessionStorage.setItem('drive_token', JSON.stringify({
       accessToken: this.accessToken,
       expiresAt: this.tokenExpiresAt,
       email: this.userEmail
     }));
-    // 다음 방문 시 자동 로그인 활성화
     localStorage.setItem('drive_auto_login', 'true');
+
+    if (isRefresh) {
+      // 조용한 갱신 — UI 건드리지 않고 싱크 상태만 유지
+      updateSyncUI('세션 갱신됨', 'synced');
+      return;
+    }
 
     // 게스트 → 로그인 전환 감지 (이관 처리용)
     const wasGuest = localStorage.getItem('guest_mode') === 'true';
@@ -1827,6 +1838,17 @@ const Drive = {
     hideLoginGate();
     updateSyncUI('로그인 완료, 동기화 중...', 'syncing');
     await this.pullFromDrive(true);
+  },
+
+  _scheduleSilentRefresh() {
+    if (this._refreshTimer) clearTimeout(this._refreshTimer);
+    // 만료 5분 전에 갱신 (최소 1분 후)
+    const delay = Math.max(60000, this.tokenExpiresAt - Date.now() - 5 * 60 * 1000);
+    this._refreshTimer = setTimeout(() => {
+      if (!this.accessToken || !this.tokenClient) return;
+      try { this.tokenClient.requestAccessToken({ prompt: '' }); }
+      catch (e) { console.warn('silent refresh 실패:', e); }
+    }, delay);
   },
 
   logout() {
@@ -1848,12 +1870,15 @@ const Drive = {
   _checkToken() {
     if (!this.accessToken) throw new Error('로그인 필요');
     if (this.tokenExpiresAt < Date.now() + 10000) {
-      // 만료 임박 → 재요청
+      // 만료 임박 → 재요청 (원래 콜백 복원 필수 — _onToken 통해 UI/타이머 갱신)
       return new Promise((resolve, reject) => {
+        const origCallback = this.tokenClient.callback;
         this.tokenClient.callback = (resp) => {
+          this.tokenClient.callback = origCallback; // 복원
           if (resp.error) return reject(new Error(resp.error));
           this.accessToken = resp.access_token;
           this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
+          this._scheduleSilentRefresh();
           sessionStorage.setItem('drive_token', JSON.stringify({
             accessToken: this.accessToken, expiresAt: this.tokenExpiresAt, email: this.userEmail
           }));
