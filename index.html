@@ -2053,8 +2053,8 @@ const Drive = {
         return;
       }
 
-      // 일반 충돌 검사: 원격이 로컬보다 새로 업데이트됨?
-      if (this.lastRemoteModified > localMod && !localEmpty) {
+      // 일반 충돌 검사: 원격이 로컬보다 새로 업데이트됨? (서버-로컬 시계 차이 대비 10초 오차 허용)
+      if (this.lastRemoteModified - localMod > 10000 && !localEmpty) {
         const useRemote = confirm(
           `⚠ 다른 기기에서 업데이트된 데이터가 있습니다.\n\n` +
           `원격 수정: ${new Date(this.lastRemoteModified).toLocaleString()}\n` +
@@ -2100,7 +2100,8 @@ const Drive = {
       if (!this.fileId) await this.findFile();
       if (this.fileId) await this.updateFile(json);
       else await this.createFile(json);
-      localStorage.setItem(STORAGE_KEY + '_mod', String(payload.lastModified));
+      // Drive 서버가 찍은 modifiedTime을 기준으로 맞춘다 (서버 시계와 로컬 시계 차이로 인한 가짜 충돌 경고 방지)
+      localStorage.setItem(STORAGE_KEY + '_mod', String(this.lastRemoteModified || payload.lastModified));
       this.lastSyncedAt = Date.now();
       updateSyncUI(silent ? '동기화됨' : '업로드 완료', 'synced');
     } catch (e) {
