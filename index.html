@@ -1855,10 +1855,15 @@ const Drive = {
     if (this.accessToken && window.google?.accounts?.oauth2) {
       google.accounts.oauth2.revoke(this.accessToken, () => {});
     }
+    // 대기 중인 타이머/업로드/갱신 전부 정리 (유령 재로그인·스테일 푸시 방지)
+    if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }
+    if (this.pendingUpload) { clearTimeout(this.pendingUpload); this.pendingUpload = null; }
+    this._pendingRefresh = null;
     this.accessToken = null;
     this.tokenExpiresAt = 0;
     this.userEmail = '';
     this.fileId = null;
+    this.lastRemoteModified = 0;
     sessionStorage.removeItem('drive_token');
     localStorage.removeItem('drive_auto_login');
     localStorage.removeItem('guest_mode');
@@ -1869,24 +1874,46 @@ const Drive = {
 
   _checkToken() {
     if (!this.accessToken) throw new Error('로그인 필요');
-    if (this.tokenExpiresAt < Date.now() + 10000) {
-      // 만료 임박 → 재요청 (원래 콜백 복원 필수 — _onToken 통해 UI/타이머 갱신)
-      return new Promise((resolve, reject) => {
-        const origCallback = this.tokenClient.callback;
-        this.tokenClient.callback = (resp) => {
-          this.tokenClient.callback = origCallback; // 복원
-          if (resp.error) return reject(new Error(resp.error));
-          this.accessToken = resp.access_token;
-          this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
-          this._scheduleSilentRefresh();
-          sessionStorage.setItem('drive_token', JSON.stringify({
-            accessToken: this.accessToken, expiresAt: this.tokenExpiresAt, email: this.userEmail
-          }));
-          resolve();
-        };
-        this.tokenClient.requestAccessToken({ prompt: '' });
-      });
-    }
+    if (this.tokenExpiresAt >= Date.now() + 10000) return;
+    // 이미 진행 중인 갱신이 있으면 같은 Promise 반환 (중복 요청 방지)
+    if (this._pendingRefresh) return this._pendingRefresh;
+    this._pendingRefresh = new Promise((resolve, reject) => {
+      const origCallback = this.tokenClient.callback;
+      let done = false;
+      // 15초 내 콜백 없으면 실패로 처리 (영구 점유 방지)
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        this.tokenClient.callback = origCallback;
+        this._pendingRefresh = null;
+        reject(new Error('토큰 갱신 타임아웃'));
+      }, 15000);
+      this.tokenClient.callback = (resp) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        this.tokenClient.callback = origCallback;
+        this._pendingRefresh = null;
+        if (resp.error) return reject(new Error(resp.error));
+        this.accessToken = resp.access_token;
+        this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
+        this._scheduleSilentRefresh();
+        sessionStorage.setItem('drive_token', JSON.stringify({
+          accessToken: this.accessToken, expiresAt: this.tokenExpiresAt, email: this.userEmail
+        }));
+        resolve();
+      };
+      try { this.tokenClient.requestAccessToken({ prompt: '' }); }
+      catch (e) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        this.tokenClient.callback = origCallback;
+        this._pendingRefresh = null;
+        reject(e);
+      }
+    });
+    return this._pendingRefresh;
   },
 
   async _apiFetch(url, opts = {}) {
@@ -2019,9 +2046,18 @@ const Drive = {
 
   async pullFromDrive(isInitial = false) {
     if (!this.accessToken) return;
+    // 이미 진행 중인 pull이 있으면 그걸 대기 (동시 실행 방지)
+    if (this._pullInFlight) return this._pullInFlight;
+    this._pullInFlight = this._doPull(isInitial).finally(() => { this._pullInFlight = null; });
+    return this._pullInFlight;
+  },
+
+  async _doPull(isInitial = false) {
     try {
+      if (!this.accessToken) return; // 로그아웃 등으로 중단된 경우 조용히 종료
       updateSyncUI('Drive에서 불러오는 중...', 'syncing');
       await this.findFile();
+      if (!this.accessToken) return; // 진행 중 로그아웃 감지
       if (!this.fileId) {
         // 원격에 파일 없음 → 현재 로컬 데이터를 첫 업로드
         if (Object.keys(state.archive).length > 0 || state.todayTasks.length > 0 ||
@@ -2111,10 +2147,29 @@ const Drive = {
     }, 4000); // 4초 디바운스
   },
 
-  async pushToDrive(silent = false) {
-    if (!this.accessToken) return;
-    if (this.status === 'syncing' && !silent) return;
+  pushToDrive(silent = false) {
+    if (!this.accessToken) return Promise.resolve();
+    // 실행 중이면 "다음 턴"에 실행 예약 (coalescing: 대기 중 호출은 전부 같은 다음 push 공유)
+    if (this._pushInFlight) {
+      if (!this._pushQueued) {
+        this._pushQueued = this._pushInFlight.catch(() => {}).then(() => {
+          this._pushQueued = null;
+          return this._runPush(silent);
+        });
+      }
+      return this._pushQueued;
+    }
+    return this._runPush(silent);
+  },
+
+  _runPush(silent) {
+    this._pushInFlight = this._doPush(silent).finally(() => { this._pushInFlight = null; });
+    return this._pushInFlight;
+  },
+
+  async _doPush(silent = false) {
     try {
+      if (!this.accessToken) return; // 로그아웃 등으로 중단
       if (!silent) updateSyncUI('업로드 중...', 'syncing');
       const payload = {
         version: 2,
@@ -2123,6 +2178,7 @@ const Drive = {
       };
       const json = JSON.stringify(payload);
       if (!this.fileId) await this.findFile();
+      if (!this.accessToken) return; // 진행 중 로그아웃 감지
       if (this.fileId) await this.updateFile(json);
       else await this.createFile(json);
       // Drive 서버가 찍은 modifiedTime을 기준으로 맞춘다 (서버 시계와 로컬 시계 차이로 인한 가짜 충돌 경고 방지)
@@ -4299,8 +4355,46 @@ render();
 // GIS 스크립트 로드 후 Drive 초기화 (HTTPS 환경에서만 작동)
 // ===== PWA: Service Worker 등록 (오프라인 지원) =====
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW 등록 실패:', e));
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      let updatePromptShown = false; // 세션당 1회만
+      const promptUpdate = (newSW) => {
+        if (updatePromptShown) return;
+        updatePromptShown = true;
+        // 화면 하단 배너로 교체 (confirm보다 덜 거슬림)
+        let bar = document.getElementById('swUpdateBar');
+        if (!bar) {
+          bar = document.createElement('div');
+          bar.id = 'swUpdateBar';
+          bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2c3e50;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;font-size:14px;display:flex;gap:12px;align-items:center;';
+          bar.innerHTML = '📦 새 버전이 있습니다. <button id="swUpdateBtn" style="background:#3498db;color:#fff;border:0;padding:6px 14px;border-radius:4px;cursor:pointer;">새로고침</button><button id="swUpdateDismiss" style="background:transparent;color:#bbb;border:0;padding:6px 8px;cursor:pointer;">나중에</button>';
+          document.body.appendChild(bar);
+          document.getElementById('swUpdateBtn').onclick = () => newSW.postMessage({ type: 'SKIP_WAITING' });
+          document.getElementById('swUpdateDismiss').onclick = () => bar.remove();
+        }
+      };
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        if (!newSW) return;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            promptUpdate(newSW);
+          }
+        });
+      });
+      // 이미 waiting 상태인 SW가 있으면 바로 알림
+      if (reg.waiting && navigator.serviceWorker.controller) promptUpdate(reg.waiting);
+      // 새 SW가 활성화되면 페이지 자동 리로드 (1회만, 최초 install엔 controller가 null이라 무시됨)
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return;
+        reloaded = true;
+        location.reload();
+      });
+      // 주기적으로 새 버전 체크 (탭을 오래 켜둔 경우 대비)
+      setInterval(() => reg.update().catch(()=>{}), 60 * 60 * 1000);
+    } catch (e) { console.warn('SW 등록 실패:', e); }
   });
 }
 
