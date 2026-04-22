@@ -507,7 +507,51 @@
     background: #d4edda !important; border-color: #a0d5a9 !important;
   }
 
-  /* 거래처/문구 모달 폼 */
+  /* 미팅 */
+  .meeting-month {
+    margin-bottom: 8px; border: 1px solid #eef1f5; border-radius: 6px;
+    background: white; overflow: hidden;
+  }
+  .meeting-month-header {
+    padding: 8px 10px; background: #f8f9fa; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; font-weight: bold; color: #2c3e50;
+    user-select: none;
+  }
+  .meeting-month-header:hover { background: #ecf0f1; }
+  .meeting-month-header .mm-caret { font-size: 10px; color: #7f8c8d; transition: transform 0.15s; }
+  .meeting-month.collapsed .mm-caret { transform: rotate(-90deg); }
+  .meeting-month.collapsed .meeting-month-body { display: none; }
+  .meeting-month-body { padding: 4px; }
+  .meeting-item {
+    padding: 8px 10px; margin: 4px 0; border-radius: 4px;
+    background: #fafbfc; border: 1px solid #eef1f5;
+    font-size: 12px; cursor: pointer; position: relative;
+    transition: background 0.15s;
+  }
+  .meeting-item:hover { background: #ecf5fc; border-color: #b8d6e8; }
+  .meeting-item .mi-top { display: flex; gap: 6px; align-items: center; margin-bottom: 3px; }
+  .meeting-item .mi-date { color: #7f8c8d; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+  .meeting-item .mi-icon { font-size: 13px; flex-shrink: 0; }
+  .meeting-item .mi-title { color: #2c3e50; font-weight: 600; word-break: break-word; line-height: 1.3; flex: 1; }
+  .meeting-item .mi-attach { font-size: 11px; color: #3498db; word-break: break-all; line-height: 1.3; margin-top: 2px; }
+  .meeting-item .mi-note { font-size: 11px; color: #7f8c8d; margin-top: 4px; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+  .meeting-item .mi-actions {
+    position: absolute; top: 6px; right: 6px; display: none; gap: 2px;
+  }
+  .meeting-item:hover .mi-actions { display: flex; }
+  .meeting-item .mi-actions button {
+    padding: 2px 5px; font-size: 10px;
+    background: white; color: #95a5a6;
+    border: 1px solid #dfe4ea; border-radius: 3px; cursor: pointer;
+  }
+  .meeting-item .mi-actions button:hover { color: #2c3e50; background: #ecf0f1; }
+  /* 미팅 모달 — 링크/파일 토글 버튼 활성화 표시 */
+  #meetingKindLink.active, #meetingKindFile.active {
+    background: #3498db; color: white; border-color: #3498db;
+  }
+
+  /* 거래처/템플릿 모달 폼 */
   .form-row { display: flex; flex-direction: column; gap: 4px; }
   .form-row label { font-size: 12px; color: #7f8c8d; font-weight: bold; }
   .form-row input, .form-row textarea {
@@ -1278,7 +1322,8 @@
     <div class="rp-tabs">
       <button class="rp-tab active" data-tab="links" onclick="switchRpTab('links')">🔗 링크</button>
       <button class="rp-tab" data-tab="contacts" onclick="switchRpTab('contacts')">📇 거래처</button>
-      <button class="rp-tab" data-tab="phrases" onclick="switchRpTab('phrases')">✍ 문구</button>
+      <button class="rp-tab" data-tab="meetings" onclick="switchRpTab('meetings')">📅 미팅</button>
+      <button class="rp-tab" data-tab="phrases" onclick="switchRpTab('phrases')">📋 템플릿</button>
     </div>
 
     <div class="rp-tab-content" id="tabLinks">
@@ -1310,12 +1355,24 @@
       </p>
     </div>
 
+    <div class="rp-tab-content" id="tabMeetings" style="display:none;">
+      <div style="display:flex;gap:4px;margin-bottom:10px;">
+        <input type="text" id="meetingSearch" placeholder="🔍 제목 · 메모 검색..." oninput="onMeetingSearch(this.value)" style="flex:1;padding:6px 8px;font-size:13px;" />
+        <button class="ghost small" onclick="addMeeting()" style="flex-shrink:0;">+ 추가</button>
+      </div>
+      <div id="meetingList"></div>
+      <p style="font-size:11px;color:#95a5a6;margin-top:12px;line-height:1.5;">
+        💡 미팅 내용(Google Docs 링크·첨부파일)을 연월별로 정리합니다.<br/>
+        <b>링크</b>는 새 탭으로 열리고, <b>파일</b>은 Drive 미리보기로 열립니다.
+      </p>
+    </div>
+
     <div class="rp-tab-content" id="tabPhrases" style="display:none;">
-      <button class="ghost small" onclick="addPhrase()" style="width:100%;margin-bottom:10px;">+ 문구 추가</button>
+      <button class="ghost small" onclick="addPhrase()" style="width:100%;margin-bottom:10px;">+ 템플릿 추가</button>
       <div id="phraseList"></div>
       <p style="font-size:11px;color:#95a5a6;margin-top:12px;line-height:1.5;">
-        💡 문구를 <b>클릭하면 클립보드에 복사</b>됩니다.<br/>
-        자주 쓰는 인사말, 양식, 답변 템플릿을 저장해 두세요.
+        💡 템플릿을 <b>클릭하면 클립보드에 복사</b>됩니다.<br/>
+        자주 쓰는 인사말, 양식, 답변 등을 저장해 두세요.
       </p>
     </div>
   </aside>
@@ -1427,7 +1484,7 @@
       <div class="tut-num">4</div>
       <div class="tut-body">
         <h4>오른쪽 패널 활용</h4>
-        <p>🔗 <b>링크</b>: 자주 쓰는 사이트 북마크 · 📇 <b>거래처</b>: 국내/해외 업체 관리 · ✍ <b>문구</b>: 복사용 템플릿 (클릭=복사)</p>
+        <p>🔗 <b>링크</b>: 자주 쓰는 사이트 북마크 · 📇 <b>거래처</b>: 국내/해외 업체 관리 · 📅 <b>미팅</b>: 회의록/자료 연월별 정리 · 📋 <b>템플릿</b>: 복사용 텍스트 (클릭=복사)</p>
       </div>
     </div>
 
@@ -1493,10 +1550,56 @@
   </div>
 </div>
 
+<div class="modal" id="meetingModal">
+  <div class="modal-content" style="max-width:560px;">
+    <button class="modal-close" onclick="closeMeetingModal()">닫기</button>
+    <h2 id="meetingModalTitle">미팅 추가</h2>
+    <input type="hidden" id="meetingEditId" />
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
+      <div class="form-row" style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <label>날짜 *</label>
+          <input type="date" id="meetingDate" />
+        </div>
+        <div style="flex:2;">
+          <label>제목 *</label>
+          <input type="text" id="meetingTitle" placeholder="예: 월간 전략 리뷰" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>첨부 유형</label>
+        <div style="display:flex;gap:6px;">
+          <button type="button" id="meetingKindLink" class="ghost small" onclick="switchMeetingKind('link')" style="flex:1;">🔗 링크</button>
+          <button type="button" id="meetingKindFile" class="ghost small" onclick="switchMeetingKind('file')" style="flex:1;">📎 파일</button>
+        </div>
+      </div>
+      <div class="form-row" id="meetingLinkRow">
+        <label>링크 URL</label>
+        <input type="url" id="meetingUrl" placeholder="https://docs.google.com/... 또는 기타 URL" />
+        <small style="color:#95a5a6;font-size:11px;">Google Docs/Sheets/Slides, Notion, 유튜브 등 무엇이든 OK</small>
+      </div>
+      <div class="form-row" id="meetingFileRow" style="display:none;">
+        <label>파일 선택</label>
+        <input type="file" id="meetingFile" />
+        <div id="meetingFileStatus" style="margin-top:6px;font-size:12px;color:#7f8c8d;"></div>
+        <small style="color:#95a5a6;font-size:11px;">Google Drive에 업로드됩니다 (이 앱이 만든 파일만 접근 가능)</small>
+      </div>
+      <div class="form-row">
+        <label>메모 (선택)</label>
+        <textarea id="meetingNote" rows="3" placeholder="간단한 메모 (참석자·결정사항 요약 등)"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;">
+        <button class="secondary" onclick="closeMeetingModal()">취소</button>
+        <button class="primary" id="meetingSaveBtn" onclick="saveMeeting()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="phraseModal">
   <div class="modal-content" style="max-width:520px;">
     <button class="modal-close" onclick="closePhraseModal()">닫기</button>
-    <h2 id="phraseModalTitle">문구 추가</h2>
+    <h2 id="phraseModalTitle">템플릿 추가</h2>
     <input type="hidden" id="phraseEditId" />
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
       <div class="form-row">
@@ -1504,8 +1607,8 @@
         <input type="text" id="phraseLabel" placeholder="예: 회의 제안 인사말" />
       </div>
       <div class="form-row">
-        <label>문구 내용 *</label>
-        <textarea id="phraseText" rows="7" placeholder="자주 복사해서 쓰는 문구를 입력하세요..."></textarea>
+        <label>내용 *</label>
+        <textarea id="phraseText" rows="7" placeholder="자주 복사해서 쓰는 텍스트를 입력하세요..."></textarea>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;">
         <button class="secondary" onclick="closePhraseModal()">취소</button>
@@ -1676,6 +1779,8 @@ function loadData() {
     linkGroups: [{ id: 'g_default', name: '자주 찾는 링크', collapsed: false, links: [] }],
     contacts: [],
     phrases: [],
+    meetings: [],
+    meetingCollapsedMonths: {}, // { '2026-04': false } — 접힘 여부 기억
     rightPanelTab: 'links',
     rightPanelOpen: true,
     calendarId: null,
@@ -1835,7 +1940,8 @@ const Drive = {
     const hadLocalData = (state.todayTasks && state.todayTasks.length > 0) ||
                          (state.archive && Object.keys(state.archive).length > 0) ||
                          (state.contacts && state.contacts.length > 0) ||
-                         (state.phrases && state.phrases.length > 0);
+                         (state.phrases && state.phrases.length > 0) ||
+                         (state.meetings && state.meetings.length > 0);
     this._justUpgradedFromGuest = wasGuest && hadLocalData;
     localStorage.removeItem('guest_mode');
     hideGuestBanner();
@@ -2067,7 +2173,8 @@ const Drive = {
       if (!this.fileId) {
         // 원격에 파일 없음 → 현재 로컬 데이터를 첫 업로드
         if (Object.keys(state.archive).length > 0 || state.todayTasks.length > 0 ||
-            (state.contacts || []).length > 0 || (state.phrases || []).length > 0) {
+            (state.contacts || []).length > 0 || (state.phrases || []).length > 0 ||
+            (state.meetings || []).length > 0) {
           await this.pushToDrive(true);
           if (this._justUpgradedFromGuest) {
             this._justUpgradedFromGuest = false;
@@ -2089,7 +2196,8 @@ const Drive = {
 
       // 초기 로딩이고 로컬이 비어있으면 무조건 원격 사용
       const localEmpty = Object.keys(state.archive).length === 0 && state.todayTasks.length === 0 &&
-                         (state.contacts || []).length === 0 && (state.phrases || []).length === 0;
+                         (state.contacts || []).length === 0 && (state.phrases || []).length === 0 &&
+                         (state.meetings || []).length === 0;
 
       if (isInitial && localEmpty) {
         applyRemoteState(remote);
@@ -2211,6 +2319,8 @@ function applyRemoteState(remote) {
   state.linkGroups = r.linkGroups || [{ id: 'g_default', name: '자주 찾는 링크', collapsed: false, links: [] }];
   state.contacts = r.contacts || [];
   state.phrases = r.phrases || [];
+  state.meetings = r.meetings || [];
+  state.meetingCollapsedMonths = r.meetingCollapsedMonths || {};
   state.rightPanelTab = r.rightPanelTab || 'links';
   state.rightPanelOpen = r.rightPanelOpen !== false;
   state.calendarId = r.calendarId || null;
@@ -3215,14 +3325,17 @@ function switchRpTab(tab) {
   });
   document.getElementById('tabLinks').style.display = tab === 'links' ? '' : 'none';
   document.getElementById('tabContacts').style.display = tab === 'contacts' ? '' : 'none';
+  document.getElementById('tabMeetings').style.display = tab === 'meetings' ? '' : 'none';
   document.getElementById('tabPhrases').style.display = tab === 'phrases' ? '' : 'none';
   const title = tab === 'links' ? '🔗 자주 찾는 링크'
               : tab === 'contacts' ? '📇 거래처 명단'
-              : '✍ 자주 쓰는 문구';
+              : tab === 'meetings' ? '📅 미팅 기록'
+              : '📋 템플릿';
   const t = document.getElementById('rpTitle');
   if (t) t.textContent = title;
   saveData();
   if (tab === 'contacts') renderContacts();
+  else if (tab === 'meetings') renderMeetings();
   else if (tab === 'phrases') renderPhrases();
   else renderLinkGroups();
 }
@@ -3477,9 +3590,9 @@ function downloadContacts() {
   XLSX.writeFile(wb, `거래처명단_${today}.xlsx`);
 }
 
-// ===== 자주 쓰는 문구 =====
+// ===== 템플릿 (자주 쓰는 문구) =====
 function addPhrase() {
-  document.getElementById('phraseModalTitle').textContent = '문구 추가';
+  document.getElementById('phraseModalTitle').textContent = '템플릿 추가';
   document.getElementById('phraseEditId').value = '';
   document.getElementById('phraseLabel').value = '';
   document.getElementById('phraseText').value = '';
@@ -3491,7 +3604,7 @@ function editPhrase(id, ev) {
   ev?.stopPropagation?.();
   const p = (state.phrases || []).find(x => x.id === id);
   if (!p) return;
-  document.getElementById('phraseModalTitle').textContent = '문구 수정';
+  document.getElementById('phraseModalTitle').textContent = '템플릿 수정';
   document.getElementById('phraseEditId').value = p.id;
   document.getElementById('phraseLabel').value = p.label || '';
   document.getElementById('phraseText').value = p.text || '';
@@ -3502,7 +3615,7 @@ function savePhrase() {
   const id = document.getElementById('phraseEditId').value;
   const label = document.getElementById('phraseLabel').value.trim();
   const text = document.getElementById('phraseText').value.trim();
-  if (!text) { alert('문구 내용을 입력하세요.'); return; }
+  if (!text) { alert('템플릿 내용을 입력하세요.'); return; }
   if (!state.phrases) state.phrases = [];
   if (id) {
     const p = state.phrases.find(x => x.id === id);
@@ -3524,7 +3637,7 @@ function closePhraseModal() {
 
 function deletePhrase(id, ev) {
   ev?.stopPropagation?.();
-  if (!confirm('이 문구를 삭제하시겠습니까?')) return;
+  if (!confirm('이 템플릿을 삭제하시겠습니까?')) return;
   state.phrases = (state.phrases || []).filter(x => x.id !== id);
   saveData();
   renderPhrases();
@@ -3562,7 +3675,7 @@ function renderPhrases() {
   if (!list) return;
   if (!state.phrases || state.phrases.length === 0) {
     list.innerHTML = `<div style="text-align:center;color:#bdc3c7;font-size:12px;padding:20px;">
-      저장된 문구가 없습니다.<br/>위 + 버튼으로 추가하세요.<br/><br/>
+      저장된 템플릿이 없습니다.<br/>위 + 버튼으로 추가하세요.<br/><br/>
       <small>💡 클릭 = 클립보드 복사</small>
     </div>`;
     return;
@@ -3577,6 +3690,318 @@ function renderPhrases() {
       </div>
     </div>
   `).join('');
+}
+
+// ===== 미팅 =====
+let meetingSearchQuery = '';
+let _meetingCurrentKind = 'link'; // 모달에서 선택된 첨부 유형
+let _meetingPendingFile = null;   // 업로드 전 파일 정보 (수정 시 기존 값 유지용)
+
+function addMeeting() {
+  document.getElementById('meetingModalTitle').textContent = '미팅 추가';
+  document.getElementById('meetingEditId').value = '';
+  document.getElementById('meetingDate').value = todayStr();
+  document.getElementById('meetingTitle').value = '';
+  document.getElementById('meetingUrl').value = '';
+  document.getElementById('meetingFile').value = '';
+  document.getElementById('meetingFileStatus').textContent = '';
+  document.getElementById('meetingNote').value = '';
+  _meetingPendingFile = null;
+  switchMeetingKind('link');
+  document.getElementById('meetingModal').classList.add('show');
+  setTimeout(() => document.getElementById('meetingTitle').focus(), 100);
+}
+
+function editMeeting(id, ev) {
+  ev?.stopPropagation?.();
+  const m = (state.meetings || []).find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('meetingModalTitle').textContent = '미팅 수정';
+  document.getElementById('meetingEditId').value = m.id;
+  document.getElementById('meetingDate').value = m.date || todayStr();
+  document.getElementById('meetingTitle').value = m.title || '';
+  document.getElementById('meetingUrl').value = m.url || '';
+  document.getElementById('meetingFile').value = '';
+  document.getElementById('meetingNote').value = m.note || '';
+  if (m.fileId) {
+    _meetingPendingFile = { fileId: m.fileId, fileName: m.fileName, mimeType: m.mimeType };
+    document.getElementById('meetingFileStatus').textContent = `📎 ${m.fileName} (기존 파일 유지)`;
+    switchMeetingKind('file');
+  } else {
+    _meetingPendingFile = null;
+    document.getElementById('meetingFileStatus').textContent = '';
+    switchMeetingKind(m.url ? 'link' : 'link');
+  }
+  document.getElementById('meetingModal').classList.add('show');
+}
+
+function switchMeetingKind(kind) {
+  _meetingCurrentKind = kind;
+  document.getElementById('meetingKindLink').classList.toggle('active', kind === 'link');
+  document.getElementById('meetingKindFile').classList.toggle('active', kind === 'file');
+  document.getElementById('meetingLinkRow').style.display = kind === 'link' ? '' : 'none';
+  document.getElementById('meetingFileRow').style.display = kind === 'file' ? '' : 'none';
+}
+
+function closeMeetingModal() {
+  document.getElementById('meetingModal').classList.remove('show');
+  _meetingPendingFile = null;
+}
+
+async function saveMeeting() {
+  const id = document.getElementById('meetingEditId').value;
+  const date = document.getElementById('meetingDate').value;
+  const title = document.getElementById('meetingTitle').value.trim();
+  const url = document.getElementById('meetingUrl').value.trim();
+  const note = document.getElementById('meetingNote').value.trim();
+  const fileInput = document.getElementById('meetingFile');
+  const chosenFile = fileInput.files && fileInput.files[0];
+
+  if (!date) { alert('날짜를 선택하세요.'); return; }
+  if (!title) { alert('제목을 입력하세요.'); return; }
+
+  const saveBtn = document.getElementById('meetingSaveBtn');
+  const statusEl = document.getElementById('meetingFileStatus');
+
+  let meetingData = { id: id || 'mt_' + Date.now() + Math.random().toString(36).slice(2, 6), date, title, note };
+
+  try {
+    if (_meetingCurrentKind === 'link') {
+      if (!url) { alert('링크 URL을 입력하세요.'); return; }
+      meetingData.url = url;
+    } else {
+      // 파일 모드
+      if (chosenFile) {
+        // 새 파일 업로드 필요
+        if (!Drive.accessToken) { alert('로그인이 필요합니다 (Google Drive에 파일 업로드).'); return; }
+        saveBtn.disabled = true;
+        saveBtn.textContent = '업로드 중...';
+        statusEl.textContent = `📤 ${chosenFile.name} 업로드 중...`;
+        const uploaded = await uploadFileToDrive(chosenFile);
+        meetingData.fileId = uploaded.id;
+        meetingData.fileName = chosenFile.name;
+        meetingData.mimeType = chosenFile.type || 'application/octet-stream';
+        meetingData.fileSize = chosenFile.size;
+        statusEl.textContent = `✅ ${chosenFile.name} 업로드 완료`;
+      } else if (_meetingPendingFile) {
+        // 기존 파일 유지
+        meetingData.fileId = _meetingPendingFile.fileId;
+        meetingData.fileName = _meetingPendingFile.fileName;
+        meetingData.mimeType = _meetingPendingFile.mimeType;
+      } else {
+        alert('파일을 선택하거나 링크 모드로 전환하세요.');
+        return;
+      }
+    }
+
+    if (!state.meetings) state.meetings = [];
+    if (id) {
+      const idx = state.meetings.findIndex(x => x.id === id);
+      if (idx >= 0) {
+        // 수정: 기존 파일을 새 파일로 바꿨으면 옛 파일 Drive에서 삭제
+        const old = state.meetings[idx];
+        if (old.fileId && old.fileId !== meetingData.fileId) {
+          deleteDriveFile(old.fileId).catch(() => {});
+        }
+        state.meetings[idx] = meetingData;
+      }
+    } else {
+      state.meetings.push(meetingData);
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = '저장';
+    closeMeetingModal();
+    saveData();
+    renderMeetings();
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = '❌ 업로드 실패: ' + (e.message || e);
+    saveBtn.disabled = false;
+    saveBtn.textContent = '저장';
+    alert('저장 실패: ' + (e.message || e));
+  }
+}
+
+function deleteMeeting(id, ev) {
+  ev?.stopPropagation?.();
+  const m = (state.meetings || []).find(x => x.id === id);
+  if (!m) return;
+  if (!confirm(`"${m.title}" 미팅 기록을 삭제할까요?${m.fileId ? '\n(첨부 파일도 Drive에서 삭제됩니다)' : ''}`)) return;
+  if (m.fileId) deleteDriveFile(m.fileId).catch(() => {});
+  state.meetings = state.meetings.filter(x => x.id !== id);
+  saveData();
+  renderMeetings();
+}
+
+function openMeeting(id) {
+  const m = (state.meetings || []).find(x => x.id === id);
+  if (!m) return;
+  if (m.url) {
+    window.open(m.url, '_blank', 'noopener,noreferrer');
+  } else if (m.fileId) {
+    // Drive 뷰어로 열기 (이미지/PDF/Docs/비디오 모두 대응)
+    window.open(`https://drive.google.com/file/d/${m.fileId}/view`, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function getMeetingIcon(m) {
+  if (m.url) {
+    const u = m.url.toLowerCase();
+    if (u.includes('docs.google.com/document')) return '📄';
+    if (u.includes('docs.google.com/spreadsheets')) return '📊';
+    if (u.includes('docs.google.com/presentation')) return '🎞';
+    if (u.includes('notion.')) return '📓';
+    if (u.includes('youtube.com') || u.includes('youtu.be')) return '▶';
+    return '🔗';
+  }
+  if (m.fileId) {
+    const mt = (m.mimeType || '').toLowerCase();
+    if (mt.startsWith('image/')) return '🖼';
+    if (mt === 'application/pdf') return '📕';
+    if (mt.includes('spreadsheet') || mt.includes('excel') || mt.includes('csv')) return '📊';
+    if (mt.includes('presentation') || mt.includes('powerpoint')) return '🎞';
+    if (mt.includes('word') || mt.includes('document')) return '📄';
+    if (mt.startsWith('video/')) return '🎬';
+    if (mt.startsWith('audio/')) return '🎵';
+    return '📎';
+  }
+  return '•';
+}
+
+function onMeetingSearch(q) {
+  meetingSearchQuery = (q || '').trim().toLowerCase();
+  renderMeetings();
+}
+
+function renderMeetings() {
+  const list = document.getElementById('meetingList');
+  if (!list) return;
+  const meetings = (state.meetings || []).slice();
+  if (meetings.length === 0) {
+    list.innerHTML = `<div style="text-align:center;color:#bdc3c7;font-size:12px;padding:20px;">
+      저장된 미팅이 없습니다.<br/>위 + 버튼으로 추가하세요.
+    </div>`;
+    return;
+  }
+  // 검색 필터
+  let filtered = meetings;
+  if (meetingSearchQuery) {
+    filtered = meetings.filter(m =>
+      (m.title || '').toLowerCase().includes(meetingSearchQuery) ||
+      (m.note || '').toLowerCase().includes(meetingSearchQuery) ||
+      (m.fileName || '').toLowerCase().includes(meetingSearchQuery)
+    );
+  }
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="text-align:center;color:#bdc3c7;font-size:12px;padding:20px;">
+      검색 결과가 없습니다.
+    </div>`;
+    return;
+  }
+  // 연월 기준으로 내림차순 정렬 후 그룹핑
+  filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const groups = {}; // { '2026-04': [...], '2026-03': [...] }
+  for (const m of filtered) {
+    const ym = (m.date || '0000-00').slice(0, 7);
+    (groups[ym] = groups[ym] || []).push(m);
+  }
+  const ymKeys = Object.keys(groups).sort().reverse();
+  const collapsed = state.meetingCollapsedMonths || {};
+  // 검색 중일 땐 전부 펼침 (찾기 쉽게)
+  const isSearching = !!meetingSearchQuery;
+
+  list.innerHTML = ymKeys.map((ym, idx) => {
+    const [y, mo] = ym.split('-');
+    // 기본: 가장 최근 월만 펼침, 나머지는 접힘. state에 저장된 설정 우선.
+    const defaultCollapsed = idx !== 0;
+    const isCollapsed = isSearching ? false : (ym in collapsed ? collapsed[ym] : defaultCollapsed);
+    const items = groups[ym].map(m => {
+      const icon = getMeetingIcon(m);
+      const [yy, mm, dd] = (m.date || '').split('-');
+      const attach = m.url
+        ? `<div class="mi-attach">🔗 ${escapeHtml(m.url)}</div>`
+        : m.fileName ? `<div class="mi-attach">📎 ${escapeHtml(m.fileName)}</div>` : '';
+      const note = m.note ? `<div class="mi-note">${escapeHtml(m.note)}</div>` : '';
+      return `
+        <div class="meeting-item" onclick="openMeeting('${m.id}')" title="클릭하여 열기">
+          <div class="mi-top">
+            <span class="mi-date">${mm}-${dd}</span>
+            <span class="mi-icon">${icon}</span>
+            <span class="mi-title">${escapeHtml(m.title)}</span>
+          </div>
+          ${attach}
+          ${note}
+          <div class="mi-actions">
+            <button onclick="editMeeting('${m.id}', event)" title="수정">✏</button>
+            <button onclick="deleteMeeting('${m.id}', event)" title="삭제">🗑</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="meeting-month ${isCollapsed ? 'collapsed' : ''}" data-ym="${ym}">
+        <div class="meeting-month-header" onclick="toggleMeetingMonth('${ym}')">
+          <span>${y}년 ${parseInt(mo)}월 (${groups[ym].length}건)</span>
+          <span class="mm-caret">▼</span>
+        </div>
+        <div class="meeting-month-body">${items}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleMeetingMonth(ym) {
+  if (!state.meetingCollapsedMonths) state.meetingCollapsedMonths = {};
+  // 현재 상태를 스토리지에 반영. 없으면 최초 기본값(최신=false, 나머지=true)의 반대로 토글.
+  const list = (state.meetings || []).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const uniqYms = [...new Set(list.map(m => (m.date || '0000-00').slice(0,7)))];
+  const idx = uniqYms.indexOf(ym);
+  const defaultCollapsed = idx !== 0;
+  const currentCollapsed = ym in state.meetingCollapsedMonths ? state.meetingCollapsedMonths[ym] : defaultCollapsed;
+  state.meetingCollapsedMonths[ym] = !currentCollapsed;
+  saveData();
+  renderMeetings();
+}
+
+// ===== Drive 파일 업로드 (미팅 첨부용) =====
+async function uploadFileToDrive(file) {
+  // drive.file 스코프로 multipart 업로드
+  await Drive._checkToken();
+  const metadata = { name: file.name, mimeType: file.type || 'application/octet-stream' };
+  const boundary = 'mt_' + Date.now();
+  const closeDelim = `\r\n--${boundary}--`;
+  // 바이너리 안전하게 보내려면 Blob 조립
+  const pre =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+    JSON.stringify(metadata) + `\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: ${metadata.mimeType}\r\n\r\n`;
+  const body = new Blob([pre, file, closeDelim]);
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Drive.accessToken}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`
+      },
+      body
+    }
+  );
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`업로드 실패 (${res.status}): ${t.slice(0, 200)}`);
+  }
+  return res.json();
+}
+
+async function deleteDriveFile(fileId) {
+  if (!Drive.accessToken || !fileId) return;
+  try {
+    await Drive._apiFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, { method: 'DELETE' });
+  } catch (e) { console.warn('Drive 파일 삭제 실패:', fileId, e); }
 }
 
 // ===== 지난 업무 검색 =====
