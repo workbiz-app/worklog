@@ -1738,8 +1738,13 @@ const Drive = {
           updateSyncUI('로그인 오류: ' + (err.message || err.type || '알 수 없음'), 'error');
         }
       });
-      // 저장된 토큰 복원
-      const saved = sessionStorage.getItem('drive_token');
+      // 저장된 토큰 복원 (localStorage — 탭/브라우저 재시작해도 유지)
+      // 이전 버전의 sessionStorage 토큰도 1회 마이그레이션
+      let saved = localStorage.getItem('drive_token');
+      if (!saved) {
+        const legacy = sessionStorage.getItem('drive_token');
+        if (legacy) { localStorage.setItem('drive_token', legacy); sessionStorage.removeItem('drive_token'); saved = legacy; }
+      }
       if (saved) {
         try {
           const t = JSON.parse(saved);
@@ -1812,7 +1817,7 @@ const Drive = {
       } catch (e) { this.userEmail = ''; }
     }
 
-    sessionStorage.setItem('drive_token', JSON.stringify({
+    localStorage.setItem('drive_token', JSON.stringify({
       accessToken: this.accessToken,
       expiresAt: this.tokenExpiresAt,
       email: this.userEmail
@@ -1864,7 +1869,8 @@ const Drive = {
     this.userEmail = '';
     this.fileId = null;
     this.lastRemoteModified = 0;
-    sessionStorage.removeItem('drive_token');
+    localStorage.removeItem('drive_token');
+    sessionStorage.removeItem('drive_token'); // 이전 버전 잔존분 정리
     localStorage.removeItem('drive_auto_login');
     localStorage.removeItem('guest_mode');
     hideGuestBanner();
@@ -1898,7 +1904,7 @@ const Drive = {
         this.accessToken = resp.access_token;
         this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
         this._scheduleSilentRefresh();
-        sessionStorage.setItem('drive_token', JSON.stringify({
+        localStorage.setItem('drive_token', JSON.stringify({
           accessToken: this.accessToken, expiresAt: this.tokenExpiresAt, email: this.userEmail
         }));
         resolve();
