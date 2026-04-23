@@ -245,6 +245,10 @@
   }
   .task.carried { border-left: 4px solid #f39c12; }
   .task.completed { background: #f8f9fa; }
+  /* 완료 카드 내부에 들어간 task는 조금 다른 색상 */
+  #completedTaskList .task { background: #f6fbf8; border-color: #d4e9dc; }
+  #completedTaskList .task:hover { background: #edf7f1; }
+  #completedCard h2 { color: #27ae60; }
   .task-head {
     display: flex;
     align-items: center;
@@ -578,35 +582,42 @@
   /* 미팅 — 달력 뷰 */
   .meeting-cal {
     background: white; border: 1px solid #eef1f5; border-radius: 8px;
-    padding: 10px; margin-bottom: 10px;
+    padding: 10px 8px; margin-bottom: 10px;
+    box-sizing: border-box; overflow: hidden;
   }
   .meeting-cal-head {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 8px; gap: 4px;
   }
   .meeting-cal-head button {
-    padding: 4px 10px; font-size: 13px;
+    padding: 3px 8px; font-size: 12px;
     background: #f8f9fa; color: #2c3e50;
     border: 1px solid #dfe4ea; border-radius: 4px; cursor: pointer;
+    flex-shrink: 0;
   }
   .meeting-cal-head button:hover { background: #ecf0f1; }
   .meeting-cal-title {
-    font-size: 14px; font-weight: bold; color: #2c3e50;
+    font-size: 13px; font-weight: bold; color: #2c3e50;
+    flex: 1; text-align: center;
   }
   .meeting-cal-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px; width: 100%;
   }
   .meeting-cal-grid .mc-wd {
     text-align: center; font-size: 11px; color: #95a5a6;
-    padding: 4px 0; font-weight: bold;
+    padding: 3px 0; font-weight: bold;
+    min-width: 0;
   }
   .meeting-cal-grid .mc-wd.sun { color: #e74c3c; }
   .meeting-cal-grid .mc-wd.sat { color: #3498db; }
   .meeting-cal-grid .mc-day {
-    text-align: center; padding: 8px 0; font-size: 12px;
+    text-align: center; padding: 6px 0; font-size: 12px;
     color: #bdc3c7; border-radius: 4px;
-    aspect-ratio: 1; display: flex; flex-direction: column;
+    min-height: 34px; min-width: 0;
+    display: flex; flex-direction: column;
     align-items: center; justify-content: center; cursor: default;
+    box-sizing: border-box;
   }
   .meeting-cal-grid .mc-day.cur { color: #2c3e50; cursor: pointer; }
   .meeting-cal-grid .mc-day.cur:hover { background: #ecf0f1; }
@@ -618,8 +629,8 @@
   }
   .meeting-cal-grid .mc-day.has-meeting:hover { background: #d4eaf5; }
   .meeting-cal-grid .mc-day.has-meeting .mc-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: #3498db; margin-top: 2px;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: #3498db; margin-top: 1px;
   }
   .meeting-cal-grid .mc-day.selected {
     background: #3498db; color: white; font-weight: bold;
@@ -1345,6 +1356,17 @@
         <span id="bulkStatus"></span>
       </div>
       <div id="taskList" style="margin-top: 14px;"></div>
+    </div>
+
+    <div class="card" id="completedCard" style="display:none;">
+      <h2 style="display:flex;align-items:center;gap:8px;">
+        <span style="color:#27ae60;">✅ 업무 완료</span>
+        <span id="completedCount" style="font-size:13px;color:#7f8c8d;font-weight:normal;"></span>
+      </h2>
+      <div style="font-size:12px;color:#95a5a6;margin-top:-4px;margin-bottom:10px;">
+        체크를 해제하면 "오늘 할 일"로 되돌아갑니다 · 🌙 일과 종료를 눌러야 저장소로 이동합니다
+      </div>
+      <div id="completedTaskList"></div>
     </div>
 
     <div class="card memo-area">
@@ -3313,23 +3335,46 @@ function render() {
   renderTodayAttachments();
 
   const list = document.getElementById('taskList');
-  const sorted = [...state.todayTasks].sort((a, b) => {
+  const completedList = document.getElementById('completedTaskList');
+  const completedCard = document.getElementById('completedCard');
+  const completedCount = document.getElementById('completedCount');
+
+  // 미완료/완료 분리 + 이월분은 맨 위로
+  const pending = state.todayTasks.filter(t => !t.completed).sort((a, b) => {
     if (!!a.carriedFrom === !!b.carriedFrom) return 0;
     return a.carriedFrom ? -1 : 1;
   });
+  const done = state.todayTasks.filter(t => t.completed);
 
-  if (sorted.length === 0) {
+  // 미완료 렌더
+  if (state.todayTasks.length === 0) {
     list.innerHTML = '<div class="empty">업무를 추가해 주세요</div>';
-    document.getElementById('bulkBar').style.display = 'none';
+  } else if (pending.length === 0) {
+    list.innerHTML = '<div class="empty" style="color:#27ae60;">🎉 오늘 할 일 모두 완료! 🌙 일과 종료를 눌러 저장소로 옮기세요.</div>';
   } else {
-    list.innerHTML = sorted.map(t => renderTask(t)).join('');
-    attachImageHandlers();
-    const bar = document.getElementById('bulkBar');
+    list.innerHTML = pending.map(t => renderTask(t)).join('');
+  }
+
+  // 완료 렌더
+  if (done.length > 0) {
+    completedCard.style.display = '';
+    completedList.innerHTML = done.map(t => renderTask(t)).join('');
+    completedCount.textContent = `${done.length}/${state.todayTasks.length}건`;
+  } else {
+    completedCard.style.display = 'none';
+    completedList.innerHTML = '';
+  }
+
+  // 이미지 핸들러 · 벌크 바
+  if (state.todayTasks.length > 0) attachImageHandlers();
+  const bar = document.getElementById('bulkBar');
+  if (state.todayTasks.length === 0) {
+    bar.style.display = 'none';
+  } else {
     bar.style.display = 'flex';
     const selCnt = state.todayTasks.filter(t => t.selected).length;
-    const doneCnt = state.todayTasks.filter(t => t.completed).length;
     document.getElementById('bulkStatus').textContent =
-      `선택 ${selCnt}건 · 완료 ${doneCnt}/${state.todayTasks.length}건`;
+      `선택 ${selCnt}건 · 완료 ${done.length}/${state.todayTasks.length}건`;
   }
   renderSidebar();
   renderArchiveSearchResults();
