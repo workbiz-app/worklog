@@ -1,7 +1,7 @@
 // 업무일지 Service Worker (v1)
 // 오프라인 지원 + 앱 쉘 캐싱
 
-const CACHE = 'worklog-v4';
+const CACHE = 'worklog-v7';
 const ASSETS = [
   './',
   './index.html',

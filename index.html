@@ -27,10 +27,10 @@
   }
   .layout { display: flex; min-height: 100vh; }
   .sidebar {
-    width: 280px;
+    width: 320px;
     background: #2c3e50;
     color: #ecf0f1;
-    padding: 20px 14px;
+    padding: 22px 16px;
     position: sticky;
     top: 0;
     height: 100vh;
@@ -39,19 +39,19 @@
   }
   .sidebar h3 {
     margin: 0 0 14px 0;
-    font-size: 15px;
+    font-size: 17px;
     color: #ecf0f1;
     padding-bottom: 10px;
     border-bottom: 1px solid #34495e;
   }
-  .sidebar .empty-side { color: #7f8c8d; font-size: 12px; padding: 14px 6px; }
+  .sidebar .empty-side { color: #7f8c8d; font-size: 13px; padding: 14px 6px; }
   .month { margin-bottom: 6px; }
   .month-head {
     cursor: pointer;
-    padding: 8px 10px;
+    padding: 10px 12px;
     background: #34495e;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: bold;
     display: flex;
     justify-content: space-between;
@@ -61,25 +61,25 @@
   .month-head:hover { background: #3d566e; }
   .month-head .caret { transition: transform 0.15s; display: inline-block; }
   .month.open .month-head .caret { transform: rotate(90deg); }
-  .month-count { font-size: 11px; color: #95a5a6; font-weight: normal; }
+  .month-count { font-size: 12px; color: #95a5a6; font-weight: normal; }
   .month-days { display: none; padding: 4px 0 4px 8px; }
   .month.open .month-days { display: block; }
   .day {
     cursor: pointer;
-    padding: 6px 10px;
-    font-size: 12px;
+    padding: 7px 11px;
+    font-size: 13px;
     border-radius: 4px;
     color: #bdc3c7;
     margin: 2px 0;
   }
   .day:hover { background: #34495e; color: #ecf0f1; }
-  .day .cnt { color: #7f8c8d; font-size: 11px; }
+  .day .cnt { color: #7f8c8d; font-size: 12px; }
 
   .main { flex: 1; padding: 20px 24px; min-width: 0; }
 
   .right-panel {
-    width: 290px;
-    padding: 20px 14px;
+    width: 340px;
+    padding: 22px 16px;
     background: #fff;
     border-left: 1px solid #eef1f5;
     position: sticky;
@@ -340,6 +340,35 @@
     font-family: inherit; font-size: 14px; resize: vertical;
   }
 
+  /* 오늘 첨부 리스트 (링크/파일) */
+  .today-attach-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .today-attach-list:empty { display: none; }
+  .today-attach-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; background: #f8f9fa;
+    border: 1px solid #eef1f5; border-radius: 5px;
+    font-size: 13px;
+  }
+  .today-attach-item:hover { background: #ecf5fc; border-color: #b8d6e8; }
+  .today-attach-item .tai-icon { flex-shrink: 0; font-size: 14px; }
+  .today-attach-item .tai-name {
+    flex: 1; color: #2c3e50; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .today-attach-item .tai-name:hover { color: #3498db; text-decoration: underline; }
+  .today-attach-item .tai-status { font-size: 11px; color: #95a5a6; flex-shrink: 0; }
+  .today-attach-item button {
+    padding: 2px 6px; font-size: 11px;
+    background: white; color: #95a5a6;
+    border: 1px solid #dfe4ea; border-radius: 3px; cursor: pointer;
+  }
+  .today-attach-item button:hover { color: #e74c3c; border-color: #e74c3c; }
+  .today-attach-hint {
+    font-size: 11px; color: #95a5a6; margin-top: 10px;
+    padding: 8px 10px; background: #f8f9fa; border-radius: 5px;
+    line-height: 1.4;
+  }
+
   .end-of-day {
     text-align: center; padding: 16px;
     background: linear-gradient(135deg, #27ae60, #2ecc71);
@@ -431,13 +460,13 @@
   /* 오른쪽 패널 탭 */
   .rp-tabs {
     display: flex; gap: 2px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     border-bottom: 2px solid #eef1f5;
   }
   .rp-tab {
-    flex: 1; padding: 8px 4px;
+    flex: 1; padding: 10px 4px;
     background: transparent; border: none;
-    color: #7f8c8d; font-size: 11px; font-weight: bold;
+    color: #7f8c8d; font-size: 13px; font-weight: bold;
     cursor: pointer; border-bottom: 2px solid transparent;
     margin-bottom: -2px;
   }
@@ -447,15 +476,15 @@
   /* 거래처 */
   .contact-filter { display: flex; gap: 4px; margin-bottom: 8px; }
   .cf-btn {
-    flex: 1; padding: 5px 8px; font-size: 11px;
+    flex: 1; padding: 6px 10px; font-size: 12px;
     background: #f8f9fa; border: 1px solid #dfe4ea;
     color: #7f8c8d; border-radius: 4px; cursor: pointer;
   }
   .cf-btn.active { background: #3498db; color: white; border-color: #3498db; }
   .contact-item {
     border: 1px solid #eef1f5; border-radius: 6px;
-    padding: 8px 10px; margin-bottom: 6px;
-    font-size: 12px; background: white;
+    padding: 10px 12px; margin-bottom: 7px;
+    font-size: 13px; background: white;
   }
   .contact-item .ci-name {
     font-weight: bold; color: #2c3e50;
@@ -464,41 +493,41 @@
   .contact-item .ci-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.1s; }
   .contact-item:hover .ci-actions { opacity: 1; }
   .contact-item .ci-actions button {
-    padding: 2px 5px; font-size: 10px;
+    padding: 3px 6px; font-size: 11px;
     background: transparent; color: #95a5a6;
     border: none; border-radius: 3px; cursor: pointer;
   }
   .contact-item .ci-actions button:hover { color: #2c3e50; background: #ecf0f1; }
-  .contact-item .ci-sub { color: #7f8c8d; font-size: 11px; margin-top: 2px; }
+  .contact-item .ci-sub { color: #7f8c8d; font-size: 12px; margin-top: 3px; }
   .contact-item .ci-items {
-    color: #555; font-size: 11px; margin-top: 4px;
-    background: #f8f9fa; padding: 4px 6px;
-    border-radius: 4px; line-height: 1.5;
+    color: #555; font-size: 12px; margin-top: 5px;
+    background: #f8f9fa; padding: 5px 8px;
+    border-radius: 4px; line-height: 1.55;
   }
 
-  /* 문구 */
+  /* 템플릿 */
   .phrase-item {
     border: 1px solid #eef1f5; border-radius: 6px;
-    padding: 8px 10px; margin-bottom: 6px;
-    font-size: 12px; background: white;
+    padding: 10px 12px; margin-bottom: 7px;
+    font-size: 13px; background: white;
     cursor: pointer; position: relative;
     transition: background 0.15s, border-color 0.15s;
   }
   .phrase-item:hover { background: #ecf5fc; }
   .phrase-item .pi-label {
     font-weight: bold; color: #2c3e50;
-    font-size: 11px; margin-bottom: 2px;
+    font-size: 12px; margin-bottom: 3px;
   }
   .phrase-item .pi-text {
-    color: #555; font-size: 12px; line-height: 1.4;
+    color: #555; font-size: 13px; line-height: 1.45;
     white-space: pre-wrap; word-break: break-word;
   }
   .phrase-item .pi-actions {
-    position: absolute; top: 4px; right: 4px; display: none;
+    position: absolute; top: 5px; right: 5px; display: none;
   }
   .phrase-item:hover .pi-actions { display: flex; gap: 2px; }
   .phrase-item .pi-actions button {
-    padding: 2px 5px; font-size: 10px;
+    padding: 3px 6px; font-size: 11px;
     background: white; color: #95a5a6;
     border: 1px solid #dfe4ea; border-radius: 3px; cursor: pointer;
   }
@@ -513,37 +542,99 @@
     background: white; overflow: hidden;
   }
   .meeting-month-header {
-    padding: 8px 10px; background: #f8f9fa; cursor: pointer;
+    padding: 10px 12px; background: #f8f9fa; cursor: pointer;
     display: flex; align-items: center; justify-content: space-between;
-    font-size: 12px; font-weight: bold; color: #2c3e50;
+    font-size: 13px; font-weight: bold; color: #2c3e50;
     user-select: none;
   }
   .meeting-month-header:hover { background: #ecf0f1; }
-  .meeting-month-header .mm-caret { font-size: 10px; color: #7f8c8d; transition: transform 0.15s; }
+  .meeting-month-header .mm-caret { font-size: 11px; color: #7f8c8d; transition: transform 0.15s; }
   .meeting-month.collapsed .mm-caret { transform: rotate(-90deg); }
   .meeting-month.collapsed .meeting-month-body { display: none; }
   .meeting-month-body { padding: 4px; }
   .meeting-item {
-    padding: 8px 10px; margin: 4px 0; border-radius: 4px;
+    padding: 10px 12px; margin: 5px 0; border-radius: 4px;
     background: #fafbfc; border: 1px solid #eef1f5;
-    font-size: 12px; cursor: pointer; position: relative;
+    font-size: 13px; cursor: pointer; position: relative;
     transition: background 0.15s;
   }
   .meeting-item:hover { background: #ecf5fc; border-color: #b8d6e8; }
-  .meeting-item .mi-top { display: flex; gap: 6px; align-items: center; margin-bottom: 3px; }
-  .meeting-item .mi-date { color: #7f8c8d; font-size: 11px; font-weight: bold; flex-shrink: 0; }
-  .meeting-item .mi-icon { font-size: 13px; flex-shrink: 0; }
-  .meeting-item .mi-title { color: #2c3e50; font-weight: 600; word-break: break-word; line-height: 1.3; flex: 1; }
-  .meeting-item .mi-attach { font-size: 11px; color: #3498db; word-break: break-all; line-height: 1.3; margin-top: 2px; }
-  .meeting-item .mi-note { font-size: 11px; color: #7f8c8d; margin-top: 4px; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+  .meeting-item .mi-top { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+  .meeting-item .mi-date { color: #7f8c8d; font-size: 12px; font-weight: bold; flex-shrink: 0; }
+  .meeting-item .mi-icon { font-size: 14px; flex-shrink: 0; }
+  .meeting-item .mi-title { color: #2c3e50; font-weight: 600; word-break: break-word; line-height: 1.35; flex: 1; font-size: 13px; }
+  .meeting-item .mi-attach { font-size: 12px; color: #3498db; word-break: break-all; line-height: 1.35; margin-top: 3px; }
+  .meeting-item .mi-note { font-size: 12px; color: #7f8c8d; margin-top: 5px; white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
   .meeting-item .mi-actions {
-    position: absolute; top: 6px; right: 6px; display: none; gap: 2px;
+    position: absolute; top: 7px; right: 7px; display: none; gap: 2px;
   }
   .meeting-item:hover .mi-actions { display: flex; }
   .meeting-item .mi-actions button {
-    padding: 2px 5px; font-size: 10px;
+    padding: 3px 6px; font-size: 11px;
     background: white; color: #95a5a6;
     border: 1px solid #dfe4ea; border-radius: 3px; cursor: pointer;
+  }
+
+  /* 미팅 — 달력 뷰 */
+  .meeting-cal {
+    background: white; border: 1px solid #eef1f5; border-radius: 8px;
+    padding: 10px; margin-bottom: 10px;
+  }
+  .meeting-cal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .meeting-cal-head button {
+    padding: 4px 10px; font-size: 13px;
+    background: #f8f9fa; color: #2c3e50;
+    border: 1px solid #dfe4ea; border-radius: 4px; cursor: pointer;
+  }
+  .meeting-cal-head button:hover { background: #ecf0f1; }
+  .meeting-cal-title {
+    font-size: 14px; font-weight: bold; color: #2c3e50;
+  }
+  .meeting-cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  }
+  .meeting-cal-grid .mc-wd {
+    text-align: center; font-size: 11px; color: #95a5a6;
+    padding: 4px 0; font-weight: bold;
+  }
+  .meeting-cal-grid .mc-wd.sun { color: #e74c3c; }
+  .meeting-cal-grid .mc-wd.sat { color: #3498db; }
+  .meeting-cal-grid .mc-day {
+    text-align: center; padding: 8px 0; font-size: 12px;
+    color: #bdc3c7; border-radius: 4px;
+    aspect-ratio: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: default;
+  }
+  .meeting-cal-grid .mc-day.cur { color: #2c3e50; cursor: pointer; }
+  .meeting-cal-grid .mc-day.cur:hover { background: #ecf0f1; }
+  .meeting-cal-grid .mc-day.today {
+    background: #fff8dc; border: 1px solid #f0c040;
+  }
+  .meeting-cal-grid .mc-day.has-meeting {
+    font-weight: bold; color: #1e6091; background: #eaf5fc;
+  }
+  .meeting-cal-grid .mc-day.has-meeting:hover { background: #d4eaf5; }
+  .meeting-cal-grid .mc-day.has-meeting .mc-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #3498db; margin-top: 2px;
+  }
+  .meeting-cal-grid .mc-day.selected {
+    background: #3498db; color: white; font-weight: bold;
+  }
+  .meeting-cal-grid .mc-day.selected .mc-dot { background: white; }
+  .meeting-cal-view-toggle {
+    display: flex; gap: 2px; margin-bottom: 10px;
+  }
+  .meeting-cal-view-toggle button {
+    flex: 1; padding: 6px 8px; font-size: 12px;
+    background: #f8f9fa; color: #7f8c8d;
+    border: 1px solid #dfe4ea; border-radius: 4px; cursor: pointer;
+  }
+  .meeting-cal-view-toggle button.active {
+    background: #3498db; color: white; border-color: #3498db;
   }
   .meeting-item .mi-actions button:hover { color: #2c3e50; background: #ecf0f1; }
   /* 미팅 모달 — 링크/파일 토글 버튼 활성화 표시 */
@@ -1261,9 +1352,14 @@
       <textarea id="todayMemo" placeholder="오늘 하루의 전반적인 소감, 특이사항, 내일 챙길 것 등을 자유롭게 작성하세요. (다운로드 시 함께 포함됩니다)"></textarea>
       <div class="save-row">
         <button class="ghost small" onclick="saveMemo()">💾 저장</button>
+        <button class="ghost small" onclick="addTodayLink()" title="링크 추가">🔗 링크</button>
+        <button class="ghost small" onclick="document.getElementById('todayFileInput').click()" title="파일 첨부">📎 파일</button>
+        <input type="file" id="todayFileInput" style="display:none;" onchange="handleTodayFileChange(event)" />
         <span class="save-status" id="memoStatus">✓ 저장됨</span>
         <span style="font-size:11px;color:#95a5a6;margin-left:auto;">자동 저장됩니다</span>
       </div>
+      <div id="todayAttachList" class="today-attach-list"></div>
+      <p class="today-attach-hint">💡 미팅 등 중요 일정이 있을 때 파일을 올리거나 링크를 연동할 수 있습니다. 일과 종료 시 그 날 기록에 함께 보관됩니다.</p>
     </div>
 
     <div class="end-of-day">
@@ -1356,14 +1452,19 @@
     </div>
 
     <div class="rp-tab-content" id="tabMeetings" style="display:none;">
+      <div class="meeting-cal-view-toggle">
+        <button id="meetingViewCal" onclick="setMeetingView('calendar')">📆 달력</button>
+        <button id="meetingViewList" onclick="setMeetingView('list')">📋 리스트</button>
+      </div>
       <div style="display:flex;gap:4px;margin-bottom:10px;">
-        <input type="text" id="meetingSearch" placeholder="🔍 제목 · 메모 검색..." oninput="onMeetingSearch(this.value)" style="flex:1;padding:6px 8px;font-size:13px;" />
+        <input type="text" id="meetingSearch" placeholder="🔍 제목 · 메모 검색..." oninput="onMeetingSearch(this.value)" style="flex:1;padding:7px 10px;font-size:13px;" />
         <button class="ghost small" onclick="addMeeting()" style="flex-shrink:0;">+ 추가</button>
       </div>
+      <div id="meetingCalendar"></div>
       <div id="meetingList"></div>
-      <p style="font-size:11px;color:#95a5a6;margin-top:12px;line-height:1.5;">
-        💡 미팅 내용(Google Docs 링크·첨부파일)을 연월별로 정리합니다.<br/>
-        <b>링크</b>는 새 탭으로 열리고, <b>파일</b>은 Drive 미리보기로 열립니다.
+      <p style="font-size:12px;color:#95a5a6;margin-top:12px;line-height:1.5;">
+        💡 <b>달력</b>에서 날짜 클릭 = 그 날 미팅 보기 / <b>굵은 날짜</b> = 미팅 있는 날.<br/>
+        링크는 새 탭, 파일은 Drive 뷰어로 열립니다.
       </p>
     </div>
 
@@ -1774,13 +1875,17 @@ function loadData() {
   const defaults = {
     currentDate: todayStr(),
     todayTasks: [], todayMemo: '',
-    archive: {}, archiveMemos: {},
+    todayAttachments: [],
+    archive: {}, archiveMemos: {}, archiveAttachments: {},
     userName: '',
     linkGroups: [{ id: 'g_default', name: '자주 찾는 링크', collapsed: false, links: [] }],
     contacts: [],
     phrases: [],
     meetings: [],
     meetingCollapsedMonths: {}, // { '2026-04': false } — 접힘 여부 기억
+    meetingView: 'calendar',    // 'calendar' | 'list'
+    meetingCalMonth: '',        // 'YYYY-MM' — 달력에 보여줄 월 (빈 값 = 현재 월)
+    meetingSelectedDay: '',     // 'YYYY-MM-DD' — 달력에서 선택된 날 (빈 값 = 전체)
     rightPanelTab: 'links',
     rightPanelOpen: true,
     calendarId: null,
@@ -2313,14 +2418,19 @@ function applyRemoteState(remote) {
   state.currentDate = r.currentDate || todayStr();
   state.todayTasks = r.todayTasks || [];
   state.todayMemo = r.todayMemo || '';
+  state.todayAttachments = r.todayAttachments || [];
   state.archive = r.archive || {};
   state.archiveMemos = r.archiveMemos || {};
+  state.archiveAttachments = r.archiveAttachments || {};
   state.userName = r.userName || '';
   state.linkGroups = r.linkGroups || [{ id: 'g_default', name: '자주 찾는 링크', collapsed: false, links: [] }];
   state.contacts = r.contacts || [];
   state.phrases = r.phrases || [];
   state.meetings = r.meetings || [];
   state.meetingCollapsedMonths = r.meetingCollapsedMonths || {};
+  state.meetingView = r.meetingView || 'calendar';
+  state.meetingCalMonth = r.meetingCalMonth || '';
+  state.meetingSelectedDay = r.meetingSelectedDay || '';
   state.rightPanelTab = r.rightPanelTab || 'links';
   state.rightPanelOpen = r.rightPanelOpen !== false;
   state.calendarId = r.calendarId || null;
@@ -2875,6 +2985,11 @@ function rolloverIfNeeded() {
   }
   if (state.todayMemo && state.todayMemo.trim()) state.archiveMemos[oldDate] = state.todayMemo;
   state.todayMemo = '';
+  if (state.todayAttachments && state.todayAttachments.length > 0) {
+    if (!state.archiveAttachments) state.archiveAttachments = {};
+    state.archiveAttachments[oldDate] = state.todayAttachments;
+    state.todayAttachments = [];
+  }
   remaining.forEach(t => { if (!t.carriedFrom) t.carriedFrom = oldDate; });
   state.todayTasks = remaining;
   state.currentDate = today;
@@ -3039,6 +3154,124 @@ function saveMemo() {
   st.classList.add('show'); setTimeout(() => st.classList.remove('show'), 1500);
 }
 
+// ===== 오늘 첨부 (링크/파일) =====
+function addTodayLink() {
+  const url = prompt('링크 URL을 입력하세요 (Google Docs, Notion, 유튜브 등):');
+  if (!url || !url.trim()) return;
+  const title = prompt('이 링크의 짧은 이름 (선택, 엔터로 건너뛰기):', '') || url.trim();
+  if (!state.todayAttachments) state.todayAttachments = [];
+  state.todayAttachments.push({
+    id: 'ta_' + Date.now() + Math.random().toString(36).slice(2, 6),
+    kind: 'link',
+    url: url.trim(),
+    title: title.trim() || url.trim()
+  });
+  saveData();
+  renderTodayAttachments();
+}
+
+async function handleTodayFileChange(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = ''; // 같은 파일 재선택 허용
+  if (!file) return;
+  if (!Drive.accessToken) {
+    alert('파일 업로드는 로그인이 필요합니다 (Google Drive에 저장).');
+    return;
+  }
+  // 업로드 중 임시 항목 표시
+  if (!state.todayAttachments) state.todayAttachments = [];
+  const tempId = 'ta_tmp_' + Date.now();
+  state.todayAttachments.push({
+    id: tempId, kind: 'file', title: file.name, uploading: true
+  });
+  renderTodayAttachments();
+  try {
+    const uploaded = await uploadFileToDrive(file);
+    const idx = state.todayAttachments.findIndex(a => a.id === tempId);
+    if (idx >= 0) {
+      state.todayAttachments[idx] = {
+        id: 'ta_' + Date.now() + Math.random().toString(36).slice(2, 6),
+        kind: 'file',
+        fileId: uploaded.id,
+        fileName: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+        title: file.name
+      };
+      saveData();
+      renderTodayAttachments();
+    }
+  } catch (e) {
+    console.error(e);
+    state.todayAttachments = state.todayAttachments.filter(a => a.id !== tempId);
+    renderTodayAttachments();
+    alert('파일 업로드 실패: ' + (e.message || e));
+  }
+}
+
+function openTodayAttachment(id) {
+  const a = (state.todayAttachments || []).find(x => x.id === id);
+  if (!a) return;
+  if (a.kind === 'link' && a.url) {
+    window.open(a.url, '_blank', 'noopener,noreferrer');
+  } else if (a.kind === 'file' && a.fileId) {
+    window.open(`https://drive.google.com/file/d/${a.fileId}/view`, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function removeTodayAttachment(id, ev) {
+  ev?.stopPropagation?.();
+  const a = (state.todayAttachments || []).find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`"${a.title || a.fileName || a.url}" 을(를) 삭제하시겠습니까?${a.fileId ? '\n(Drive에서도 삭제됩니다)' : ''}`)) return;
+  if (a.fileId) deleteDriveFile(a.fileId).catch(() => {});
+  state.todayAttachments = state.todayAttachments.filter(x => x.id !== id);
+  saveData();
+  renderTodayAttachments();
+}
+
+function getTodayAttachIcon(a) {
+  if (a.kind === 'link') {
+    const u = (a.url || '').toLowerCase();
+    if (u.includes('docs.google.com/document')) return '📄';
+    if (u.includes('docs.google.com/spreadsheets')) return '📊';
+    if (u.includes('docs.google.com/presentation')) return '🎞';
+    if (u.includes('notion.')) return '📓';
+    if (u.includes('youtube.com') || u.includes('youtu.be')) return '▶';
+    return '🔗';
+  }
+  const mt = (a.mimeType || '').toLowerCase();
+  if (mt.startsWith('image/')) return '🖼';
+  if (mt === 'application/pdf') return '📕';
+  if (mt.includes('spreadsheet') || mt.includes('excel') || mt.includes('csv')) return '📊';
+  if (mt.includes('presentation') || mt.includes('powerpoint')) return '🎞';
+  if (mt.includes('word') || mt.includes('document')) return '📄';
+  if (mt.startsWith('video/')) return '🎬';
+  if (mt.startsWith('audio/')) return '🎵';
+  return '📎';
+}
+
+function renderTodayAttachments() {
+  const list = document.getElementById('todayAttachList');
+  if (!list) return;
+  const items = state.todayAttachments || [];
+  if (items.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = items.map(a => {
+    const icon = getTodayAttachIcon(a);
+    const label = a.title || a.fileName || a.url || '(이름 없음)';
+    const status = a.uploading ? '<span class="tai-status">업로드 중...</span>' : '';
+    const openable = !a.uploading && (a.kind === 'link' || a.fileId);
+    return `
+      <div class="today-attach-item">
+        <span class="tai-icon">${icon}</span>
+        <span class="tai-name" ${openable ? `onclick="openTodayAttachment('${a.id}')"` : 'style="cursor:default;"'} title="${escapeHtml(a.url || a.fileName || '')}">${escapeHtml(label)}</span>
+        ${status}
+        ${!a.uploading ? `<button onclick="removeTodayAttachment('${a.id}', event)" title="삭제">🗑</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
 // ===== 일과 종료 =====
 function endOfDay() {
   const completed = state.todayTasks.filter(t => t.completed);
@@ -3059,6 +3292,11 @@ function endOfDay() {
     });
   }
   if (state.todayMemo.trim()) { state.archiveMemos[today] = state.todayMemo; state.todayMemo = ''; }
+  if (state.todayAttachments && state.todayAttachments.length > 0) {
+    if (!state.archiveAttachments) state.archiveAttachments = {};
+    state.archiveAttachments[today] = state.todayAttachments;
+    state.todayAttachments = [];
+  }
   incomplete.forEach(t => { if (!t.carriedFrom) t.carriedFrom = today; });
   state.todayTasks = incomplete;
   saveData();
@@ -3072,6 +3310,7 @@ function endOfDay() {
 function render() {
   document.getElementById('todayLabel').textContent = `오늘은 ${formatDateKo(state.currentDate)} 입니다`;
   document.getElementById('todayMemo').value = state.todayMemo || '';
+  renderTodayAttachments();
 
   const list = document.getElementById('taskList');
   const sorted = [...state.todayTasks].sort((a, b) => {
@@ -3874,16 +4113,54 @@ function onMeetingSearch(q) {
   renderMeetings();
 }
 
+function setMeetingView(view) {
+  state.meetingView = view;
+  if (view === 'list') state.meetingSelectedDay = ''; // 리스트 모드에선 선택 해제
+  saveData();
+  renderMeetings();
+}
+
 function renderMeetings() {
   const list = document.getElementById('meetingList');
-  if (!list) return;
+  const cal = document.getElementById('meetingCalendar');
+  if (!list || !cal) return;
+
+  // 뷰 토글 버튼 활성 상태
+  const view = state.meetingView || 'calendar';
+  const bCal = document.getElementById('meetingViewCal');
+  const bList = document.getElementById('meetingViewList');
+  if (bCal) bCal.classList.toggle('active', view === 'calendar');
+  if (bList) bList.classList.toggle('active', view === 'list');
+
   const meetings = (state.meetings || []).slice();
   if (meetings.length === 0) {
-    list.innerHTML = `<div style="text-align:center;color:#bdc3c7;font-size:12px;padding:20px;">
+    cal.innerHTML = '';
+    list.innerHTML = `<div style="text-align:center;color:#bdc3c7;font-size:13px;padding:20px;">
       저장된 미팅이 없습니다.<br/>위 + 버튼으로 추가하세요.
     </div>`;
     return;
   }
+
+  // 달력 모드
+  if (view === 'calendar' && !meetingSearchQuery) {
+    cal.innerHTML = renderMeetingCalendarHtml(meetings);
+    // 선택된 날짜가 있으면 그 날 미팅만, 없으면 현재 월 미팅만
+    const sel = state.meetingSelectedDay;
+    const curMonth = state.meetingCalMonth || todayStr().slice(0, 7);
+    const filtered = sel
+      ? meetings.filter(m => m.date === sel)
+      : meetings.filter(m => (m.date || '').startsWith(curMonth));
+    list.innerHTML = renderMeetingItemsHtml(filtered,
+      sel ? `${sel} 미팅 (${filtered.length}건)` :
+      filtered.length > 0 ? `${curMonth.replace('-', '년 ')}월 미팅 (${filtered.length}건)` :
+      `${curMonth.replace('-', '년 ')}월엔 기록된 미팅이 없습니다.`
+    );
+    return;
+  }
+
+  // 리스트 모드 (또는 검색 중)
+  cal.innerHTML = '';
+
   // 검색 필터
   let filtered = meetings;
   if (meetingSearchQuery) {
@@ -3949,6 +4226,114 @@ function renderMeetings() {
       </div>
     `;
   }).join('');
+}
+
+// 달력 그리드 HTML 생성
+function renderMeetingCalendarHtml(meetings) {
+  const today = todayStr();
+  const curMonth = state.meetingCalMonth || today.slice(0, 7);
+  const [y, m] = curMonth.split('-').map(Number);
+  // 미팅 있는 날짜 Set (YYYY-MM-DD)
+  const meetingDays = new Set(meetings.map(mt => mt.date).filter(Boolean));
+  // 이전/다음 월 계산
+  const prevDate = new Date(y, m - 2, 1);
+  const nextDate = new Date(y, m, 1);
+  const prevYm = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+  const nextYm = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+  // 월 첫 날의 요일, 마지막 날
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay = new Date(y, m, 0).getDate();
+  const firstWd = firstDay.getDay(); // 0=일
+
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  let wdHtml = weekdays.map((w, i) =>
+    `<div class="mc-wd ${i===0?'sun':i===6?'sat':''}">${w}</div>`
+  ).join('');
+
+  let dayHtml = '';
+  // 앞쪽 빈 칸
+  for (let i = 0; i < firstWd; i++) dayHtml += `<div class="mc-day"></div>`;
+  // 실제 날짜
+  for (let d = 1; d <= lastDay; d++) {
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const classes = ['mc-day', 'cur'];
+    if (dateStr === today) classes.push('today');
+    if (meetingDays.has(dateStr)) classes.push('has-meeting');
+    if (dateStr === state.meetingSelectedDay) classes.push('selected');
+    const dot = meetingDays.has(dateStr) ? '<span class="mc-dot"></span>' : '';
+    dayHtml += `<div class="${classes.join(' ')}" onclick="selectMeetingDay('${dateStr}')">${d}${dot}</div>`;
+  }
+
+  return `
+    <div class="meeting-cal">
+      <div class="meeting-cal-head">
+        <button onclick="goMeetingMonth('${prevYm}')" title="이전 월">◀</button>
+        <div class="meeting-cal-title">${y}년 ${m}월</div>
+        <button onclick="goMeetingMonth('${nextYm}')" title="다음 월">▶</button>
+      </div>
+      <div class="meeting-cal-grid">
+        ${wdHtml}
+        ${dayHtml}
+      </div>
+      <div style="text-align:center;margin-top:8px;">
+        <button onclick="goMeetingMonth('')" style="padding:4px 12px;font-size:12px;background:#f8f9fa;color:#7f8c8d;border:1px solid #dfe4ea;border-radius:4px;cursor:pointer;">오늘</button>
+        ${state.meetingSelectedDay ? '<button onclick="selectMeetingDay(\'\')" style="padding:4px 12px;font-size:12px;margin-left:4px;background:#f8f9fa;color:#7f8c8d;border:1px solid #dfe4ea;border-radius:4px;cursor:pointer;">선택 해제</button>' : ''}
+      </div>
+    </div>
+  `;
+}
+
+// 달력 아래에 표시될 미팅 리스트(플랫) HTML
+function renderMeetingItemsHtml(items, headerText) {
+  if (items.length === 0) {
+    return `<div style="text-align:center;color:#bdc3c7;font-size:13px;padding:20px;">${escapeHtml(headerText)}</div>`;
+  }
+  items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const header = headerText
+    ? `<div style="font-size:12px;color:#7f8c8d;padding:4px 2px 8px;font-weight:bold;">${escapeHtml(headerText)}</div>`
+    : '';
+  const listHtml = items.map(m => {
+    const icon = getMeetingIcon(m);
+    const [yy, mm, dd] = (m.date || '').split('-');
+    const attach = m.url
+      ? `<div class="mi-attach">🔗 ${escapeHtml(m.url)}</div>`
+      : m.fileName ? `<div class="mi-attach">📎 ${escapeHtml(m.fileName)}</div>` : '';
+    const note = m.note ? `<div class="mi-note">${escapeHtml(m.note)}</div>` : '';
+    return `
+      <div class="meeting-item" onclick="openMeeting('${m.id}')" title="클릭하여 열기">
+        <div class="mi-top">
+          <span class="mi-date">${mm}-${dd}</span>
+          <span class="mi-icon">${icon}</span>
+          <span class="mi-title">${escapeHtml(m.title)}</span>
+        </div>
+        ${attach}
+        ${note}
+        <div class="mi-actions">
+          <button onclick="editMeeting('${m.id}', event)" title="수정">✏</button>
+          <button onclick="deleteMeeting('${m.id}', event)" title="삭제">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  return header + listHtml;
+}
+
+// 달력 월 이동 (빈 문자열 = 오늘 월로 리셋)
+function goMeetingMonth(ym) {
+  state.meetingCalMonth = ym || '';
+  state.meetingSelectedDay = ''; // 월 바뀌면 선택 해제
+  saveData();
+  renderMeetings();
+}
+
+// 달력 날짜 클릭 → 그 날 미팅만 필터. 빈 문자열 = 선택 해제.
+function selectMeetingDay(date) {
+  state.meetingSelectedDay = date || '';
+  if (date) {
+    state.meetingCalMonth = date.slice(0, 7);
+  }
+  saveData();
+  renderMeetings();
 }
 
 function toggleMeetingMonth(ym) {
@@ -4267,6 +4652,25 @@ function showDay(date) {
       ${escapeHtml(memo)}
     </div>`;
   }
+  // 이 날 첨부 (링크/파일)
+  const atts = (state.archiveAttachments && state.archiveAttachments[date]) || [];
+  if (atts.length > 0) {
+    html += `<div class="day-memo" style="background:#f0f7fc;border-color:#b8d6e8;">
+      <div class="day-memo-head"><span>📎 이 날의 첨부 (${atts.length}건)</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px;">
+        ${atts.map(a => {
+          const icon = getTodayAttachIcon(a);
+          const label = a.title || a.fileName || a.url || '(이름 없음)';
+          const href = a.kind === 'link' ? a.url
+                     : (a.fileId ? `https://drive.google.com/file/d/${a.fileId}/view` : '#');
+          return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:white;border:1px solid #eef1f5;border-radius:5px;">
+            <span>${icon}</span>
+            <a href="${href}" target="_blank" rel="noopener noreferrer" style="flex:1;color:#2c3e50;word-break:break-all;">${escapeHtml(label)}</a>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
   document.getElementById('dayModalBody').innerHTML = html;
   document.getElementById('dayModal').classList.add('show');
 }
@@ -4283,8 +4687,12 @@ function deleteArchiveDay(date) {
   if (Drive.accessToken && !confirm('정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) return;
   // Drive 이미지 파일 일괄 삭제
   tasks.forEach(t => cascadeDeleteTaskImages(t));
+  // 첨부 파일도 Drive에서 삭제
+  const atts = (state.archiveAttachments && state.archiveAttachments[date]) || [];
+  atts.forEach(a => { if (a.fileId) deleteDriveFile(a.fileId).catch(() => {}); });
   delete state.archive[date];
   delete state.archiveMemos[date];
+  if (state.archiveAttachments) delete state.archiveAttachments[date];
   selectedDays.delete(date);
   saveData();
   document.getElementById('dayModal').classList.remove('show');
