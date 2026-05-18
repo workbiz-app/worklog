@@ -579,6 +579,265 @@
     border: 1px solid #dfe4ea; border-radius: 3px; cursor: pointer;
   }
 
+  /* 앱 도구 모음 — 최상단 액션 버튼들 */
+  .app-tools-bar {
+    display: flex; gap: 8px; align-items: center; margin: 10px 0 16px;
+    flex-wrap: wrap;
+  }
+  .app-tool-btn {
+    padding: 10px 16px; font-size: 13px; font-weight: bold;
+    color: white; border: none; border-radius: 8px;
+    cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+    white-space: nowrap;
+  }
+  .app-tool-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+  .app-tool-btn.po { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
+  .app-tool-btn.vendor { background: linear-gradient(135deg, #16a085, #1abc9c); }
+  .app-tool-btn.cost { background: linear-gradient(135deg, #d35400, #e67e22); }
+  .app-tool-btn.stock { background: linear-gradient(135deg, #2980b9, #3498db); }
+  .po-due-banner {
+    flex: 1; min-width: 250px;
+    padding: 10px 14px; background: #fff3e0; border: 1px solid #f0c040;
+    border-radius: 8px; color: #b8860b; font-size: 13px; font-weight: bold;
+    cursor: pointer;
+  }
+  .po-due-banner:hover { background: #ffe9b8; }
+  .po-due-banner.overdue { background: #fee; border-color: #e74c3c; color: #c0392b; }
+
+  /* 외부 계산기 iframe 모달 — 거의 풀스크린 */
+  .modal:has(.calc-frame-content.show-frame) { padding: 0 !important; }
+  .calc-frame-content {
+    max-width: none !important; width: 96vw !important;
+    height: 96vh; padding: 0 !important;
+    display: flex; flex-direction: column;
+    border-radius: 8px;
+  }
+  /* 풀스크린 모드 */
+  .calc-frame-content.fullscreen {
+    width: 100vw !important; height: 100vh; border-radius: 0;
+  }
+  .calc-frame-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-bottom: 1px solid #eef1f5;
+    background: #f8f9fa; border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+  }
+  .calc-frame-content.fullscreen .calc-frame-header { border-radius: 0; }
+  .calc-frame-header h2 { font-size: 15px; color: #2c3e50; margin: 0; border: none; padding: 0; }
+  .calc-frame-header button {
+    padding: 6px 12px; font-size: 12px;
+    background: white; color: #2c3e50;
+    border: 1px solid #dfe4ea; border-radius: 5px; cursor: pointer;
+  }
+  .calc-frame-header button:hover { background: #ecf0f1; }
+  .calc-frame-wrap { flex: 1; min-height: 0; background: white; border-radius: 0 0 8px 8px; overflow: hidden; }
+  .calc-frame-content.fullscreen .calc-frame-wrap { border-radius: 0; }
+  .calc-frame-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+  /* 모달 백드롭 패딩 제거 (계산기 모달 한정) */
+  #calcFrameModal.show { padding: 0; }
+
+  /* 거래처 관리 풀스크린 모달 */
+  .vendor-mgr-content { max-width: 1100px; max-height: 90vh; }
+  .vendor-mgr-toolbar {
+    display: flex; gap: 8px; align-items: center; margin: 12px 0;
+    flex-wrap: wrap;
+  }
+  .vendor-mgr-toolbar input[type="text"] {
+    flex: 1; min-width: 200px; padding: 8px 12px; font-size: 13px;
+    border: 1px solid #dfe4ea; border-radius: 5px;
+  }
+  .vendor-mgr-filter { display: flex; gap: 4px; }
+  .vmf-btn {
+    padding: 6px 12px; font-size: 12px;
+    background: #f8f9fa; color: #7f8c8d;
+    border: 1px solid #dfe4ea; border-radius: 4px; cursor: pointer;
+  }
+  .vmf-btn.active { background: #16a085; color: white; border-color: #16a085; }
+  .vendor-mgr-body {
+    display: grid; grid-template-columns: 280px 1fr; gap: 14px;
+    height: 65vh; min-height: 400px;
+  }
+  @media (max-width: 768px) {
+    .vendor-mgr-body { grid-template-columns: 1fr; height: auto; }
+  }
+  .vendor-mgr-list {
+    overflow-y: auto; border: 1px solid #eef1f5; border-radius: 8px; padding: 6px;
+    background: #fafbfc;
+  }
+  .vendor-mgr-list .vml-item {
+    padding: 10px 12px; margin-bottom: 4px; border-radius: 6px;
+    cursor: pointer; background: white; border: 1px solid #eef1f5;
+    transition: background 0.1s;
+  }
+  .vendor-mgr-list .vml-item:hover { background: #ecf5fc; border-color: #b8d6e8; }
+  .vendor-mgr-list .vml-item.selected { background: #16a085; color: white; border-color: #16a085; }
+  .vendor-mgr-list .vml-item.selected .vml-meta { color: #d1f2eb; }
+  .vendor-mgr-list .vml-name { font-weight: bold; font-size: 13px; }
+  .vendor-mgr-list .vml-meta { font-size: 11px; color: #7f8c8d; margin-top: 2px; }
+  .vendor-mgr-detail {
+    overflow-y: auto; border: 1px solid #eef1f5; border-radius: 8px; padding: 16px;
+    background: white;
+  }
+  .vmd-empty { color: #bdc3c7; text-align: center; padding: 60px 20px; font-size: 14px; }
+  .vmd-section { margin-bottom: 18px; }
+  .vmd-section h3 {
+    margin: 0 0 8px 0; font-size: 14px; color: #2c3e50;
+    padding-bottom: 5px; border-bottom: 1px solid #eef1f5;
+  }
+  .vmd-actions { display: flex; gap: 6px; margin-bottom: 12px; }
+  .vmd-info-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+  .vmd-info-row .vmd-label { color: #7f8c8d; min-width: 80px; flex-shrink: 0; }
+  .vmd-info-row .vmd-val { color: #2c3e50; flex: 1; word-break: break-word; }
+  /* 거래처 품목 단가 테이블 */
+  .vmd-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .vmd-items-table th, .vmd-items-table td {
+    padding: 6px 8px; border-bottom: 1px solid #eef1f5; text-align: left;
+  }
+  .vmd-items-table th {
+    background: #f8f9fa; color: #7f8c8d; font-weight: bold; font-size: 12px;
+  }
+  .vmd-items-table input {
+    width: 100%; padding: 5px 8px; font-size: 13px;
+    border: 1px solid #dfe4ea; border-radius: 4px;
+  }
+  .vmd-items-table .vmd-item-del {
+    padding: 4px 8px; background: white; color: #e74c3c;
+    border: 1px solid #f0c0c0; border-radius: 4px; cursor: pointer; font-size: 11px;
+  }
+  .vmd-recent-pos {
+    background: #f8f9fa; border-radius: 6px; padding: 8px;
+  }
+  .vmd-recent-po-item {
+    padding: 8px 10px; margin-bottom: 4px; background: white;
+    border: 1px solid #eef1f5; border-radius: 4px;
+    font-size: 12px; display: flex; gap: 8px; align-items: center;
+    cursor: pointer;
+  }
+  .vmd-recent-po-item:hover { background: #ecf5fc; }
+  .vmd-recent-po-item .vmd-po-date { color: #7f8c8d; font-weight: bold; flex-shrink: 0; }
+  .vmd-recent-po-item .vmd-po-amount { margin-left: auto; font-weight: bold; }
+
+  /* 발주일지 메인 모달 */
+  .po-modal-content { max-width: 960px; max-height: 90vh; }
+  .po-toolbar {
+    display: flex; gap: 8px; align-items: center; margin: 12px 0;
+    flex-wrap: wrap;
+  }
+  .po-toolbar input[type="text"] {
+    flex: 1; min-width: 180px; padding: 8px 12px; font-size: 13px;
+    border: 1px solid #dfe4ea; border-radius: 5px;
+  }
+  .po-toolbar select {
+    padding: 8px 10px; font-size: 13px;
+    border: 1px solid #dfe4ea; border-radius: 5px; background: white;
+  }
+  .po-list { max-height: 60vh; overflow-y: auto; }
+  .po-list:empty::before {
+    content: '저장된 발주가 없습니다.\A위 + 새 발주 버튼으로 시작하세요.';
+    white-space: pre-line; display: block; text-align: center;
+    color: #bdc3c7; padding: 40px 20px; font-size: 14px;
+  }
+  .po-vendor-group {
+    margin-bottom: 10px; border: 1px solid #eef1f5; border-radius: 8px;
+    background: white; overflow: hidden;
+  }
+  .po-vendor-head {
+    padding: 12px 16px; background: #f8f9fa; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: bold; color: #2c3e50; font-size: 14px;
+    user-select: none;
+  }
+  .po-vendor-head:hover { background: #ecf0f1; }
+  .po-vendor-head .pv-caret { font-size: 11px; color: #7f8c8d; transition: transform 0.15s; }
+  .po-vendor-group.collapsed .pv-caret { transform: rotate(-90deg); }
+  .po-vendor-group.collapsed .po-vendor-body { display: none; }
+  .po-vendor-stats {
+    font-size: 12px; color: #7f8c8d; font-weight: normal; margin-left: 12px;
+  }
+  .po-vendor-body { padding: 8px; }
+  .po-item-row {
+    padding: 10px 14px; margin: 4px 0; border-radius: 6px;
+    background: #fafbfc; border: 1px solid #eef1f5;
+    cursor: pointer; transition: background 0.1s;
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    gap: 10px; align-items: center;
+  }
+  .po-item-row:hover { background: #ecf5fc; border-color: #b8d6e8; }
+  .po-item-row .pir-date { font-size: 12px; color: #7f8c8d; font-weight: bold; }
+  .po-item-row .pir-main { min-width: 0; }
+  .po-item-row .pir-items {
+    font-size: 13px; color: #2c3e50; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .po-item-row .pir-payment {
+    font-size: 11px; color: #7f8c8d; margin-top: 4px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .po-item-row .pir-amount {
+    font-size: 13px; font-weight: bold; color: #2c3e50; text-align: right;
+  }
+  .po-item-row .pir-amount .pir-amount-krw {
+    display: block; font-size: 11px; color: #95a5a6; font-weight: normal;
+  }
+  .po-status-badge {
+    display: inline-block; padding: 1px 8px; font-size: 10px;
+    border-radius: 10px; font-weight: bold;
+  }
+  .po-status-badge.ongoing { background: #fff3e0; color: #b8860b; }
+  .po-status-badge.completed { background: #d4edda; color: #155724; }
+  .po-status-badge.cancelled { background: #f8d7da; color: #721c24; }
+  .po-payment-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 6px; border-radius: 8px; font-size: 11px;
+  }
+  .po-payment-tag.paid { background: #d4edda; color: #155724; }
+  .po-payment-tag.unpaid { background: #fff3e0; color: #b8860b; }
+  .po-payment-tag.overdue { background: #f8d7da; color: #721c24; font-weight: bold; }
+
+  /* 발주 추가/수정 폼 */
+  .po-form-content { max-width: 680px; }
+  .po-form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  @media (max-width: 600px) {
+    .po-form-grid { grid-template-columns: 1fr; }
+  }
+  .po-items-table {
+    width: 100%; border-collapse: collapse; margin-top: 6px;
+    font-size: 13px;
+  }
+  .po-items-table th, .po-items-table td {
+    padding: 6px 8px; border-bottom: 1px solid #eef1f5; text-align: left;
+  }
+  .po-items-table th {
+    background: #f8f9fa; color: #7f8c8d; font-size: 12px; font-weight: bold;
+  }
+  .po-items-table td input {
+    width: 100%; padding: 5px 8px; font-size: 13px;
+    border: 1px solid #dfe4ea; border-radius: 4px;
+  }
+  .po-items-table .po-item-total {
+    font-weight: bold; color: #2c3e50; white-space: nowrap;
+  }
+  .po-items-table .po-item-del {
+    padding: 4px 8px; background: white; color: #e74c3c;
+    border: 1px solid #f0c0c0; border-radius: 4px; cursor: pointer;
+    font-size: 11px;
+  }
+  .po-items-table .po-item-del:hover { background: #fee; }
+  .po-payment-box {
+    border: 1px solid #eef1f5; border-radius: 6px; padding: 10px; background: #fafbfc;
+  }
+  .po-payment-detail {
+    display: flex; gap: 6px; margin-top: 6px;
+  }
+  .po-payment-detail input {
+    flex: 1; padding: 6px 8px; font-size: 12px;
+    border: 1px solid #dfe4ea; border-radius: 4px;
+  }
+
   /* 미팅 — 달력 뷰 */
   .meeting-cal {
     background: white; border: 1px solid #eef1f5; border-radius: 8px;
@@ -1339,6 +1598,15 @@
       </div>
     </div>
 
+    <!-- 앱 도구 모음 — 클릭 시 전체 화면 모달로 열림 -->
+    <div class="app-tools-bar">
+      <button class="app-tool-btn po" onclick="openPOModal()">📦 발주일지</button>
+      <button class="app-tool-btn vendor" onclick="openVendorMgr()">📇 거래처 관리</button>
+      <button class="app-tool-btn cost" onclick="openCalcFrame('cost')">💰 원가계산기</button>
+      <button class="app-tool-btn stock" onclick="openCalcFrame('stock')">📊 재고소진계산기</button>
+      <div id="poDueBanner" class="po-due-banner" style="display:none;margin-left:auto;"></div>
+    </div>
+
     <div class="name-field" id="nameField" onclick="startNameEdit()"></div>
     <div class="today" id="todayLabel"></div>
 
@@ -1673,6 +1941,161 @@
   </div>
 </div>
 
+<!-- 외부 계산기 iframe 모달 (원가계산기/재고소진계산기 공용) -->
+<div class="modal" id="calcFrameModal">
+  <div class="modal-content calc-frame-content" id="calcFrameBox">
+    <div class="calc-frame-header">
+      <h2 id="calcFrameTitle"></h2>
+      <button id="calcFrameNewTab" title="새 탭에서 열기">↗ 새 탭</button>
+      <button id="calcFrameFullBtn" onclick="toggleCalcFullscreen()" title="전체 화면">⛶ 전체화면</button>
+      <button onclick="closeCalcFrame()">닫기 ✕</button>
+    </div>
+    <div class="calc-frame-wrap">
+      <iframe id="calcFrameIframe" src="about:blank" frameborder="0" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- 거래처 관리 풀스크린 모달 -->
+<div class="modal" id="vendorMgrModal">
+  <div class="modal-content vendor-mgr-content">
+    <button class="modal-close" onclick="closeVendorMgr()">닫기</button>
+    <h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      📇 거래처 관리
+      <span id="vendorMgrCount" style="font-size:13px;color:#7f8c8d;font-weight:normal;"></span>
+    </h2>
+    <div class="vendor-mgr-toolbar">
+      <input type="text" id="vendorMgrSearch" placeholder="🔍 회사명 · 담당자 · 품목 · 메모 검색" oninput="renderVendorMgr()" />
+      <div class="vendor-mgr-filter">
+        <button class="vmf-btn active" data-type="all" onclick="setVendorMgrFilter('all')">전체</button>
+        <button class="vmf-btn" data-type="domestic" onclick="setVendorMgrFilter('domestic')">🇰🇷 국내</button>
+        <button class="vmf-btn" data-type="overseas" onclick="setVendorMgrFilter('overseas')">🌏 해외</button>
+      </div>
+      <button class="primary small" onclick="addContact()">+ 거래처 추가</button>
+      <button class="ghost small" onclick="downloadContacts()" title="Excel로 내보내기">📥 Excel</button>
+    </div>
+    <div class="vendor-mgr-body">
+      <div id="vendorMgrList" class="vendor-mgr-list"></div>
+      <div id="vendorMgrDetail" class="vendor-mgr-detail">
+        <div class="vmd-empty">왼쪽에서 거래처를 선택하세요</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 발주일지 메인 모달 -->
+<div class="modal" id="poModal">
+  <div class="modal-content po-modal-content">
+    <button class="modal-close" onclick="closePOModal()">닫기</button>
+    <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      📦 발주일지
+      <span style="font-size:12px;color:#7f8c8d;font-weight:normal;" id="fxRateInfo">환율 로딩...</span>
+      <button class="ghost small" style="margin-left:auto;font-size:12px;" onclick="loadFxRates()">🔄 환율</button>
+    </h2>
+    <div class="po-toolbar">
+      <button class="primary small" onclick="addPO()">+ 새 발주</button>
+      <input type="text" id="poSearch" placeholder="🔍 거래처/품목/메모 검색" oninput="renderPOList()" />
+      <select id="poFilterSel" onchange="setPOFilter(this.value)">
+        <option value="all">전체</option>
+        <option value="unpaid">잔금 미결제</option>
+        <option value="overdue">잔금 기한 초과</option>
+        <option value="ongoing">진행 중</option>
+        <option value="completed">완료</option>
+      </select>
+    </div>
+    <div id="poList" class="po-list"></div>
+  </div>
+</div>
+
+<!-- 발주 추가/수정 모달 -->
+<div class="modal" id="poFormModal">
+  <div class="modal-content po-form-content">
+    <button class="modal-close" onclick="closePOForm()">닫기</button>
+    <h2 id="poFormTitle">새 발주</h2>
+    <input type="hidden" id="poEditId" />
+    <div class="po-form-grid">
+      <div class="form-row">
+        <label>발주일 *</label>
+        <input type="date" id="poDate" />
+      </div>
+      <div class="form-row">
+        <label>거래처 *</label>
+        <select id="poVendor" onchange="onPOVendorChange()"></select>
+        <small style="color:#95a5a6;font-size:11px;">📇 거래처 탭에서 미리 추가하세요</small>
+      </div>
+      <div class="form-row">
+        <label>통화</label>
+        <select id="poCurrency" onchange="recalcPOTotal()">
+          <option value="KRW">₩ 원 (KRW)</option>
+          <option value="USD">$ 달러 (USD)</option>
+          <option value="CNY">¥ 위안 (CNY)</option>
+          <option value="JPY">¥ 엔 (JPY)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>상태</label>
+        <select id="poStatus">
+          <option value="ongoing">진행 중</option>
+          <option value="completed">완료</option>
+          <option value="cancelled">취소</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:14px;">
+      <label>품목 *</label>
+      <table class="po-items-table">
+        <thead>
+          <tr><th style="width:50%;">품목명</th><th>수량</th><th>단가</th><th>합계</th><th></th></tr>
+        </thead>
+        <tbody id="poItemsBody"></tbody>
+      </table>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button class="ghost small" onclick="addPOItemRow()">+ 품목 추가</button>
+        <span style="margin-left:auto;font-weight:bold;font-size:15px;color:#2c3e50;">
+          총액: <span id="poTotalDisplay">0</span>
+          <span style="font-size:12px;color:#7f8c8d;" id="poTotalKrwDisplay"></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="po-form-grid" style="margin-top:14px;">
+      <div class="form-row po-payment-box">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="poDepositPaid" onchange="onPODepositPaidToggle()" />
+          계약금 지급 완료
+        </label>
+        <div class="po-payment-detail">
+          <input type="number" id="poDepositAmount" placeholder="계약금 금액" step="0.01" />
+          <input type="date" id="poDepositDate" title="지급일" />
+        </div>
+      </div>
+      <div class="form-row po-payment-box">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="poBalancePaid" onchange="onPOBalancePaidToggle()" />
+          잔금 지급 완료
+        </label>
+        <div class="po-payment-detail">
+          <input type="number" id="poBalanceAmount" placeholder="잔금 금액 (비우면 자동)" step="0.01" />
+          <input type="date" id="poBalanceDueDate" title="잔금 납기일" />
+          <small style="font-size:11px;color:#95a5a6;">납기일 3일 전부터 알림</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:14px;">
+      <label>메모 (선택)</label>
+      <textarea id="poNote" rows="2" placeholder="예: 부분 출고 가능, 박스당 단가 적용 등"></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="danger small" id="poDeleteBtn" onclick="deletePOFromForm()" style="margin-right:auto;display:none;">🗑 삭제</button>
+      <button class="secondary" onclick="closePOForm()">취소</button>
+      <button class="primary" onclick="savePO()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="meetingModal">
   <div class="modal-content" style="max-width:560px;">
     <button class="modal-close" onclick="closeMeetingModal()">닫기</button>
@@ -1908,6 +2331,11 @@ function loadData() {
     meetingView: 'calendar',    // 'calendar' | 'list'
     meetingCalMonth: '',        // 'YYYY-MM' — 달력에 보여줄 월 (빈 값 = 현재 월)
     meetingSelectedDay: '',     // 'YYYY-MM-DD' — 달력에서 선택된 날 (빈 값 = 전체)
+    purchaseOrders: [],         // 발주일지: [{id, date, vendorId, items, currency, total, deposit, balance, status, note}]
+    poVendorCollapsed: {},      // 발주일지 거래처별 접힘 여부 { vendorId: bool }
+    poFilter: 'all',            // 'all' | 'unpaid' | 'ongoing'
+    fxRates: { KRW: 1, USD: null, CNY: null, JPY: null, updatedAt: 0 }, // 환율 캐시
+    calculatorData: { cost: {}, stock: {} }, // 원가/재고소진계산기 localStorage 미러 (Drive 동기화용)
     rightPanelTab: 'links',
     rightPanelOpen: true,
     calendarId: null,
@@ -2301,7 +2729,7 @@ const Drive = {
         // 원격에 파일 없음 → 현재 로컬 데이터를 첫 업로드
         if (Object.keys(state.archive).length > 0 || state.todayTasks.length > 0 ||
             (state.contacts || []).length > 0 || (state.phrases || []).length > 0 ||
-            (state.meetings || []).length > 0) {
+            (state.meetings || []).length > 0 || (state.purchaseOrders || []).length > 0) {
           await this.pushToDrive(true);
           if (this._justUpgradedFromGuest) {
             this._justUpgradedFromGuest = false;
@@ -2324,7 +2752,7 @@ const Drive = {
       // 초기 로딩이고 로컬이 비어있으면 무조건 원격 사용
       const localEmpty = Object.keys(state.archive).length === 0 && state.todayTasks.length === 0 &&
                          (state.contacts || []).length === 0 && (state.phrases || []).length === 0 &&
-                         (state.meetings || []).length === 0;
+                         (state.meetings || []).length === 0 && (state.purchaseOrders || []).length === 0;
 
       if (isInitial && localEmpty) {
         applyRemoteState(remote);
@@ -2453,6 +2881,13 @@ function applyRemoteState(remote) {
   state.meetingView = r.meetingView || 'calendar';
   state.meetingCalMonth = r.meetingCalMonth || '';
   state.meetingSelectedDay = r.meetingSelectedDay || '';
+  state.purchaseOrders = r.purchaseOrders || [];
+  state.poVendorCollapsed = r.poVendorCollapsed || {};
+  state.poFilter = r.poFilter || 'all';
+  state.fxRates = r.fxRates || { KRW: 1, USD: null, CNY: null, JPY: null, updatedAt: 0 };
+  state.calculatorData = r.calculatorData || { cost: {}, stock: {} };
+  if (!state.calculatorData.cost) state.calculatorData.cost = {};
+  if (!state.calculatorData.stock) state.calculatorData.stock = {};
   state.rightPanelTab = r.rightPanelTab || 'links';
   state.rightPanelOpen = r.rightPanelOpen !== false;
   state.calendarId = r.calendarId || null;
@@ -3333,6 +3768,7 @@ function render() {
   document.getElementById('todayLabel').textContent = `오늘은 ${formatDateKo(state.currentDate)} 입니다`;
   document.getElementById('todayMemo').value = state.todayMemo || '';
   renderTodayAttachments();
+  checkPODueBanner();
 
   const list = document.getElementById('taskList');
   const completedList = document.getElementById('completedTaskList');
@@ -3711,7 +4147,7 @@ function editContact(id) {
   document.getElementById('contactModalTitle').textContent = '거래처 수정';
   document.getElementById('contactEditId').value = c.id;
   document.getElementById('contactName').value = c.name || '';
-  document.getElementById('contactItems').value = (c.items || []).join('\n');
+  document.getElementById('contactItems').value = (c.items || []).map(i => typeof i === 'string' ? i : (i.name || '')).join('\n');
   document.getElementById('contactMemo').value = c.memo || '';
   // 하위 호환: 기존 contact 필드가 있으면 persons로 마이그레이션
   let persons = c.persons;
@@ -3731,15 +4167,23 @@ function saveContact() {
   const typeEl = document.querySelector('input[name=contactType]:checked');
   const type = typeEl ? typeEl.value : 'domestic';
   if (!name) { alert('거래처 이름을 입력하세요.'); return; }
-  const items = itemsText ? itemsText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+  const newItemNames = itemsText ? itemsText.split('\n').map(s => s.trim()).filter(Boolean) : [];
   if (!state.contacts) state.contacts = [];
   if (id) {
     const c = state.contacts.find(x => x.id === id);
     if (c) {
-      c.type = type; c.name = name; c.persons = persons; c.items = items; c.memo = memo;
+      // 기존 items(객체 또는 문자열)에서 단가 정보 보존
+      const oldItemsMap = {};
+      (c.items || []).forEach(i => {
+        if (typeof i === 'string') oldItemsMap[i] = { name: i, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW' };
+        else if (i.name) oldItemsMap[i.name] = i;
+      });
+      const newItems = newItemNames.map(n => oldItemsMap[n] || { name: n, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW' });
+      c.type = type; c.name = name; c.persons = persons; c.items = newItems; c.memo = memo;
       delete c.contact; // 구 필드 제거
     }
   } else {
+    const items = newItemNames.map(n => ({ name: n, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW' }));
     state.contacts.push({
       id: 'c_' + Date.now() + Math.random().toString(36).slice(2, 6),
       type, name, persons, items, memo
@@ -3749,6 +4193,8 @@ function saveContact() {
   saveData();
   if (type !== contactFilter) switchContactFilter(type);
   else renderContacts();
+  // 거래처 관리 모달 열려있으면 같이 새로고침
+  if (document.getElementById('vendorMgrModal')?.classList.contains('show')) renderVendorMgr();
 }
 
 function closeContactModal() {
@@ -3756,10 +4202,15 @@ function closeContactModal() {
 }
 
 function deleteContact(id) {
-  if (!confirm('이 거래처를 삭제하시겠습니까?')) return;
+  const v = (state.contacts || []).find(c => c.id === id);
+  const poCount = (state.purchaseOrders || []).filter(p => p.vendorId === id).length;
+  const extra = poCount > 0 ? `\n\n⚠ 이 거래처와 연결된 발주 ${poCount}건이 있습니다.\n발주 기록은 유지되지만 거래처명이 "(거래처 미지정)"으로 표시됩니다.` : '';
+  if (!confirm(`'${v?.name || '이 거래처'}'를 삭제할까요?${extra}`)) return;
   state.contacts = (state.contacts || []).filter(x => x.id !== id);
+  if (_vendorMgrSelected === id) _vendorMgrSelected = null;
   saveData();
   renderContacts();
+  if (document.getElementById('vendorMgrModal')?.classList.contains('show')) renderVendorMgr();
 }
 
 function renderContacts() {
@@ -3774,11 +4225,12 @@ function renderContacts() {
   if (searching) {
     filtered = all.filter(c => {
       const personsText = (c.persons || []).map(p => `${p.name || ''} ${p.note || ''}`).join(' ');
+      const itemsText = (c.items || []).map(i => typeof i === 'string' ? i : (i.name || '')).join(' ');
       const hay = [
         c.name || '',
         personsText,
         c.contact || '', // 구 필드 호환
-        (c.items || []).join(' '),
+        itemsText,
         c.memo || ''
       ].join(' ').toLowerCase();
       return hay.includes(q);
@@ -3834,7 +4286,7 @@ function renderContacts() {
         </div>
       </div>
       ${personsHtml}
-      ${(c.items || []).length > 0 ? `<div class="ci-items">📦 ${c.items.map(i => highlight(i)).join(' · ')}</div>` : ''}
+      ${(c.items || []).length > 0 ? `<div class="ci-items">📦 ${c.items.map(i => highlight(typeof i === 'string' ? i : (i.name || ''))).join(' · ')}</div>` : ''}
       ${c.memo ? `<div class="ci-items" style="background:#fff8e7;color:#856404;">📝 ${highlight(c.memo)}</div>` : ''}
     </div>
     `;
@@ -3855,7 +4307,7 @@ function downloadContacts() {
     if ((!persons || persons.length === 0) && c.contact) persons = [{ name: c.contact, note: '' }];
     const names = persons.map(p => p.name || '').join('\n');
     const notes = persons.map(p => p.note || '').join('\n');
-    const items = (c.items || []).join('\n');
+    const items = (c.items || []).map(i => typeof i === 'string' ? i : `${i.name || ''}${i.unitPrice ? ` (${fmtMoney(i.unitPrice, i.currency||'KRW')})` : ''}`).join('\n');
     rows.push([type, c.name || '', names, notes, items, c.memo || '']);
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -4432,6 +4884,743 @@ async function deleteDriveFile(fileId) {
   try {
     await Drive._apiFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, { method: 'DELETE' });
   } catch (e) { console.warn('Drive 파일 삭제 실패:', fileId, e); }
+}
+
+// ===== 외부 계산기 iframe 모달 =====
+let _currentCalcFrameKind = null;
+
+function openCalcFrame(kind) {
+  const cfg = {
+    cost:  { src: 'cost.html',  title: '💰 원가계산기' },
+    stock: { src: 'stock.html', title: '📊 재고소진계산기' }
+  }[kind];
+  if (!cfg) return;
+  _currentCalcFrameKind = kind;
+  document.getElementById('calcFrameTitle').textContent = cfg.title;
+  const iframe = document.getElementById('calcFrameIframe');
+  // 같은 src 재할당 시 새로고침 강제
+  iframe.src = cfg.src + '?_=' + Date.now();
+  // 새 탭 버튼 링크 설정
+  const newTabBtn = document.getElementById('calcFrameNewTab');
+  if (newTabBtn) newTabBtn.onclick = () => window.open(cfg.src, '_blank', 'noopener');
+  document.getElementById('calcFrameModal').classList.add('show');
+}
+
+function toggleCalcFullscreen() {
+  const box = document.getElementById('calcFrameBox');
+  if (!box) return;
+  box.classList.toggle('fullscreen');
+  const btn = document.getElementById('calcFrameFullBtn');
+  if (btn) btn.textContent = box.classList.contains('fullscreen') ? '🗗 원래 크기' : '⛶ 전체화면';
+}
+function closeCalcFrame() {
+  document.getElementById('calcFrameModal').classList.remove('show');
+  _currentCalcFrameKind = null;
+  // iframe 메모리/사운드 해제 위해 src 비움
+  const iframe = document.getElementById('calcFrameIframe');
+  if (iframe) iframe.src = 'about:blank';
+}
+
+// 계산기(iframe)에서 오는 메시지 처리
+window.addEventListener('message', function (ev) {
+  const d = ev.data;
+  if (!d || typeof d !== 'object') return;
+  const iframe = document.getElementById('calcFrameIframe');
+  const sendToFrame = (msg) => { if (iframe && iframe.contentWindow) iframe.contentWindow.postMessage(msg, '*'); };
+
+  // 1) 재고소진계산기에 업무일지 거래처 자동 동기화
+  if (d.type === 'stock-ready' && _currentCalcFrameKind === 'stock') {
+    sendToFrame({
+      type: 'worklog-vendors',
+      contacts: (state.contacts || []).map(c => ({
+        name: c.name, type: c.type || 'domestic',
+        memo: c.memo || '',
+        persons: c.persons || [],
+        items: c.items || []
+      }))
+    });
+  }
+
+  // 2) 계산기가 자기 localStorage 복원 요청 → 저장된 데이터 전달
+  if (d.type === 'calc-needs-data' && (d.kind === 'cost' || d.kind === 'stock')) {
+    const saved = (state.calculatorData && state.calculatorData[d.kind]) || {};
+    sendToFrame({ type: 'calc-data-restore', kind: d.kind, data: saved });
+  }
+
+  // 3) 계산기가 자기 localStorage 변경 알림 → state에 저장 + Drive 싱크
+  if (d.type === 'calc-data-update' && (d.kind === 'cost' || d.kind === 'stock')) {
+    if (!state.calculatorData) state.calculatorData = { cost: {}, stock: {} };
+    state.calculatorData[d.kind] = d.data || {};
+    saveData();
+  }
+});
+
+// ===== 거래처 관리 풀스크린 모달 =====
+let _vendorMgrSelected = null;   // 선택된 거래처 ID
+let _vendorMgrFilter = 'all';    // 'all' | 'domestic' | 'overseas'
+
+function openVendorMgr() {
+  document.getElementById('vendorMgrModal').classList.add('show');
+  // 기본: 첫 거래처 자동 선택
+  const list = (state.contacts || []).filter(c => _vendorMgrFilter === 'all' || c.type === _vendorMgrFilter);
+  if (list.length > 0 && !_vendorMgrSelected) _vendorMgrSelected = list[0].id;
+  renderVendorMgr();
+}
+function closeVendorMgr() {
+  document.getElementById('vendorMgrModal').classList.remove('show');
+}
+function setVendorMgrFilter(type) {
+  _vendorMgrFilter = type;
+  document.querySelectorAll('.vmf-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  // 필터 바꾸면 선택된 게 필터에 안 맞으면 해제
+  const sel = (state.contacts || []).find(c => c.id === _vendorMgrSelected);
+  if (sel && type !== 'all' && sel.type !== type) _vendorMgrSelected = null;
+  renderVendorMgr();
+}
+
+function renderVendorMgr() {
+  const list = document.getElementById('vendorMgrList');
+  const detail = document.getElementById('vendorMgrDetail');
+  const count = document.getElementById('vendorMgrCount');
+  if (!list || !detail) return;
+  const q = (document.getElementById('vendorMgrSearch')?.value || '').trim().toLowerCase();
+  let vendors = (state.contacts || []).slice();
+  if (_vendorMgrFilter !== 'all') vendors = vendors.filter(v => v.type === _vendorMgrFilter);
+  if (q) {
+    vendors = vendors.filter(v => {
+      const name = (v.name || '').toLowerCase();
+      const memo = (v.memo || '').toLowerCase();
+      const persons = (v.persons || []).map(p => `${p.name || ''} ${p.role || ''} ${p.phone || ''}`).join(' ').toLowerCase();
+      const items = (v.items || []).map(i => typeof i === 'string' ? i : (i.name || '')).join(' ').toLowerCase();
+      return name.includes(q) || memo.includes(q) || persons.includes(q) || items.includes(q);
+    });
+  }
+  vendors.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  count.textContent = `${vendors.length}개${q ? ' (검색)' : ''}`;
+
+  if (vendors.length === 0) {
+    list.innerHTML = `<div style="color:#bdc3c7;text-align:center;padding:20px;font-size:12px;">거래처가 없습니다</div>`;
+  } else {
+    list.innerHTML = vendors.map(v => {
+      const flag = v.type === 'overseas' ? '🌏' : '🇰🇷';
+      const itemCount = (v.items || []).length;
+      const poCount = (state.purchaseOrders || []).filter(p => p.vendorId === v.id).length;
+      const meta = `${itemCount}개 품목 · 발주 ${poCount}건`;
+      return `
+        <div class="vml-item ${v.id === _vendorMgrSelected ? 'selected' : ''}" onclick="selectVendorMgr('${v.id}')">
+          <div class="vml-name">${flag} ${escapeHtml(v.name)}</div>
+          <div class="vml-meta">${meta}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 상세 패널
+  const sel = (state.contacts || []).find(c => c.id === _vendorMgrSelected);
+  if (!sel) {
+    detail.innerHTML = `<div class="vmd-empty">왼쪽에서 거래처를 선택하세요</div>`;
+    return;
+  }
+  detail.innerHTML = renderVendorDetailHtml(sel);
+}
+
+function selectVendorMgr(vid) {
+  _vendorMgrSelected = vid;
+  renderVendorMgr();
+}
+
+function renderVendorDetailHtml(v) {
+  // items 마이그레이션: 문자열 배열 → 객체 배열 ({name, unitPrice, currency})
+  const itemsObj = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+  const persons = v.persons || [];
+  const flag = v.type === 'overseas' ? '🌏 해외' : '🇰🇷 국내';
+  const recentPOs = (state.purchaseOrders || []).filter(p => p.vendorId === v.id)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
+
+  return `
+    <div class="vmd-section">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">
+        ${flag} <span style="font-size:16px;color:#2c3e50;flex:1;margin-left:8px;">${escapeHtml(v.name)}</span>
+        <div class="vmd-actions">
+          <button class="ghost small" onclick="editContact('${v.id}')">✏ 수정</button>
+          <button class="danger small" onclick="deleteContact('${v.id}')">🗑 삭제</button>
+        </div>
+      </h3>
+      ${v.memo ? `<div class="vmd-info-row"><span class="vmd-label">메모</span><span class="vmd-val">${escapeHtml(v.memo)}</span></div>` : ''}
+    </div>
+
+    <div class="vmd-section">
+      <h3>👥 담당자 (${persons.length}명)</h3>
+      ${persons.length === 0 ? '<div style="color:#bdc3c7;font-size:12px;">등록된 담당자 없음</div>' : persons.map(p => `
+        <div class="vmd-info-row">
+          <span class="vmd-label">${escapeHtml(p.role || '담당')}</span>
+          <span class="vmd-val">${escapeHtml(p.name || '')}${p.phone ? ` · ${escapeHtml(p.phone)}` : ''}${p.email ? ` · ${escapeHtml(p.email)}` : ''}</span>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="vmd-section">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">
+        📦 취급 품목 · 단가 (${itemsObj.length}건)
+        <button class="ghost small" onclick="addVendorItem('${v.id}')">+ 품목 추가</button>
+      </h3>
+      ${itemsObj.length === 0 ? '<div style="color:#bdc3c7;font-size:12px;padding:8px;">등록된 품목 없음 · 발주서 작성 시 자동 등록도 됩니다</div>' : `
+        <table class="vmd-items-table">
+          <thead><tr><th style="width:50%;">품목명</th><th>표준 단가</th><th style="width:80px;">통화</th><th style="width:60px;"></th></tr></thead>
+          <tbody>
+            ${itemsObj.map((it, i) => `
+              <tr>
+                <td><input type="text" value="${escapeHtml(it.name || '')}" oninput="updateVendorItem('${v.id}', ${i}, 'name', this.value)" /></td>
+                <td><input type="number" value="${it.unitPrice || ''}" oninput="updateVendorItem('${v.id}', ${i}, 'unitPrice', this.value)" min="0" step="any" placeholder="0" /></td>
+                <td>
+                  <select onchange="updateVendorItem('${v.id}', ${i}, 'currency', this.value)">
+                    <option value="KRW" ${(it.currency||'KRW')==='KRW'?'selected':''}>₩</option>
+                    <option value="USD" ${it.currency==='USD'?'selected':''}>$</option>
+                    <option value="CNY" ${it.currency==='CNY'?'selected':''}>¥CN</option>
+                    <option value="JPY" ${it.currency==='JPY'?'selected':''}>¥JP</option>
+                  </select>
+                </td>
+                <td><button class="vmd-item-del" onclick="removeVendorItem('${v.id}', ${i})">✕</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `}
+    </div>
+
+    <div class="vmd-section">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">
+        📋 최근 발주 (${recentPOs.length}/${(state.purchaseOrders || []).filter(p=>p.vendorId===v.id).length}건)
+        <button class="ghost small" onclick="closeVendorMgr(); openPOModal();">📦 발주일지 열기</button>
+      </h3>
+      ${recentPOs.length === 0 ? '<div style="color:#bdc3c7;font-size:12px;">발주 기록 없음</div>' : `
+        <div class="vmd-recent-pos">
+          ${recentPOs.map(po => {
+            const items = poItemsSummary(po);
+            const cur = po.currency || 'KRW';
+            const balanceState = !po.balance ? '' :
+              po.balance.paid ? '<span style="color:#27ae60;">잔금 ✓</span>' :
+              `<span style="color:#e67e22;">잔금 ⏳${po.balance.dueDate ? ' '+po.balance.dueDate : ''}</span>`;
+            return `
+              <div class="vmd-recent-po-item" onclick="closeVendorMgr(); editPO('${po.id}');">
+                <span class="vmd-po-date">${po.date}</span>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(items)}</span>
+                ${balanceState}
+                <span class="vmd-po-amount">${fmtMoney(po.total || 0, cur)}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function updateVendorItem(vid, idx, key, val) {
+  const v = (state.contacts || []).find(c => c.id === vid);
+  if (!v) return;
+  // 문자열 배열을 객체 배열로 한 번에 마이그레이션
+  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+  if (!v.items[idx]) return;
+  if (key === 'unitPrice') v.items[idx][key] = parseFloat(val) || 0;
+  else v.items[idx][key] = val;
+  saveData();
+}
+
+function addVendorItem(vid) {
+  const v = (state.contacts || []).find(c => c.id === vid);
+  if (!v) return;
+  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+  v.items.push({ name: '', unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' });
+  saveData();
+  renderVendorMgr();
+}
+
+function removeVendorItem(vid, idx) {
+  const v = (state.contacts || []).find(c => c.id === vid);
+  if (!v) return;
+  if (!confirm('이 품목을 삭제할까요?')) return;
+  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i);
+  v.items.splice(idx, 1);
+  saveData();
+  renderVendorMgr();
+}
+
+// ===== 발주일지 =====
+const CURRENCY_SYMBOL = { KRW: '₩', USD: '$', CNY: '¥', JPY: '¥' };
+const CURRENCY_NAME = { KRW: '원', USD: '달러', CNY: '위안', JPY: '엔' };
+
+function fmtMoney(amount, currency) {
+  if (amount == null || isNaN(amount)) return '';
+  const sym = CURRENCY_SYMBOL[currency] || '';
+  if (currency === 'KRW') return `${sym}${Math.round(amount).toLocaleString('ko-KR')}`;
+  return `${sym}${amount.toLocaleString('ko-KR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+}
+
+function toKRW(amount, currency) {
+  if (!amount || !currency) return 0;
+  if (currency === 'KRW') return amount;
+  const r = state.fxRates && state.fxRates[currency];
+  if (!r) return 0;
+  return amount * r;
+}
+
+// 환율 로딩 (open.er-api.com — 무료, 키 불필요)
+async function loadFxRates() {
+  const info = document.getElementById('fxRateInfo');
+  if (info) info.textContent = '환율 조회 중...';
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/KRW');
+    const data = await res.json();
+    if (data.result !== 'success') throw new Error('환율 API 오류');
+    // KRW 기준 1 KRW = data.rates[X] → 역수로 X→KRW 환산
+    const rates = data.rates;
+    state.fxRates = {
+      KRW: 1,
+      USD: rates.USD ? (1 / rates.USD) : null,
+      CNY: rates.CNY ? (1 / rates.CNY) : null,
+      JPY: rates.JPY ? (1 / rates.JPY) : null,
+      updatedAt: Date.now()
+    };
+    saveData();
+    if (info) {
+      const d = new Date();
+      info.textContent = `1 USD ≈ ${Math.round(state.fxRates.USD)}원 · 1 CNY ≈ ${Math.round(state.fxRates.CNY)}원 · 1 JPY ≈ ${state.fxRates.JPY.toFixed(2)}원 (${d.toLocaleDateString('ko-KR')})`;
+    }
+    recalcPOTotal();
+    if (document.getElementById('poModal')?.classList.contains('show')) renderPOList();
+  } catch (e) {
+    console.warn('환율 로딩 실패:', e);
+    if (info) info.textContent = '⚠ 환율 자동조회 실패 — 직접 입력 필요';
+  }
+}
+
+// 환율 캐시 만료 체크 (6시간)
+function ensureFxRates() {
+  const fx = state.fxRates || {};
+  if (!fx.USD || !fx.CNY || !fx.JPY || (Date.now() - (fx.updatedAt || 0) > 6 * 3600 * 1000)) {
+    loadFxRates();
+  } else {
+    const info = document.getElementById('fxRateInfo');
+    if (info) {
+      const d = new Date(fx.updatedAt);
+      info.textContent = `1 USD ≈ ${Math.round(fx.USD)}원 · 1 CNY ≈ ${Math.round(fx.CNY)}원 · 1 JPY ≈ ${fx.JPY.toFixed(2)}원 (${d.toLocaleDateString('ko-KR')})`;
+    }
+  }
+}
+
+// 잔금 임박/초과 체크 → 상단 배너 표시
+function checkPODueBanner() {
+  const banner = document.getElementById('poDueBanner');
+  if (!banner) return;
+  const today = todayStr();
+  const todayMs = new Date(today).getTime();
+  const upcoming = [];
+  const overdue = [];
+  (state.purchaseOrders || []).forEach(po => {
+    if (po.status === 'cancelled') return;
+    if (!po.balance || po.balance.paid) return;
+    if (!po.balance.dueDate) return;
+    const dueMs = new Date(po.balance.dueDate).getTime();
+    const diffDays = Math.round((dueMs - todayMs) / (24 * 3600 * 1000));
+    if (diffDays < 0) overdue.push({ po, diffDays });
+    else if (diffDays <= 3) upcoming.push({ po, diffDays });
+  });
+  if (overdue.length === 0 && upcoming.length === 0) {
+    banner.style.display = 'none';
+    return;
+  }
+  banner.style.display = '';
+  banner.classList.toggle('overdue', overdue.length > 0);
+  const parts = [];
+  if (overdue.length > 0) parts.push(`❗ 잔금 기한 초과 ${overdue.length}건`);
+  if (upcoming.length > 0) parts.push(`⏰ 3일 내 잔금 ${upcoming.length}건`);
+  banner.innerHTML = parts.join(' · ') + ' <span style="font-weight:normal;font-size:12px;">(클릭하여 확인)</span>';
+  banner.onclick = () => {
+    state.poFilter = overdue.length > 0 ? 'overdue' : 'unpaid';
+    saveData();
+    openPOModal();
+  };
+}
+
+function openPOModal() {
+  ensureFxRates();
+  document.getElementById('poModal').classList.add('show');
+  // 필터 셀렉트 동기화
+  const sel = document.getElementById('poFilterSel');
+  if (sel) sel.value = state.poFilter || 'all';
+  renderPOList();
+}
+function closePOModal() {
+  document.getElementById('poModal').classList.remove('show');
+}
+
+function setPOFilter(v) {
+  state.poFilter = v;
+  saveData();
+  renderPOList();
+}
+
+function getVendorName(vid) {
+  const v = (state.contacts || []).find(c => c.id === vid);
+  return v ? v.name : '(거래처 미지정)';
+}
+
+function poItemsSummary(po) {
+  if (!po.items || po.items.length === 0) return '(품목 없음)';
+  if (po.items.length === 1) return `${po.items[0].name} × ${po.items[0].qty || 0}`;
+  return `${po.items[0].name} 외 ${po.items.length - 1}건`;
+}
+
+function renderPOList() {
+  const list = document.getElementById('poList');
+  if (!list) return;
+  const q = (document.getElementById('poSearch')?.value || '').trim().toLowerCase();
+  const filter = state.poFilter || 'all';
+  const today = todayStr();
+  const todayMs = new Date(today).getTime();
+
+  let pos = (state.purchaseOrders || []).slice();
+  // 필터 적용
+  if (filter === 'unpaid') pos = pos.filter(po => po.status !== 'cancelled' && (!po.balance || !po.balance.paid));
+  else if (filter === 'overdue') pos = pos.filter(po => {
+    if (po.status === 'cancelled' || !po.balance || po.balance.paid || !po.balance.dueDate) return false;
+    return new Date(po.balance.dueDate).getTime() < todayMs;
+  });
+  else if (filter === 'ongoing') pos = pos.filter(po => po.status === 'ongoing');
+  else if (filter === 'completed') pos = pos.filter(po => po.status === 'completed');
+
+  // 검색
+  if (q) {
+    pos = pos.filter(po => {
+      const vname = getVendorName(po.vendorId).toLowerCase();
+      const items = (po.items || []).map(i => (i.name || '').toLowerCase()).join(' ');
+      const note = (po.note || '').toLowerCase();
+      return vname.includes(q) || items.includes(q) || note.includes(q);
+    });
+  }
+
+  if (pos.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+
+  // 거래처별 그룹핑
+  const groups = {};
+  pos.forEach(po => {
+    const vid = po.vendorId || '__none__';
+    (groups[vid] = groups[vid] || []).push(po);
+  });
+  // 거래처별로 최근 발주일 기준 정렬
+  Object.values(groups).forEach(arr => arr.sort((a, b) => (b.date || '').localeCompare(a.date || '')));
+  const vendorIds = Object.keys(groups).sort((a, b) => {
+    const aLatest = groups[a][0]?.date || '';
+    const bLatest = groups[b][0]?.date || '';
+    return bLatest.localeCompare(aLatest);
+  });
+
+  const collapsed = state.poVendorCollapsed || {};
+  list.innerHTML = vendorIds.map(vid => {
+    const arr = groups[vid];
+    const vname = getVendorName(vid);
+    const unpaidCount = arr.filter(p => p.status !== 'cancelled' && (!p.balance || !p.balance.paid)).length;
+    const isCollapsed = !!collapsed[vid];
+    const totalKRW = arr.reduce((s, p) => s + toKRW(p.total || 0, p.currency || 'KRW'), 0);
+    const stats = `${arr.length}건 · 총 ${fmtMoney(totalKRW, 'KRW')}${unpaidCount > 0 ? ` · <span style="color:#e67e22;">미결 ${unpaidCount}</span>` : ''}`;
+    const rows = arr.map(po => poItemRowHtml(po, today)).join('');
+    return `
+      <div class="po-vendor-group ${isCollapsed ? 'collapsed' : ''}" data-vid="${vid}">
+        <div class="po-vendor-head" onclick="togglePOVendor('${vid}')">
+          <span>${escapeHtml(vname)} <span class="po-vendor-stats">${stats}</span></span>
+          <span class="pv-caret">▼</span>
+        </div>
+        <div class="po-vendor-body">${rows}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function poItemRowHtml(po, today) {
+  const todayMs = new Date(today).getTime();
+  const items = poItemsSummary(po);
+  const cur = po.currency || 'KRW';
+  const totalCur = fmtMoney(po.total || 0, cur);
+  const totalKrw = cur === 'KRW' ? '' : `<span class="pir-amount-krw">≈ ${fmtMoney(toKRW(po.total || 0, cur), 'KRW')}</span>`;
+  // 결제 상태
+  const depositPaid = po.deposit && po.deposit.paid;
+  const balancePaid = po.balance && po.balance.paid;
+  let balanceTag = '';
+  if (po.balance) {
+    if (balancePaid) balanceTag = `<span class="po-payment-tag paid">잔금 ✓</span>`;
+    else if (po.balance.dueDate) {
+      const dueMs = new Date(po.balance.dueDate).getTime();
+      const diff = Math.round((dueMs - todayMs) / (24 * 3600 * 1000));
+      if (diff < 0) balanceTag = `<span class="po-payment-tag overdue">잔금 ❗ ${Math.abs(diff)}일 초과</span>`;
+      else if (diff <= 3) balanceTag = `<span class="po-payment-tag overdue">잔금 ⏰ ${diff === 0 ? '오늘' : `D-${diff}`}</span>`;
+      else balanceTag = `<span class="po-payment-tag unpaid">잔금 ⏳ ${po.balance.dueDate}</span>`;
+    } else balanceTag = `<span class="po-payment-tag unpaid">잔금 ⏳ 미정</span>`;
+  }
+  const depositTag = po.deposit
+    ? (depositPaid ? `<span class="po-payment-tag paid">계약금 ✓</span>` : `<span class="po-payment-tag unpaid">계약금 ⏳</span>`)
+    : '';
+  const statusBadge = po.status === 'completed' ? `<span class="po-status-badge completed">완료</span>`
+                    : po.status === 'cancelled' ? `<span class="po-status-badge cancelled">취소</span>`
+                    : `<span class="po-status-badge ongoing">진행 중</span>`;
+  return `
+    <div class="po-item-row" onclick="editPO('${po.id}')">
+      <div class="pir-date">${escapeHtml(po.date || '')}</div>
+      <div class="pir-main">
+        <div class="pir-items">${escapeHtml(items)} ${statusBadge}</div>
+        <div class="pir-payment">${depositTag} ${balanceTag}${po.note ? `<span style="color:#95a5a6;">· ${escapeHtml(po.note.slice(0, 40))}${po.note.length > 40 ? '…' : ''}</span>` : ''}</div>
+      </div>
+      <div class="pir-amount">${totalCur}${totalKrw}</div>
+    </div>
+  `;
+}
+
+function togglePOVendor(vid) {
+  if (!state.poVendorCollapsed) state.poVendorCollapsed = {};
+  state.poVendorCollapsed[vid] = !state.poVendorCollapsed[vid];
+  saveData();
+  renderPOList();
+}
+
+// ===== 발주 추가/수정 폼 =====
+let _poItemsDraft = []; // 폼에서 편집 중인 품목 리스트
+
+function addPO() {
+  document.getElementById('poFormTitle').textContent = '새 발주';
+  document.getElementById('poEditId').value = '';
+  document.getElementById('poDate').value = todayStr();
+  document.getElementById('poCurrency').value = 'KRW';
+  document.getElementById('poStatus').value = 'ongoing';
+  document.getElementById('poDepositPaid').checked = false;
+  document.getElementById('poDepositAmount').value = '';
+  document.getElementById('poDepositDate').value = '';
+  document.getElementById('poBalancePaid').checked = false;
+  document.getElementById('poBalanceAmount').value = '';
+  document.getElementById('poBalanceDueDate').value = '';
+  document.getElementById('poNote').value = '';
+  document.getElementById('poDeleteBtn').style.display = 'none';
+  _poItemsDraft = [{ name: '', qty: 1, unitPrice: 0 }];
+  populateVendorSelect();
+  renderPOItemsForm();
+  document.getElementById('poFormModal').classList.add('show');
+  setTimeout(() => document.getElementById('poVendor')?.focus(), 100);
+}
+
+function editPO(id) {
+  const po = (state.purchaseOrders || []).find(p => p.id === id);
+  if (!po) return;
+  document.getElementById('poFormTitle').textContent = '발주 수정';
+  document.getElementById('poEditId').value = po.id;
+  document.getElementById('poDate').value = po.date || '';
+  document.getElementById('poCurrency').value = po.currency || 'KRW';
+  document.getElementById('poStatus').value = po.status || 'ongoing';
+  document.getElementById('poDepositPaid').checked = !!(po.deposit && po.deposit.paid);
+  document.getElementById('poDepositAmount').value = po.deposit?.amount || '';
+  document.getElementById('poDepositDate').value = po.deposit?.date || '';
+  document.getElementById('poBalancePaid').checked = !!(po.balance && po.balance.paid);
+  document.getElementById('poBalanceAmount').value = po.balance?.amount || '';
+  document.getElementById('poBalanceDueDate').value = po.balance?.dueDate || '';
+  document.getElementById('poNote').value = po.note || '';
+  document.getElementById('poDeleteBtn').style.display = '';
+  _poItemsDraft = (po.items || []).map(i => ({ ...i }));
+  if (_poItemsDraft.length === 0) _poItemsDraft = [{ name: '', qty: 1, unitPrice: 0 }];
+  populateVendorSelect(po.vendorId);
+  renderPOItemsForm();
+  document.getElementById('poFormModal').classList.add('show');
+}
+
+function closePOForm() {
+  document.getElementById('poFormModal').classList.remove('show');
+}
+
+function populateVendorSelect(selectedId) {
+  const sel = document.getElementById('poVendor');
+  const vendors = (state.contacts || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  sel.innerHTML = '<option value="">— 거래처 선택 —</option>' +
+    vendors.map(v => `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${escapeHtml(v.name)} ${v.type === 'overseas' ? '🌏' : '🇰🇷'}</option>`).join('');
+}
+
+function onPOVendorChange() {
+  // 거래처 변경 시 해외면 통화 USD로 추천 (사용자가 변경 가능)
+  const vid = document.getElementById('poVendor').value;
+  const v = (state.contacts || []).find(c => c.id === vid);
+  if (v && v.type === 'overseas' && document.getElementById('poCurrency').value === 'KRW') {
+    document.getElementById('poCurrency').value = 'USD';
+    recalcPOTotal();
+  }
+  renderPOItemsForm();
+}
+
+function renderPOItemsForm() {
+  const tbody = document.getElementById('poItemsBody');
+  if (!tbody) return;
+  // 거래처에 등록된 품목 리스트(객체화 + 자동완성용)
+  const vid = document.getElementById('poVendor')?.value;
+  const vendor = (state.contacts || []).find(c => c.id === vid);
+  const vendorItemsRaw = vendor?.items || [];
+  const vendorItems = vendorItemsRaw.map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i);
+  const datalistId = 'poItemsDatalist';
+  let datalistHtml = '';
+  if (vendorItems.length > 0) {
+    datalistHtml = `<datalist id="${datalistId}">${vendorItems.map(i => `<option value="${escapeHtml(i.name || '')}">`).join('')}</datalist>`;
+  }
+  tbody.innerHTML = datalistHtml + _poItemsDraft.map((it, i) => `
+    <tr>
+      <td><input type="text" value="${escapeHtml(it.name || '')}" oninput="updatePOItem(${i}, 'name', this.value); maybeAutofillPOPrice(${i}, this.value)" list="${vendorItems.length ? datalistId : ''}" placeholder="품목명" /></td>
+      <td><input type="number" value="${it.qty || ''}" oninput="updatePOItem(${i}, 'qty', this.value); recalcPOTotal()" min="0" step="any" /></td>
+      <td><input type="number" value="${it.unitPrice || ''}" oninput="updatePOItem(${i}, 'unitPrice', this.value); recalcPOTotal()" min="0" step="any" id="poUnitPrice_${i}" /></td>
+      <td class="po-item-total" id="poItemTotal_${i}">${fmtMoney((parseFloat(it.qty)||0) * (parseFloat(it.unitPrice)||0), document.getElementById('poCurrency')?.value || 'KRW')}</td>
+      <td><button type="button" class="po-item-del" onclick="removePOItemRow(${i})">✕</button></td>
+    </tr>
+  `).join('');
+  recalcPOTotal();
+}
+
+// 품목명 입력 시 거래처에 등록된 단가 자동 채우기 (사용자가 이미 단가 입력했으면 건드리지 않음)
+function maybeAutofillPOPrice(idx, name) {
+  const vid = document.getElementById('poVendor')?.value;
+  const vendor = (state.contacts || []).find(c => c.id === vid);
+  if (!vendor || !vendor.items) return;
+  const it = _poItemsDraft[idx];
+  if (!it) return;
+  // 기존에 단가가 이미 0보다 크면 덮어쓰지 않음
+  if ((parseFloat(it.unitPrice) || 0) > 0) return;
+  const match = vendor.items.find(vi => {
+    const vn = typeof vi === 'string' ? vi : (vi.name || '');
+    return vn === name;
+  });
+  if (!match) return;
+  const price = typeof match === 'string' ? 0 : (parseFloat(match.unitPrice) || 0);
+  const cur = typeof match === 'string' ? null : match.currency;
+  if (price > 0) {
+    it.unitPrice = price;
+    const input = document.getElementById(`poUnitPrice_${idx}`);
+    if (input) input.value = price;
+    // 통화도 일치시켜주기 (현재 폼 통화와 다르면 한 번 변경 권유 — 자동 변경은 X)
+    if (cur && cur !== document.getElementById('poCurrency').value) {
+      document.getElementById('poCurrency').value = cur;
+    }
+    recalcPOTotal();
+  }
+}
+
+function addPOItemRow() {
+  _poItemsDraft.push({ name: '', qty: 1, unitPrice: 0 });
+  renderPOItemsForm();
+}
+
+function removePOItemRow(idx) {
+  _poItemsDraft.splice(idx, 1);
+  if (_poItemsDraft.length === 0) _poItemsDraft.push({ name: '', qty: 1, unitPrice: 0 });
+  renderPOItemsForm();
+}
+
+function updatePOItem(idx, key, val) {
+  if (!_poItemsDraft[idx]) return;
+  if (key === 'qty' || key === 'unitPrice') _poItemsDraft[idx][key] = parseFloat(val) || 0;
+  else _poItemsDraft[idx][key] = val;
+}
+
+function recalcPOTotal() {
+  const cur = document.getElementById('poCurrency')?.value || 'KRW';
+  let total = 0;
+  _poItemsDraft.forEach((it, i) => {
+    const sub = (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0);
+    total += sub;
+    const cell = document.getElementById(`poItemTotal_${i}`);
+    if (cell) cell.textContent = fmtMoney(sub, cur);
+  });
+  const totalEl = document.getElementById('poTotalDisplay');
+  if (totalEl) totalEl.textContent = fmtMoney(total, cur);
+  const krwEl = document.getElementById('poTotalKrwDisplay');
+  if (krwEl) krwEl.textContent = cur === 'KRW' ? '' : ` (≈ ${fmtMoney(toKRW(total, cur), 'KRW')})`;
+}
+
+function onPODepositPaidToggle() {
+  const checked = document.getElementById('poDepositPaid').checked;
+  const dateEl = document.getElementById('poDepositDate');
+  if (checked && !dateEl.value) dateEl.value = todayStr();
+}
+function onPOBalancePaidToggle() {
+  // 잔금 결제 시 별도 자동 처리 없음 (사용자가 금액/날짜 직접 확인)
+}
+
+async function savePO() {
+  const id = document.getElementById('poEditId').value;
+  const date = document.getElementById('poDate').value;
+  const vendorId = document.getElementById('poVendor').value;
+  const currency = document.getElementById('poCurrency').value;
+  const status = document.getElementById('poStatus').value;
+  const note = document.getElementById('poNote').value.trim();
+
+  if (!date) return alert('발주일을 선택하세요.');
+  if (!vendorId) return alert('거래처를 선택하세요.');
+  const validItems = _poItemsDraft.filter(i => (i.name || '').trim() && (parseFloat(i.qty) > 0));
+  if (validItems.length === 0) return alert('품목을 1개 이상 입력하세요 (이름 + 수량).');
+
+  const total = validItems.reduce((s, i) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0), 0);
+  const depositPaid = document.getElementById('poDepositPaid').checked;
+  const depositAmount = parseFloat(document.getElementById('poDepositAmount').value) || 0;
+  const depositDate = document.getElementById('poDepositDate').value;
+  const balancePaid = document.getElementById('poBalancePaid').checked;
+  const balanceAmount = parseFloat(document.getElementById('poBalanceAmount').value) || (total - depositAmount);
+  const balanceDueDate = document.getElementById('poBalanceDueDate').value;
+
+  const poData = {
+    id: id || 'po_' + Date.now() + Math.random().toString(36).slice(2, 6),
+    date, vendorId, currency, status, note,
+    items: validItems.map(i => ({ name: i.name.trim(), qty: parseFloat(i.qty) || 0, unitPrice: parseFloat(i.unitPrice) || 0 })),
+    total,
+    deposit: (depositAmount > 0 || depositPaid) ? { paid: depositPaid, amount: depositAmount, date: depositDate } : null,
+    balance: { paid: balancePaid, amount: balanceAmount, dueDate: balanceDueDate, paidDate: balancePaid ? (todayStr()) : '' }
+  };
+
+  if (!state.purchaseOrders) state.purchaseOrders = [];
+  if (id) {
+    const idx = state.purchaseOrders.findIndex(p => p.id === id);
+    if (idx >= 0) state.purchaseOrders[idx] = poData;
+  } else {
+    state.purchaseOrders.push(poData);
+  }
+  // 거래처에 처음 보는 품목이면 거래처 카드에 자동 등록 (객체 형식으로)
+  const vendor = (state.contacts || []).find(c => c.id === vendorId);
+  if (vendor) {
+    if (!vendor.items) vendor.items = [];
+    // 기존 문자열 항목들을 객체로 마이그레이션
+    vendor.items = vendor.items.map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: vendor.type === 'overseas' ? 'USD' : 'KRW' } : i);
+    validItems.forEach(it => {
+      const nm = it.name.trim();
+      const exists = vendor.items.find(vi => vi.name === nm);
+      if (!exists) {
+        vendor.items.push({ name: nm, unitPrice: it.unitPrice || 0, currency });
+      } else if (!exists.unitPrice && it.unitPrice > 0) {
+        // 기존 항목에 단가 없으면 이번 발주 단가로 채워줌
+        exists.unitPrice = it.unitPrice;
+        exists.currency = currency;
+      }
+    });
+  }
+  saveData();
+  closePOForm();
+  renderPOList();
+  checkPODueBanner();
+}
+
+function deletePOFromForm() {
+  const id = document.getElementById('poEditId').value;
+  if (!id) return;
+  const po = (state.purchaseOrders || []).find(p => p.id === id);
+  if (!po) return;
+  const vname = getVendorName(po.vendorId);
+  if (!confirm(`${po.date} · ${vname} 발주를 삭제할까요?`)) return;
+  state.purchaseOrders = state.purchaseOrders.filter(p => p.id !== id);
+  saveData();
+  closePOForm();
+  renderPOList();
+  checkPODueBanner();
 }
 
 // ===== 지난 업무 검색 =====

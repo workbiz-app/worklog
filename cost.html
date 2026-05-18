@@ -1,0 +1,2485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="원가계산기">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%EC%9B%90%EA%B0%80%C2%B7%EC%98%81%EC%97%85%EC%9D%B4%EC%9D%B5%20%EA%B3%84%EC%82%B0%EA%B8%B0%22%2C%22short_name%22%3A%22%EC%9B%90%EA%B0%80%EA%B3%84%EC%82%B0%EA%B8%B0%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6fa%22%2C%22theme_color%22%3A%22%234f46e5%22%2C%22orientation%22%3A%22portrait%22%7D">
+<title>원가 · 영업이익 계산기</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+    background: #f4f6fa;
+    margin: 0;
+    padding: 24px;
+    color: #1f2937;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  h1 {
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+    padding-left: 100px;
+    font-size: 24px;
+  }
+  .sub { padding-left: 100px; }
+  .sub {
+    grid-column: 1 / -1;
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .card h2 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: #111827;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #374151;
+    margin: 10px 0 4px;
+    font-weight: 500;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus {
+    border-color: #3b82f6;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+  }
+  .row > * { flex: 1; }
+  .fx-status {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+    min-height: 16px;
+  }
+  .fx-status.ok { color: #059669; }
+  .fx-status.err { color: #dc2626; }
+  button.refresh {
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  button.refresh:hover { background: #e0e7ff; }
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e5e7eb;
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-label {
+    color: #6b7280;
+    font-size: 13px;
+  }
+  .result-value {
+    font-weight: 600;
+    font-size: 16px;
+    color: #111827;
+  }
+  .hero {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 16px 0 8px;
+  }
+  .hero.loss { background: linear-gradient(135deg, #dc2626, #991b1b); }
+  .hero-label {
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .hero-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .hero-sub {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 2px;
+  }
+  .toggle-group {
+    display: flex;
+    gap: 6px;
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 8px;
+  }
+  .toggle-group input { display: none; }
+  .toggle-group label {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    margin: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #6b7280;
+    transition: all 0.15s;
+  }
+  .toggle-group input:checked + label {
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    font-weight: 600;
+  }
+  .hint {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+  .fwd-panel {
+    margin-top: 8px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+  .fwd-panel[hidden] { display: none; }
+  .fwd-panel label { margin-top: 8px; }
+  .fwd-panel label:first-child { margin-top: 0; }
+  .fwd-result {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #eef2ff;
+    color: #4338ca;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .card.wide { grid-column: 1 / -1; }
+  .cbm-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .cbm-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .cbm-box {
+    background: #f3f4f6;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .cbm-box-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .cbm-box-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 2px;
+  }
+  button.sync {
+    margin-top: 12px;
+    width: 100%;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  button.sync:hover { background: #4338ca; }
+  button.sync:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+  }
+  @keyframes flash {
+    0%   { background: #fef3c7; border-color: #fbbf24; }
+    100% { background: #fff;    border-color: #d1d5db; }
+  }
+  input.flashed { animation: flash 1.2s ease-out; }
+  .history-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .history-head h2 { margin: 0; }
+  button.save-btn {
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  button.save-btn:hover { background: #4338ca; }
+  button.excel-btn {
+    background: #f3f4f6;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  button.excel-btn:hover { background: #d1fae5; border-color: #6ee7b7; }
+  .hist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .hist-table th {
+    text-align: left;
+    padding: 10px 8px;
+    background: #f9fafb;
+    color: #6b7280;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  .hist-table td {
+    padding: 8px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .hist-table input {
+    padding: 6px 8px;
+    font-size: 13px;
+    min-width: 100px;
+  }
+  .hist-table input[type=date] { min-width: 140px; }
+  .hist-empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 28px;
+    font-size: 13px;
+  }
+  .profit-positive { color: #059669; font-weight: 600; }
+  .profit-negative { color: #dc2626; font-weight: 600; }
+  .row-btns button {
+    padding: 5px 10px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-right: 4px;
+  }
+  .row-btns .load:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+  .row-btns .del:hover { background: #fee2e2; border-color: #fecaca; color: #dc2626; }
+  .hist-scroll { overflow-x: auto; }
+  /* ---------- 왼쪽 사이드바 기록표 ---------- */
+  .sidebar {
+    position: fixed;
+    left: -340px;
+    top: 0;
+    width: 340px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: 2px 0 16px rgba(0,0,0,0.08);
+    transition: left 0.3s ease;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+  body.sidebar-open .sidebar { left: 0; }
+  .sidebar-head {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .sidebar-head h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
+  .sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+  .sidebar-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 101;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    transition: left 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  body.sidebar-open .sidebar-toggle { left: 360px; }
+  .sidebar-toggle:hover { background: #4338ca; }
+  .hist-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .hist-card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 2px 6px rgba(79,70,229,0.08);
+  }
+  .hist-card input.hist-name {
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 8px;
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    margin-bottom: 4px;
+  }
+  .hist-card input.hist-name:hover,
+  .hist-card input.hist-name:focus {
+    background: #fff;
+    border-color: #d1d5db;
+  }
+  .hist-card input.hist-date {
+    padding: 4px 6px;
+    font-size: 12px;
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #6b7280;
+  }
+  .hist-card input.hist-date:hover,
+  .hist-card input.hist-date:focus {
+    background: #fff;
+    border-color: #d1d5db;
+  }
+  .hist-profit {
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 6px;
+  }
+  .hist-profit.positive { color: #059669; }
+  .hist-profit.negative { color: #dc2626; }
+  .hist-detail {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .hist-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .hist-actions button {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .hist-actions .load:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+  .hist-actions .del:hover { background: #fee2e2; border-color: #fecaca; color: #dc2626; }
+  .hist-actions .single-dl {
+    flex: 0 0 36px;
+    font-size: 14px;
+  }
+  .hist-actions .single-dl:hover { background: #d1fae5; border-color: #6ee7b7; color: #059669; }
+  .hist-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hist-check {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 7px;
+    accent-color: #4f46e5;
+  }
+  .dl-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .dl-row button {
+    flex: 1;
+    padding: 8px;
+    font-size: 12px;
+  }
+  #selCount {
+    display: inline-block;
+    min-width: 18px;
+    padding: 1px 6px;
+    background: #059669;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 2px;
+  }
+  .sidebar-empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 40px 20px;
+    font-size: 13px;
+  }
+  /* 사이드바 오버레이 (모바일 탭으로 닫기용) */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 99;
+  }
+  body.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* ---------- 모바일/앱 최적화 ---------- */
+  @media (max-width: 720px) {
+    body {
+      padding: 12px;
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+      padding-top: calc(12px + env(safe-area-inset-top));
+    }
+    .wrap { grid-template-columns: 1fr; gap: 12px; }
+    .cbm-row, .cbm-summary { grid-template-columns: 1fr; }
+    .card { padding: 16px; border-radius: 12px; }
+    .tab-bar { padding: 4px; gap: 4px; }
+    .tab-btn { min-width: 0; font-size: 12.5px; padding: 10px 8px; }
+    h1 {
+      font-size: 20px;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .sub { padding-left: 0; font-size: 12px; }
+    input, select {
+      font-size: 16px; /* iOS 자동 확대 방지 */
+      padding: 12px;
+    }
+    label { font-size: 13px; margin-top: 12px; }
+    .toggle-group label {
+      padding: 10px 6px;
+      font-size: 13px;
+    }
+    button.refresh, button.sync, button.save-btn, button.excel-btn {
+      padding: 12px;
+      font-size: 14px;
+    }
+    .hero-value { font-size: 24px; }
+    .result-item { padding: 10px 0; }
+    .cbm-box-value { font-size: 16px; }
+    .sidebar {
+      width: 88vw;
+      max-width: 380px;
+      left: -100vw;
+      padding-top: env(safe-area-inset-top);
+    }
+    body.sidebar-open .sidebar { left: 0; }
+    /* 모바일에서는 상단 기록 버튼 숨김 - 하단 액션 바로 대체 */
+    .sidebar-toggle { display: none !important; }
+    .fwd-panel { padding: 10px; }
+    /* 모바일 하단 스티키 액션 */
+    .mobile-save-bar {
+      display: flex;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-top: 1px solid #e5e7eb;
+      z-index: 50;
+      gap: 8px;
+    }
+    .mobile-save-bar button {
+      flex: 1;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+    .mobile-save-bar .m-save {
+      background: #4f46e5;
+      color: #fff;
+    }
+    .mobile-save-bar .m-save:active { background: #4338ca; }
+    .mobile-save-bar .m-open {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+      flex: 0 0 40%;
+    }
+  }
+  @media (min-width: 721px) {
+    .mobile-save-bar { display: none; }
+  }
+
+  /* ── 마케팅 ROAS 섹션 (결과 카드 내부) ── */
+  .roas-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px dashed #e5e7eb;
+  }
+  .roas-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .roas-title { font-size: 14px; font-weight: 700; color: #4338ca; }
+  .roas-toggle-btn {
+    background: transparent; border: 1px solid #e5e7eb; color: #6b7280;
+    padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 11px; font-weight: 600;
+  }
+  .roas-toggle-btn:hover { background: #f9fafb; color: #4338ca; }
+  .roas-mode-group { margin-bottom: 8px; }
+  .roas-mode-group label { padding: 6px 10px; font-size: 12px; }
+  .roas-input-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 12px;
+  }
+  .roas-input-row input { flex: 1; padding: 8px 10px; }
+  .roas-input-prefix, .roas-input-suffix {
+    font-size: 13px; color: #6b7280; font-weight: 600;
+    min-width: 18px; text-align: center;
+  }
+  .roas-profit-row {
+    background: linear-gradient(90deg, #eff6ff, #f0fdf4);
+    border-radius: 8px;
+    padding: 10px 12px !important;
+    margin: 8px 0;
+    border: 1px solid #bbf7d0 !important;
+  }
+  .roas-profit-row.loss {
+    background: linear-gradient(90deg, #fef2f2, #fff5f5);
+    border-color: #fecaca;
+  }
+  .roas-profit-row.loss .result-value { color: #dc2626; }
+  .roas-body[hidden] { display: none; }
+
+  /* ── 탭 바 ── */
+  .tab-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 6px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 180px;
+    padding: 11px 16px;
+    background: transparent;
+    color: #6b7280;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { background: #f3f4f6; color: #374151; }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(79,70,229,0.3);
+  }
+  .tab-page[hidden] { display: none !important; }
+
+  /* ── BEP ── */
+  .bep-rates-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin-bottom: 12px; padding: 8px 12px;
+    background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;
+  }
+  .bep-rates-info { font-size: 11.5px; color: #0c4a6e; line-height: 1.4; }
+  .bep-fixed-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 8px; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f3f4f6;
+  }
+  .bep-fixed-row.bep-total {
+    border-bottom: none; border-top: 2px solid #4338ca;
+    margin-top: 10px; padding-top: 14px;
+  }
+  .bep-label {
+    font-size: 13px; color: #374151; font-weight: 600;
+    margin: 0; white-space: nowrap;
+  }
+  .bep-input-group {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .bep-input-group input {
+    flex: 1; min-width: 0;
+    padding: 8px 10px; font-size: 14px; text-align: right;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+  }
+  .bep-cur-sel {
+    width: 84px; padding: 8px 6px; font-size: 12.5px;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+    background: #fff; cursor: pointer;
+  }
+  .bep-cur-sel:focus { outline: none; border-color: #4f46e5; }
+  .bep-conv {
+    grid-column: 2 / -1;
+    font-size: 11.5px; color: #4338ca;
+    text-align: right; margin-top: 2px;
+    min-height: 14px;
+  }
+  .bep-conv:empty { min-height: 0; }
+  .bep-total-value {
+    text-align: right; font-size: 18px; font-weight: 700;
+    color: #4338ca;
+  }
+  .bep-hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #fff; border-radius: 12px;
+    padding: 22px; text-align: center;
+    margin-bottom: 14px;
+  }
+  .bep-hero.unreachable {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  }
+  .bep-hero-label { font-size: 12px; opacity: 0.9; letter-spacing: 0.04em; }
+  .bep-hero-value { font-size: 32px; font-weight: 800; margin: 6px 0 4px; }
+  .bep-hero-sub { font-size: 13px; opacity: 0.9; }
+  .bep-sim-final {
+    background: linear-gradient(90deg, #ecfdf5, #f0fdf4);
+    border-radius: 8px;
+    padding: 12px !important;
+    margin: 6px 0;
+    border: 1px solid #bbf7d0 !important;
+  }
+  .bep-sim-final.loss {
+    background: linear-gradient(90deg, #fef2f2, #fff5f5);
+    border-color: #fecaca !important;
+  }
+  .bep-sim-final.loss .result-value { color: #dc2626; }
+
+  /* ── BEP 마케팅 ROAS 섹션 ── */
+  .bep-mkt-section {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 2px dashed #fde68a;
+    background: linear-gradient(180deg, #fffbeb 0%, transparent 100%);
+    margin-left: -22px; margin-right: -22px;
+    padding-left: 22px; padding-right: 22px;
+    padding-bottom: 12px;
+    border-radius: 0 0 12px 12px;
+  }
+  .bep-mkt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .bep-mkt-title { font-size: 14px; font-weight: 700; color: #b45309; }
+  .bep-mkt-toggle {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #92400e; cursor: pointer;
+    user-select: none;
+  }
+  .bep-mkt-toggle input { width: 16px; height: 16px; cursor: pointer; }
+  .bep-mkt-mode { margin-bottom: 8px; }
+  .bep-mkt-mode label { padding: 6px 10px; font-size: 12px; }
+  .bep-mkt-input-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+  }
+  .bep-mkt-input-row input { flex: 1; padding: 8px 10px; }
+  .bep-mkt-input-row[hidden] { display: none; }
+  .bep-mkt-suffix { font-size: 14px; color: #6b7280; font-weight: 600; min-width: 18px; text-align: center; }
+  .bep-hero-mkt {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  }
+  .bep-hero-mkt.unreachable {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  }
+  .bep-mkt-diff {
+    margin-top: 10px; padding: 10px 12px;
+    background: #fff; border: 1px dashed #fbbf24;
+    border-radius: 8px; font-size: 12.5px; color: #78350f;
+    text-align: center;
+  }
+  .bep-mkt-body[hidden] { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="profit">💰 원가 · 영업이익 계산기</button>
+    <button class="tab-btn" data-tab="bep">📈 손익분기점 계산기</button>
+  </div>
+  <div class="sub" id="pageSub">목표 판매가를 설정하고 위안/달러 원가를 넣으면 영업이익을 자동 계산합니다.</div>
+
+  <div class="card tab-page" data-tab="profit">
+    <h2>입력</h2>
+
+    <label>원가 통화</label>
+    <div class="toggle-group">
+      <input type="radio" id="cur-cny" name="currency" value="CNY" checked>
+      <label for="cur-cny">위안 (CNY)</label>
+      <input type="radio" id="cur-usd" name="currency" value="USD">
+      <label for="cur-usd">달러 (USD)</label>
+    </div>
+
+    <label>원가 (외화 금액)</label>
+    <input type="number" inputmode="decimal" id="cost" placeholder="예: 100" step="any">
+
+    <label>환율 (1 외화 → 원)</label>
+    <div class="row">
+      <input type="number" inputmode="decimal" id="fx" step="any" placeholder="자동 로딩 중...">
+      <button class="refresh" id="refreshBtn">새로고침</button>
+    </div>
+    <div class="fx-status" id="fxStatus">환율 조회 중...</div>
+
+    <label>목표 판매가 (원, VAT 포함가 기준)</label>
+    <input type="number" inputmode="decimal" id="price" placeholder="예: 50000" step="any">
+
+    <label>국내 배송비 (원, 개당)</label>
+    <input type="number" inputmode="decimal" id="shipping" value="3000" step="any">
+
+    <label>발주수량 (개)</label>
+    <input type="number" inputmode="numeric" id="totalQty" value="1" step="1" min="1" placeholder="이 수량 기준으로 운임·부대비용을 개당 환산합니다">
+    <div class="hint">운임비·부대비용(관세사 등)은 이 수량으로 나눠 개당 원가를 산출합니다.</div>
+
+    <label>운임 방식</label>
+    <div class="toggle-group">
+      <input type="radio" id="fwd-fcl" name="fwdType" value="FCL">
+      <label for="fwd-fcl">FCL</label>
+      <input type="radio" id="fwd-lcl" name="fwdType" value="LCL" checked>
+      <label for="fwd-lcl">LCL</label>
+      <input type="radio" id="fwd-exp" name="fwdType" value="EXP">
+      <label for="fwd-exp">특송</label>
+    </div>
+
+    <!-- FCL 패널 -->
+    <div class="fwd-panel" id="panel-FCL" hidden>
+      <label>컨테이너 타입</label>
+      <div class="toggle-group">
+        <input type="radio" id="fcl-20" name="fclType" value="20" checked>
+        <label for="fcl-20">20피트</label>
+        <input type="radio" id="fcl-40" name="fclType" value="40">
+        <label for="fcl-40">40피트</label>
+        <input type="radio" id="fcl-40hc" name="fclType" value="40HC">
+        <label for="fcl-40hc">40피트 HC</label>
+      </div>
+
+      <label>적재 가능 CBM (m³)</label>
+      <input type="number" inputmode="decimal" id="fcl-cbm" value="28" step="any">
+      <div class="hint">참고값: 20ft ≈ 28 / 40ft ≈ 58 / 40ft HC ≈ 68 CBM (실 적재 기준, 화물에 따라 조정)</div>
+
+      <div class="fwd-result" id="fcl-capacity">적재 가능 개수: <b>약 0개</b> <span style="color:#9ca3af;">· CBM 계산기의 박스 치수 기준</span></div>
+
+      <label>컨테이너 총비용 (원)</label>
+      <input type="number" inputmode="decimal" id="fcl-cost" value="0" step="any" placeholder="예: 3500000">
+      <div class="fwd-result" id="fcl-result">개당 운임 비용: ₩0</div>
+    </div>
+
+    <!-- LCL 패널 -->
+    <div class="fwd-panel" id="panel-LCL">
+      <div class="row">
+        <div>
+          <label>기본 요금 (원)</label>
+          <input type="number" inputmode="decimal" id="lcl-base" value="0" step="any" placeholder="예: 45000">
+        </div>
+        <div>
+          <label>기본 포함 CBM</label>
+          <input type="number" inputmode="decimal" id="lcl-base-cbm" value="0.5" step="any">
+        </div>
+      </div>
+      <label>0.1 CBM당 추가 요금 (원)</label>
+      <input type="number" inputmode="decimal" id="lcl-extra" value="0" step="any" placeholder="예: 8000">
+      <div class="hint">기본료로 0.5 CBM까지 커버, 초과분은 0.1 CBM 단위로 올림 과금됩니다.</div>
+      <label>총 CBM (m³)</label>
+      <input type="number" inputmode="decimal" id="lcl-cbm" value="0" step="any" placeholder="CBM 계산기에서 자동 반영 가능">
+      <div class="fwd-result" id="lcl-result">개당 운임 비용: ₩0</div>
+    </div>
+
+    <!-- 특송 패널 -->
+    <div class="fwd-panel" id="panel-EXP" hidden>
+      <label>특송 과금 기준</label>
+      <div class="toggle-group">
+        <input type="radio" id="exp-vol" name="expMode" value="VOL" checked>
+        <label for="exp-vol">부피무게(항공)</label>
+        <input type="radio" id="exp-rt" name="expMode" value="RT">
+        <label for="exp-rt">R.TON(해상)</label>
+      </div>
+
+      <!-- 부피무게 서브패널 -->
+      <div class="exp-sub" id="exp-sub-VOL">
+        <div class="row">
+          <div>
+            <label>기본 요금 (원)</label>
+            <input type="number" inputmode="decimal" id="exp-vol-base" value="0" step="any" placeholder="예: 15000">
+          </div>
+          <div>
+            <label>기본 포함 중량 (kg)</label>
+            <input type="number" inputmode="decimal" id="exp-vol-base-kg" value="0.5" step="any">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>올림 단위 (kg)</label>
+            <input type="number" inputmode="decimal" id="exp-round" value="0.5" step="any">
+          </div>
+          <div>
+            <label>부피 환산계수</label>
+            <input type="number" inputmode="decimal" id="exp-div" value="5000" step="any">
+          </div>
+        </div>
+        <label>초과 단위당 요금 (원)</label>
+        <input type="number" inputmode="decimal" id="exp-rate-vol" value="0" step="any" placeholder="예: 3000">
+        <div class="hint">기본료로 0.5kg까지 커버, 초과분은 올림 단위로 추가 과금됩니다. DHL/FedEx/UPS 표준 환산계수 5000, 일부 경제서비스 6000.</div>
+        <label>총 CBM (m³)</label>
+        <input type="number" inputmode="decimal" id="exp-cbm" value="0" step="any">
+        <label>총 실중량 (kg)</label>
+        <input type="number" inputmode="decimal" id="exp-actual" value="0" step="any">
+      </div>
+
+      <!-- R.TON 서브패널 -->
+      <div class="exp-sub" id="exp-sub-RT" hidden>
+        <div class="row">
+          <div>
+            <label>기본 요금 (원)</label>
+            <input type="number" inputmode="decimal" id="exp-rt-base" value="0" step="any" placeholder="예: 150000">
+          </div>
+          <div>
+            <label>기본 포함 R.TON</label>
+            <input type="number" inputmode="decimal" id="exp-rt-base-rt" value="1" step="any">
+          </div>
+        </div>
+        <label>0.1 R.TON당 추가 요금 (원)</label>
+        <input type="number" inputmode="decimal" id="exp-rate-rt" value="0" step="any" placeholder="예: 15000">
+        <div class="hint">1 R.TON = 1 CBM 또는 1,000kg 중 큰 값. 기본 포함 R.TON 이하면 기본료만, 초과분은 0.1 R.TON 단위로 올림 과금됩니다.</div>
+        <label>총 CBM (m³)</label>
+        <input type="number" inputmode="decimal" id="exp-cbm-rt" value="0" step="any">
+        <label>총 중량 (kg)</label>
+        <input type="number" inputmode="decimal" id="exp-kg-rt" value="0" step="any">
+      </div>
+
+      <div class="fwd-result" id="exp-result">개당 운임 비용: ₩0</div>
+    </div>
+
+    <label>운임비 제외 총비용 (원, 관세사비용 포함)</label>
+    <input type="number" inputmode="decimal" id="customs" value="0" step="any" placeholder="관세·부가세·관세사 수수료·내륙운송·THC·창고료 등 합계">
+    <div class="hint" id="customsHint">개당: ₩0 (발주수량으로 자동 분배)</div>
+
+    <label>플랫폼 수수료 (%)</label>
+    <input type="number" inputmode="decimal" id="fee" value="10" step="any">
+    <div class="hint">쿠팡 약 10.8%, 스마트스토어 약 3.74%, 자사몰 PG 수수료 약 3.3%</div>
+
+    <label>부가세 (VAT, %)</label>
+    <input type="number" inputmode="decimal" id="vat" value="10" step="any">
+    <div class="hint">판매가에서 VAT를 차감한 공급가액 기준으로 이익을 계산합니다.</div>
+  </div>
+
+  <div class="card tab-page" data-tab="profit">
+    <h2>결과</h2>
+
+    <div class="hero" id="profitHero">
+      <div class="hero-label">영업이익</div>
+      <div class="hero-value" id="profitValue">₩0</div>
+      <div class="hero-sub" id="profitRate">이익률 0%</div>
+    </div>
+
+    <div class="result-item">
+      <span class="result-label">원가 (원화 환산)</span>
+      <span class="result-value" id="costKrw">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">개당 운임 비용</span>
+      <span class="result-value" id="forwarderPerUnit">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">개당 부대비용 (관세사·통관 등)</span>
+      <span class="result-value" id="customsPerUnit">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">총 비용 (원가+국내배송+운임+부대)</span>
+      <span class="result-value" id="totalCost">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">판매가 공급가액 (VAT 제외)</span>
+      <span class="result-value" id="supplyPrice">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">플랫폼 수수료</span>
+      <span class="result-value" id="feeAmount">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">실수령액 (수수료 차감 후)</span>
+      <span class="result-value" id="netRevenue">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">손익분기 원가 (외화 기준)</span>
+      <span class="result-value" id="breakEven">-</span>
+    </div>
+
+    <!-- 마케팅 ROAS 섹션 (결과 카드 내부) -->
+    <div class="roas-section">
+      <div class="roas-header">
+        <span class="roas-title">📣 마케팅 ROAS</span>
+        <button type="button" class="roas-toggle-btn" id="roasToggleBtn" aria-expanded="true">접기 ▲</button>
+      </div>
+
+      <div class="roas-body" id="roasBody">
+        <div class="toggle-group roas-mode-group">
+          <input type="radio" id="roas-mode-pct" name="roasMode" value="pct" checked>
+          <label for="roas-mode-pct">ROAS(%)</label>
+          <input type="radio" id="roas-mode-cost" name="roasMode" value="cost">
+          <label for="roas-mode-cost">개당 광고비(₩)</label>
+        </div>
+
+        <div class="roas-input-row" id="panel-roas-pct">
+          <input type="number" inputmode="decimal" id="roasPct" value="300" step="any" placeholder="예: 300">
+          <span class="roas-input-suffix">%</span>
+        </div>
+        <div class="roas-input-row" id="panel-roas-cost" hidden>
+          <span class="roas-input-prefix">₩</span>
+          <input type="number" inputmode="decimal" id="roasCost" value="0" step="any" placeholder="예: 5000">
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">개당 광고비</span>
+          <span class="result-value" id="roasAdCost">₩0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">유효 ROAS</span>
+          <span class="result-value" id="roasEffective">-</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">손익분기 ROAS <span style="font-size:10.5px;color:#9ca3af;">(이하면 적자)</span></span>
+          <span class="result-value" id="roasBreakEven">-</span>
+        </div>
+        <div class="result-item roas-profit-row" id="roasProfitHero">
+          <span class="result-label"><b>마케팅 반영 후 영업이익</b><br><span id="roasProfitRate" style="font-size:11px;color:#6b7280;">이익률 0%</span></span>
+          <span class="result-value" id="roasProfit" style="font-size:18px; font-weight:700;">₩0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">마케팅 반영 후 총 영업이익 <span style="font-size:10.5px;color:#9ca3af;">(× 발주수량)</span></span>
+          <span class="result-value" id="roasProfitTotal">₩0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card wide tab-page" data-tab="profit">
+    <h2>📦 CBM 계산기</h2>
+
+    <label>박스 치수 (cm)</label>
+    <div class="cbm-row">
+      <input type="number" inputmode="decimal" id="box-l" placeholder="가로 L" step="any">
+      <input type="number" inputmode="decimal" id="box-w" placeholder="세로 W" step="any">
+      <input type="number" inputmode="decimal" id="box-h" placeholder="높이 H" step="any">
+    </div>
+
+    <div class="cbm-row" style="margin-top:10px;">
+      <div>
+        <label>박스 수량</label>
+        <input type="number" inputmode="numeric" id="box-count" value="1" step="1" min="1">
+      </div>
+      <div>
+        <label>박스당 제품 수</label>
+        <input type="number" inputmode="numeric" id="box-per-unit" value="1" step="1" min="1">
+      </div>
+      <div>
+        <label>박스당 중량 (kg)</label>
+        <input type="number" inputmode="decimal" id="box-kg" value="0" step="any" placeholder="특송용">
+      </div>
+    </div>
+
+    <div class="cbm-summary">
+      <div class="cbm-box">
+        <div class="cbm-box-label">박스당 CBM</div>
+        <div class="cbm-box-value" id="cbmPerBox">0.000</div>
+      </div>
+      <div class="cbm-box">
+        <div class="cbm-box-label">총 CBM (m³)</div>
+        <div class="cbm-box-value" id="cbmTotal">0.000</div>
+      </div>
+      <div class="cbm-box">
+        <div class="cbm-box-label">총 제품 수</div>
+        <div class="cbm-box-value" id="cbmTotalUnits">0</div>
+      </div>
+    </div>
+
+    <div class="cbm-summary" style="grid-template-columns: 1fr 1fr;">
+      <div class="cbm-box">
+        <div class="cbm-box-label">총 실중량 (kg)</div>
+        <div class="cbm-box-value" id="cbmTotalKg">0</div>
+      </div>
+      <div class="cbm-box">
+        <div class="cbm-box-label">부피무게 (kg, ÷5000)</div>
+        <div class="cbm-box-value" id="cbmVolWeight">0</div>
+      </div>
+    </div>
+
+    <button class="sync" id="syncBtn">📐 CBM 산출 → 운임 자동 반영</button>
+    <div class="hint" style="text-align:center;margin-top:6px;">산출값이 선택한 운임 방식(LCL/특송)에 자동 입력됩니다. 자동 반영된 값도 수정 가능합니다.</div>
+  </div>
+
+  <!-- ═══════════ 손익분기점(BEP) 페이지 ═══════════ -->
+  <div class="card tab-page" data-tab="bep" hidden>
+    <h2>💸 초기 고정비 (1회성)</h2>
+    <div class="hint">한국·중국·해외 어디서 발생하든 통화별로 입력하면 당일 환율로 자동 환산됩니다.</div>
+
+    <div class="bep-rates-bar">
+      <div class="bep-rates-info" id="bepRatesInfo">환율 로딩 중...</div>
+      <button type="button" class="refresh" id="bepRatesBtn" style="font-size:11px;">🔄 환율</button>
+    </div>
+
+    <div class="bep-fixed-row">
+      <label class="bep-label">몰드비</label>
+      <div class="bep-input-group">
+        <input type="number" inputmode="decimal" id="bep-mold" value="0" step="any" placeholder="0">
+        <select class="bep-cur-sel" id="bep-mold-cur">
+          <option value="KRW">₩ 원</option>
+          <option value="CNY">¥ 위안</option>
+          <option value="USD">$ 달러</option>
+        </select>
+      </div>
+      <div class="bep-conv" id="bep-mold-conv"></div>
+    </div>
+
+    <div class="bep-fixed-row">
+      <label class="bep-label">개발비</label>
+      <div class="bep-input-group">
+        <input type="number" inputmode="decimal" id="bep-dev" value="0" step="any" placeholder="0">
+        <select class="bep-cur-sel" id="bep-dev-cur">
+          <option value="KRW">₩ 원</option>
+          <option value="CNY">¥ 위안</option>
+          <option value="USD">$ 달러</option>
+        </select>
+      </div>
+      <div class="bep-conv" id="bep-dev-conv"></div>
+    </div>
+
+    <div class="bep-fixed-row">
+      <label class="bep-label">인증비</label>
+      <div class="bep-input-group">
+        <input type="number" inputmode="decimal" id="bep-cert" value="0" step="any" placeholder="0">
+        <select class="bep-cur-sel" id="bep-cert-cur">
+          <option value="KRW">₩ 원</option>
+          <option value="CNY">¥ 위안</option>
+          <option value="USD">$ 달러</option>
+        </select>
+      </div>
+      <div class="bep-conv" id="bep-cert-conv"></div>
+    </div>
+
+    <div class="bep-fixed-row">
+      <label class="bep-label">성적서비</label>
+      <div class="bep-input-group">
+        <input type="number" inputmode="decimal" id="bep-test" value="0" step="any" placeholder="0">
+        <select class="bep-cur-sel" id="bep-test-cur">
+          <option value="KRW">₩ 원</option>
+          <option value="CNY">¥ 위안</option>
+          <option value="USD">$ 달러</option>
+        </select>
+      </div>
+      <div class="bep-conv" id="bep-test-conv"></div>
+    </div>
+
+    <div class="bep-fixed-row">
+      <label class="bep-label">기타</label>
+      <div class="bep-input-group">
+        <input type="number" inputmode="decimal" id="bep-etc" value="0" step="any" placeholder="포장 디자인, 촬영비 등">
+        <select class="bep-cur-sel" id="bep-etc-cur">
+          <option value="KRW">₩ 원</option>
+          <option value="CNY">¥ 위안</option>
+          <option value="USD">$ 달러</option>
+        </select>
+      </div>
+      <div class="bep-conv" id="bep-etc-conv"></div>
+    </div>
+
+    <div class="bep-fixed-row bep-total">
+      <label class="bep-label">총 고정비</label>
+      <span class="bep-total-value" id="bep-fixed-total">₩0</span>
+    </div>
+
+    <h2 style="margin-top:24px;">📦 단가 / 환율 / 판매가</h2>
+    <div class="hint">왼쪽 <b>원가 · 영업이익 계산기</b> 탭의 입력값을 자동으로 가져옵니다. 직접 수정도 가능합니다 (수정값은 BEP 계산에만 적용).</div>
+
+    <label>원가 통화</label>
+    <div class="toggle-group">
+      <input type="radio" id="bep-cur-cny" name="bepCurrency" value="CNY" checked>
+      <label for="bep-cur-cny">위안 (CNY)</label>
+      <input type="radio" id="bep-cur-usd" name="bepCurrency" value="USD">
+      <label for="bep-cur-usd">달러 (USD)</label>
+    </div>
+
+    <label>단가 (외화)</label>
+    <input type="number" inputmode="decimal" id="bep-cost" value="0" step="any" placeholder="예: 100">
+
+    <label>환율 (1 외화 → 원)
+      <button type="button" class="refresh" id="bepFxBtn" style="font-size:11px; margin-left:6px;">🔄 자동</button>
+    </label>
+    <input type="number" inputmode="decimal" id="bep-fx" value="0" step="any">
+    <div class="fx-status" id="bepFxStatus"></div>
+
+    <label>목표 판매가 (₩)</label>
+    <input type="number" inputmode="decimal" id="bep-price" value="0" step="any" placeholder="예: 50000">
+
+    <label>VAT (%)</label>
+    <input type="number" inputmode="decimal" id="bep-vat" value="10" step="any">
+    <label>플랫폼 수수료 (%)</label>
+    <input type="number" inputmode="decimal" id="bep-fee" value="10" step="any">
+
+    <button class="sync" id="bepPullBtn" style="margin-top:14px;">⬅ 원가/영업이익 탭에서 값 가져오기</button>
+  </div>
+
+  <div class="card tab-page" data-tab="bep" hidden>
+    <h2>📊 손익분기점 결과</h2>
+
+    <div class="bep-hero" id="bepHero">
+      <div class="bep-hero-label">손익분기 수량</div>
+      <div class="bep-hero-value" id="bep-qty">- 개</div>
+      <div class="bep-hero-sub" id="bep-revenue">손익분기 매출 ₩0</div>
+    </div>
+
+    <div class="result-item">
+      <span class="result-label">개당 판매가</span>
+      <span class="result-value" id="bep-out-price">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">개당 변동원가</span>
+      <span class="result-value" id="bep-var-cost">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">개당 공헌이익</span>
+      <span class="result-value" id="bep-margin">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">공헌이익률</span>
+      <span class="result-value" id="bep-margin-rate">0%</span>
+    </div>
+
+    <!-- ─── 마케팅 ROAS 반영 ─── -->
+    <div class="bep-mkt-section">
+      <div class="bep-mkt-header">
+        <span class="bep-mkt-title">📣 마케팅 ROAS 반영</span>
+        <label class="bep-mkt-toggle">
+          <input type="checkbox" id="bep-mkt-on">
+          <span>적용</span>
+        </label>
+      </div>
+
+      <div class="bep-mkt-body" id="bepMktBody" hidden>
+        <div class="toggle-group bep-mkt-mode">
+          <input type="radio" id="bep-mkt-mode-pct" name="bepMktMode" value="pct" checked>
+          <label for="bep-mkt-mode-pct">ROAS(%)</label>
+          <input type="radio" id="bep-mkt-mode-cost" name="bepMktMode" value="cost">
+          <label for="bep-mkt-mode-cost">개당 광고비(₩)</label>
+        </div>
+
+        <div class="bep-mkt-input-row" id="bep-mkt-panel-pct">
+          <input type="number" inputmode="decimal" id="bep-mkt-pct" value="300" step="any" placeholder="예: 300">
+          <span class="bep-mkt-suffix">%</span>
+        </div>
+        <div class="bep-mkt-input-row" id="bep-mkt-panel-cost" hidden>
+          <span class="bep-mkt-suffix">₩</span>
+          <input type="number" inputmode="decimal" id="bep-mkt-cost" value="0" step="any" placeholder="예: 5000">
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">개당 광고비</span>
+          <span class="result-value" id="bep-mkt-adcost">₩0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">마케팅 후 개당 공헌이익</span>
+          <span class="result-value" id="bep-mkt-margin">₩0</span>
+        </div>
+
+        <!-- 마케팅 반영 BEP hero (주황) -->
+        <div class="bep-hero bep-hero-mkt" id="bepHeroMkt" style="margin-top:14px;">
+          <div class="bep-hero-label">📣 마케팅 반영 손익분기 수량</div>
+          <div class="bep-hero-value" id="bep-mkt-qty">- 개</div>
+          <div class="bep-hero-sub" id="bep-mkt-revenue">손익분기 매출 ₩0</div>
+        </div>
+        <div class="bep-mkt-diff" id="bep-mkt-diff"></div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:22px;">🎯 시뮬레이션</h2>
+    <label>예상 총 판매수량 (개)</label>
+    <input type="number" inputmode="numeric" id="bep-sim-qty" value="0" step="1" min="0" placeholder="예: 5000">
+
+    <label>월 평균 판매수량 (개) <span style="font-size:11px;color:#9ca3af;">— 입력 시 BEP 도달 시점 자동 계산</span></label>
+    <input type="number" inputmode="numeric" id="bep-sim-monthly" value="0" step="1" min="0" placeholder="예: 500">
+
+    <div class="result-item" style="margin-top:14px;">
+      <span class="result-label">예상 누적 매출</span>
+      <span class="result-value" id="bep-sim-revenue">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">예상 누적 공헌이익</span>
+      <span class="result-value" id="bep-sim-contri">₩0</span>
+    </div>
+    <div class="result-item bep-sim-final" id="bep-sim-final-row">
+      <span class="result-label"><b>고정비 차감 후 최종 손익</b></span>
+      <span class="result-value" id="bep-sim-final" style="font-size:18px;">₩0</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">BEP 도달 시점</span>
+      <span class="result-value" id="bep-sim-when">-</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- 왼쪽 접이식 기록 탭 -->
+<button id="sidebarToggle" class="sidebar-toggle">📋 기록</button>
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-head">
+    <h3>📋 계산 기록</h3>
+    <button class="save-btn" id="saveBtn" style="width:100%;">+ 현재 계산 저장</button>
+    <div class="dl-row">
+      <button class="excel-btn" id="selectAllBtn">☑ 전체 선택</button>
+      <button class="excel-btn" id="exportSelBtn">⬇ 선택 <span id="selCount">0</span></button>
+    </div>
+    <div class="hint" style="margin-top:8px;"><b>전체 선택</b>으로 모두 체크한 뒤 <b>선택 다운로드</b>를 누르면 전체 저장 가능.<br>각 카드의 <b>⬇</b> 버튼으로 개별 다운로드도 가능합니다. (Excel·Google Sheets 호환 .csv)</div>
+    <button id="diagBtn" style="width:100%; margin-top:10px; padding:9px; background:#334155; color:#e2e8f0; border:1px solid #475569; border-radius:7px; cursor:pointer; font-size:12px; font-weight:600;">🔧 기록 진단 / 강제 복원</button>
+    <div style="font-size:11px; color:#9ca3af; margin-top:4px; line-height:1.4;">기록이 안 보이거나 안 열리면 클릭</div>
+  </div>
+  <div class="sidebar-list" id="historyBody"></div>
+</aside>
+
+<!-- 모바일 오버레이 & 하단 액션 바 -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="mobile-save-bar">
+  <button class="m-open" id="mSaveOpen">📋 기록</button>
+  <button class="m-save" id="mSave">+ 현재 계산 저장</button>
+</div>
+
+<script>
+// ============================================================
+// Worklog Drive 동기화 브릿지 (페이지 최상단)
+// ============================================================
+(function worklogSyncBridge() {
+  if (!window.parent || window.parent === window) return;
+  const KIND = 'cost';
+  const PREFIX = 'calc-';
+  const url = new URL(location.href);
+  const alreadySynced = url.searchParams.get('synced') === '1';
+
+  function getMyData() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(PREFIX)) data[k] = localStorage.getItem(k);
+    }
+    return data;
+  }
+
+  if (!alreadySynced) {
+    document.documentElement.style.visibility = 'hidden';
+    let applied = false;
+    const onMsg = function (ev) {
+      const d = ev.data;
+      if (!d || d.type !== 'calc-data-restore' || d.kind !== KIND) return;
+      applied = true;
+      window.removeEventListener('message', onMsg);
+      const saved = d.data || {};
+      if (Object.keys(saved).length > 0) {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(PREFIX)) keys.push(k);
+        }
+        keys.forEach(k => localStorage.removeItem(k));
+        Object.entries(saved).forEach(([k, v]) => {
+          if (typeof v === 'string') localStorage.setItem(k, v);
+        });
+      }
+      url.searchParams.set('synced', '1');
+      location.replace(url.toString());
+    };
+    window.addEventListener('message', onMsg);
+    try { window.parent.postMessage({ type: 'calc-needs-data', kind: KIND }, '*'); } catch (e) {}
+    setTimeout(() => {
+      if (!applied) {
+        window.removeEventListener('message', onMsg);
+        document.documentElement.style.visibility = '';
+      }
+    }, 1200);
+  }
+
+  function startSync() {
+    let lastSnap = JSON.stringify(getMyData());
+    setInterval(() => {
+      const cur = JSON.stringify(getMyData());
+      if (cur === lastSnap) return;
+      lastSnap = cur;
+      try {
+        window.parent.postMessage({ type: 'calc-data-update', kind: KIND, data: JSON.parse(cur) }, '*');
+      } catch (e) {}
+    }, 5000);
+  }
+  if (document.readyState === 'complete') startSync();
+  else window.addEventListener('load', startSync);
+})();
+
+const krw = n => isFinite(n) ? '₩' + Math.round(n).toLocaleString('ko-KR') : '₩0';
+const pct = n => isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) + '%' : '0%';
+
+const $ = id => document.getElementById(id);
+const fxStatus = $('fxStatus');
+
+async function loadFx() {
+  const cur = document.querySelector('input[name=currency]:checked').value;
+  fxStatus.textContent = '환율 조회 중...';
+  fxStatus.className = 'fx-status';
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${cur}`);
+    const data = await res.json();
+    if (data.result !== 'success') throw new Error('API 응답 오류');
+    const rate = data.rates.KRW;
+    $('fx').value = rate.toFixed(2);
+    const d = new Date(data.time_last_update_unix * 1000);
+    fxStatus.textContent = `✓ 1 ${cur} = ${rate.toFixed(2)}원 (${d.toLocaleString('ko-KR')})`;
+    fxStatus.className = 'fx-status ok';
+    calc();
+  } catch (e) {
+    fxStatus.textContent = '⚠ 환율 자동조회 실패 - 직접 입력해주세요';
+    fxStatus.className = 'fx-status err';
+  }
+}
+
+function num(id) { return parseFloat($(id).value) || 0; }
+function intMin1(id) { return Math.max(1, parseInt($(id).value) || 1); }
+
+function getForwarderPerUnit() {
+  const type = document.querySelector('input[name=fwdType]:checked').value;
+  let perUnit = 0;
+  const q = intMin1('totalQty');
+  if (type === 'FCL') {
+    const total = num('fcl-cost');
+    perUnit = total / q;
+    $('fcl-result').textContent = '개당 운임 비용: ' + krw(perUnit);
+  } else if (type === 'LCL') {
+    const base = num('lcl-base');
+    const baseCbm = num('lcl-base-cbm') || 0.5;
+    const extra = num('lcl-extra');
+    const cbm = num('lcl-cbm');
+    let total = base;
+    let extraUnits = 0;
+    if (cbm > baseCbm) {
+      // 부동소수점 오차 방지: 소수 4자리에서 정규화 후 0.1 CBM 단위로 올림
+      const extraCbm = Math.round((cbm - baseCbm) * 10000) / 10000;
+      extraUnits = Math.ceil(extraCbm * 10);
+      total = base + extraUnits * extra;
+    }
+    perUnit = total / q;
+    $('lcl-result').innerHTML =
+      `CBM ${cbm.toFixed(3)} ${cbm <= baseCbm ? '→ 기본 포함 범위(기본료만 과금)' : `(기본 ${baseCbm} + 추가 ${extraUnits}×0.1)`}<br>` +
+      `기본료 ${krw(base)} + 추가 ${krw(extraUnits * extra)}<br>` +
+      `총 포워더 비용: <b>${krw(total)}</b> &nbsp;|&nbsp; 개당: <b>${krw(perUnit)}</b>`;
+  } else if (type === 'EXP') {
+    const mode = document.querySelector('input[name=expMode]:checked').value;
+    let total = 0;
+    if (mode === 'VOL') {
+      const div = num('exp-div') || 5000;
+      const volBase = num('exp-vol-base');
+      const volBaseKg = num('exp-vol-base-kg') || 0.5;
+      const roundUnit = num('exp-round') || 0.5;
+      const extraRate = num('exp-rate-vol');
+      const cbm = num('exp-cbm');
+      const actual = num('exp-actual');
+      const volW = cbm * 1000000 / div;
+      const chargeable = Math.max(actual, volW);
+      total = volBase;
+      let extraUnits = 0;
+      let appliedKg = Math.min(chargeable, volBaseKg);
+      if (chargeable > volBaseKg) {
+        const extraKg = Math.round((chargeable - volBaseKg) * 10000) / 10000;
+        extraUnits = roundUnit > 0 ? Math.ceil(extraKg / roundUnit) : 0;
+        total = volBase + extraUnits * extraRate;
+        appliedKg = volBaseKg + extraUnits * roundUnit;
+      }
+      perUnit = total / q;
+      $('exp-result').innerHTML =
+        `부피무게 ${volW.toFixed(2)}kg vs 실중량 ${actual.toFixed(2)}kg → 적용 <b>${chargeable.toFixed(2)}kg</b><br>` +
+        `${chargeable <= volBaseKg ? '기본 포함 범위(기본료만 과금)' : `기본 ${volBaseKg}kg + 추가 ${extraUnits}단위(${appliedKg.toFixed(2)}kg까지)`}<br>` +
+        `기본료 ${krw(volBase)} + 추가 ${krw(extraUnits * extraRate)}<br>` +
+        `총 포워더 비용: <b>${krw(total)}</b> &nbsp;|&nbsp; 개당: <b>${krw(perUnit)}</b>`;
+    } else {
+      const rtBase = num('exp-rt-base');
+      const rtBaseRT = num('exp-rt-base-rt') || 1;
+      const extraRate = num('exp-rate-rt');
+      const cbm = num('exp-cbm-rt');
+      const kg = num('exp-kg-rt');
+      const rt = Math.max(cbm, kg / 1000);
+      total = rtBase;
+      let extraUnits = 0;
+      if (rt > rtBaseRT) {
+        const extraRT = Math.round((rt - rtBaseRT) * 10000) / 10000;
+        extraUnits = Math.ceil(extraRT * 10);
+        total = rtBase + extraUnits * extraRate;
+      }
+      perUnit = total / q;
+      $('exp-result').innerHTML =
+        `R.TON: CBM ${cbm.toFixed(3)} vs 중량 ${(kg/1000).toFixed(3)}T → 적용 <b>${rt.toFixed(3)} R.TON</b><br>` +
+        `${rt <= rtBaseRT ? '기본 포함 범위(기본료만 과금)' : `기본 ${rtBaseRT} + 추가 ${extraUnits}×0.1 R.TON`}<br>` +
+        `기본료 ${krw(rtBase)} + 추가 ${krw(extraUnits * extraRate)}<br>` +
+        `총 포워더 비용: <b>${krw(total)}</b> &nbsp;|&nbsp; 개당: <b>${krw(perUnit)}</b>`;
+    }
+  }
+  return perUnit;
+}
+
+function updateExpSubVisibility() {
+  const mode = document.querySelector('input[name=expMode]:checked').value;
+  $('exp-sub-VOL').hidden = (mode !== 'VOL');
+  $('exp-sub-RT').hidden = (mode !== 'RT');
+}
+
+function getFwdQty() {
+  return intMin1('totalQty');
+}
+
+function updateFwdPanelVisibility() {
+  const type = document.querySelector('input[name=fwdType]:checked').value;
+  ['FCL', 'LCL', 'EXP'].forEach(t => {
+    $('panel-' + t).hidden = (t !== type);
+  });
+}
+
+// FCL 컨테이너 타입별 기본 적재 가능 CBM (실 적재 기준, 이론치 아님)
+const FCL_CBM_DEFAULTS = { '20': 28, '40': 58, '40HC': 68 };
+
+function applyFclDefault() {
+  const t = document.querySelector('input[name=fclType]:checked');
+  if (!t) return;
+  const def = FCL_CBM_DEFAULTS[t.value];
+  if (def != null) $('fcl-cbm').value = def;
+}
+
+function updateFclCapacity(cbmPerBox, perBox) {
+  const containerCbm = num('fcl-cbm');
+  let loadableBoxes = 0;
+  let loadableUnits = 0;
+  if (cbmPerBox > 0 && containerCbm > 0) {
+    loadableBoxes = Math.floor(containerCbm / cbmPerBox);
+    loadableUnits = loadableBoxes * perBox;
+  }
+  $('fcl-capacity').innerHTML =
+    `적재 가능 개수: <b>약 ${loadableUnits.toLocaleString('ko-KR')}개</b> ` +
+    `<span style="color:#9ca3af;">(박스 ${loadableBoxes.toLocaleString('ko-KR')}개 × ${perBox}개/박스 · 컨테이너 ${containerCbm} CBM)</span>`;
+}
+
+function calcCbm() {
+  const l = num('box-l');
+  const w = num('box-w');
+  const h = num('box-h');
+  const cnt = intMin1('box-count');
+  const perBox = intMin1('box-per-unit');
+  const kgPerBox = num('box-kg');
+
+  const cbmPerBox = (l * w * h) / 1000000; // cm³ → m³
+  const cbmTotal = cbmPerBox * cnt;
+  const totalUnits = cnt * perBox;
+  const totalKg = kgPerBox * cnt;
+  const volWeight = cbmTotal * 1000000 / 5000; // 부피무게(kg) = 부피(cm³)/5000
+
+  $('cbmPerBox').textContent = cbmPerBox.toFixed(4);
+  $('cbmTotal').textContent = cbmTotal.toFixed(3);
+  $('cbmTotalUnits').textContent = totalUnits.toLocaleString('ko-KR');
+  $('cbmTotalKg').textContent = totalKg.toFixed(2);
+  $('cbmVolWeight').textContent = volWeight.toFixed(2);
+
+  updateFclCapacity(cbmPerBox, perBox);
+
+  return { cbmTotal, totalUnits, totalKg, volWeight, cbmPerBox, perBox };
+}
+
+function flashField(id) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.remove('flashed');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('flashed');
+}
+
+function syncToForwarder() {
+  const { cbmTotal, totalUnits, totalKg } = calcCbm();
+  const filled = [];
+  $('totalQty').value = totalUnits || 1;
+  filled.push('totalQty');
+  const type = document.querySelector('input[name=fwdType]:checked').value;
+  if (type === 'LCL') {
+    $('lcl-cbm').value = cbmTotal.toFixed(3);
+    filled.push('lcl-cbm');
+  } else if (type === 'EXP') {
+    const mode = document.querySelector('input[name=expMode]:checked').value;
+    if (mode === 'VOL') {
+      $('exp-cbm').value = cbmTotal.toFixed(3);
+      $('exp-actual').value = totalKg.toFixed(2);
+      filled.push('exp-cbm', 'exp-actual');
+    } else {
+      $('exp-cbm-rt').value = cbmTotal.toFixed(3);
+      $('exp-kg-rt').value = totalKg.toFixed(2);
+      filled.push('exp-cbm-rt', 'exp-kg-rt');
+    }
+  }
+  calc();
+  filled.forEach(flashField);
+}
+
+function calc() {
+  calcCbm();
+  updateFwdPanelVisibility();
+  updateExpSubVisibility();
+
+  const cost = num('cost');
+  const fx = num('fx');
+  const price = num('price');
+  const shipping = num('shipping');
+  const customsTotal = num('customs');
+  const feeRate = num('fee') / 100;
+  const vatRate = num('vat') / 100;
+
+  const forwarderPerUnit = getForwarderPerUnit();
+  $('forwarderPerUnit').textContent = krw(forwarderPerUnit);
+
+  const fwdQty = getFwdQty();
+  const customsPerUnit = customsTotal / fwdQty;
+  $('customsHint').textContent = `개당: ${krw(customsPerUnit)} (발주수량 ${fwdQty.toLocaleString('ko-KR')}개 기준)`;
+  $('customsPerUnit').textContent = krw(customsPerUnit);
+
+  const costKrw = cost * fx;
+  const totalCost = costKrw + shipping + forwarderPerUnit + customsPerUnit;
+  const supplyPrice = price / (1 + vatRate);
+  const feeAmount = price * feeRate;
+  const netRevenue = supplyPrice - feeAmount;
+  const profit = netRevenue - totalCost;
+  const profitRate = price > 0 ? (profit / price) * 100 : 0;
+
+  $('costKrw').textContent = krw(costKrw);
+  $('totalCost').textContent = krw(totalCost);
+  $('supplyPrice').textContent = krw(supplyPrice);
+  $('feeAmount').textContent = krw(feeAmount);
+  $('netRevenue').textContent = krw(netRevenue);
+  $('profitValue').textContent = krw(profit);
+  $('profitRate').textContent = '판매가 대비 이익률 ' + pct(profitRate);
+
+  const hero = $('profitHero');
+  hero.classList.toggle('loss', profit < 0);
+
+  if (fx > 0) {
+    const beCost = (netRevenue - shipping - forwarderPerUnit - customsPerUnit) / fx;
+    const cur = document.querySelector('input[name=currency]:checked').value;
+    $('breakEven').textContent = beCost > 0
+      ? beCost.toFixed(2) + ' ' + cur
+      : '- (이미 손실)';
+  } else {
+    $('breakEven').textContent = '-';
+  }
+
+  /* ---------- 마케팅 ROAS ---------- */
+  const roasModeEl = document.querySelector('input[name=roasMode]:checked');
+  const roasMode = roasModeEl ? roasModeEl.value : 'pct';
+  // 패널 가시성
+  const pctPanel = $('panel-roas-pct');
+  const costPanel = $('panel-roas-cost');
+  if (pctPanel)  pctPanel.hidden  = (roasMode !== 'pct');
+  if (costPanel) costPanel.hidden = (roasMode !== 'cost');
+
+  let adCost = 0;
+  let effRoas = 0;
+  if (roasMode === 'pct') {
+    const roasPct = num('roasPct');
+    adCost = roasPct > 0 ? price / (roasPct / 100) : 0;
+    effRoas = roasPct;
+  } else {
+    adCost = num('roasCost');
+    effRoas = adCost > 0 ? (price / adCost) * 100 : 0;
+  }
+
+  // 손익분기 ROAS = 판매가 / (현재 영업이익) × 100
+  // → 광고비가 영업이익을 모두 잡아먹는 ROAS 수준 (그 이하면 적자)
+  const beRoas = profit > 0 ? (price / profit) * 100 : null;
+
+  const roasProfit = profit - adCost;
+  const roasProfitRate = price > 0 ? (roasProfit / price) * 100 : 0;
+  const roasProfitTotal = roasProfit * fwdQty;
+
+  $('roasAdCost').textContent = krw(adCost);
+  $('roasEffective').textContent = (effRoas > 0 && isFinite(effRoas)) ? effRoas.toFixed(1) + '%' : '-';
+  $('roasBreakEven').textContent = (beRoas != null && isFinite(beRoas)) ? beRoas.toFixed(1) + '%' : '- (마케팅 전 이미 적자)';
+  $('roasProfit').textContent = krw(roasProfit);
+  $('roasProfitRate').textContent = '판매가 대비 이익률 ' + pct(roasProfitRate);
+  $('roasProfitTotal').textContent = krw(roasProfitTotal);
+  $('roasProfitHero').classList.toggle('loss', roasProfit < 0);
+
+  /* ---------- 손익분기점(BEP) — 별도 탭에서 사용 ---------- */
+  if (typeof updateBep === 'function') updateBep(price, totalCost, profit);
+}
+
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', calc);
+});
+document.querySelectorAll('input[name=currency]').forEach(el => {
+  el.addEventListener('change', loadFx);
+});
+document.querySelectorAll('input[name=fwdType]').forEach(el => {
+  el.addEventListener('change', calc);
+});
+document.querySelectorAll('input[name=roasMode]').forEach(el => {
+  el.addEventListener('change', calc);
+});
+
+/* ═══════════ 탭 전환 ═══════════ */
+const TAB_KEY = 'calc-active-tab';
+function activateTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-page').forEach(p => {
+    p.hidden = (p.dataset.tab !== tab);
+  });
+  // 사이드 부제 업데이트
+  const sub = $('pageSub');
+  if (sub) {
+    sub.textContent = tab === 'bep'
+      ? '몰드비·개발비·인증비 등 1회성 고정비를 입력하면 몇 개를 팔아야 손익분기를 넘기는지 자동 계산합니다.'
+      : '목표 판매가를 설정하고 위안/달러 원가를 넣으면 영업이익을 자동 계산합니다.';
+  }
+  try { localStorage.setItem(TAB_KEY, tab); } catch(e) {}
+  if (tab === 'bep') {
+    // 첫 진입 시 환율 자동 로드
+    if (bepRates.CNY === null && bepRates.USD === null) loadBepRates();
+    else runBep();
+  }
+}
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => activateTab(b.dataset.tab));
+});
+// 마지막 활성 탭 복원
+try {
+  const lastTab = localStorage.getItem(TAB_KEY);
+  if (lastTab === 'bep') activateTab('bep');
+} catch(e) {}
+
+/* ═══════════ BEP 환율 자동 ═══════════ */
+// 1) 단가용 환율 (기존)
+async function loadBepFx() {
+  const cur = document.querySelector('input[name=bepCurrency]:checked').value;
+  const status = $('bepFxStatus');
+  status.textContent = '환율 조회 중...';
+  status.className = 'fx-status';
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/' + cur);
+    const data = await res.json();
+    if (data.result === 'success') {
+      const rate = data.rates.KRW;
+      $('bep-fx').value = rate.toFixed(2);
+      const ts = new Date(data.time_last_update_utc).toLocaleString('ko-KR');
+      status.textContent = `✓ ${ts} 기준 1 ${cur} = ${rate.toFixed(2)}원`;
+      status.className = 'fx-status ok';
+      runBep();
+    } else throw new Error('API 응답 오류');
+  } catch (err) {
+    status.textContent = '⚠ 환율 조회 실패 — 직접 입력해주세요.';
+    status.className = 'fx-status err';
+  }
+}
+$('bepFxBtn').addEventListener('click', loadBepFx);
+document.querySelectorAll('input[name=bepCurrency]').forEach(el => {
+  el.addEventListener('change', loadBepFx);
+});
+
+// 2) 고정비용 다중 통화 환율 (CNY·USD → KRW 동시 보유)
+const bepRates = { KRW: 1, CNY: null, USD: null };
+async function loadBepRates() {
+  const info = $('bepRatesInfo');
+  info.textContent = '환율 조회 중...';
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const d = await res.json();
+    if (d.result !== 'success') throw new Error('API 오류');
+    const usdToKrw = d.rates.KRW;
+    const usdToCny = d.rates.CNY;
+    bepRates.USD = usdToKrw;
+    bepRates.CNY = usdToKrw / usdToCny;
+    const ts = new Date(d.time_last_update_utc).toLocaleString('ko-KR', { dateStyle:'short', timeStyle:'short' });
+    info.innerHTML = `<b>${ts}</b> 기준 · 1 USD = <b>${bepRates.USD.toFixed(2)}원</b> · 1 CNY = <b>${bepRates.CNY.toFixed(2)}원</b>`;
+    runBep();
+  } catch (err) {
+    info.textContent = '⚠ 환율 조회 실패 — 한화로 직접 입력해주세요.';
+  }
+}
+$('bepRatesBtn').addEventListener('click', loadBepRates);
+
+// 통화 선택 변경 시 즉시 재계산
+['mold','dev','cert','test','etc'].forEach(k => {
+  const sel = $('bep-' + k + '-cur');
+  if (sel) sel.addEventListener('change', runBep);
+});
+
+// 통화별 KRW 환산 헬퍼
+function bepCostInKrw(id) {
+  const v = num(id);
+  const cur = ($(id + '-cur') || {}).value || 'KRW';
+  const rate = bepRates[cur] || 1;
+  return { krw: v * rate, raw: v, cur, rate };
+}
+function updateConv(key) {
+  const r = bepCostInKrw('bep-' + key);
+  const el = $('bep-' + key + '-conv');
+  if (!el) return;
+  if (r.cur === 'KRW' || r.raw === 0) { el.textContent = ''; return; }
+  if (!bepRates[r.cur]) { el.textContent = '환율 미조회'; return; }
+  el.textContent = `≈ ${krw(r.krw)} (1 ${r.cur} = ${r.rate.toFixed(2)}원)`;
+}
+
+/* ═══════════ "값 가져오기" — 메인 탭에서 단가/환율/판매가 등 복사 ═══════════ */
+$('bepPullBtn').addEventListener('click', () => {
+  // 통화 라디오
+  const mainCur = document.querySelector('input[name=currency]:checked').value;
+  const bepCurEl = document.querySelector(`input[name="bepCurrency"][value="${CSS.escape(mainCur)}"]`);
+  if (bepCurEl) bepCurEl.checked = true;
+  // 값 복사
+  $('bep-cost').value = $('cost').value;
+  $('bep-fx').value = $('fx').value;
+  $('bep-price').value = $('price').value;
+  $('bep-vat').value = $('vat').value;
+  $('bep-fee').value = $('fee').value;
+  runBep();
+});
+
+/* ═══════════ BEP 계산 ═══════════ */
+function runBep() {
+  // 각 항목 통화별 환산 후 합산
+  const keys = ['mold','dev','cert','test','etc'];
+  let fixedTotal = 0;
+  keys.forEach(k => {
+    fixedTotal += bepCostInKrw('bep-' + k).krw;
+    updateConv(k);
+  });
+  $('bep-fixed-total').textContent = krw(fixedTotal);
+
+  const cost = num('bep-cost');
+  const fx = num('bep-fx');
+  const price = num('bep-price');
+  const vatRate = num('bep-vat') / 100;
+  const feeRate = num('bep-fee') / 100;
+
+  // 변동원가 = 단가×환율 (BEP 페이지에서는 단순화. 운임/관세는 메인에서 가져온 값 안에 녹일 수 있음)
+  const variableCostPerUnit = cost * fx;
+  const supplyPrice = price / (1 + vatRate);
+  const feeAmount = price * feeRate;
+  const netRevenue = supplyPrice - feeAmount;
+  const marginPerUnit = netRevenue - variableCostPerUnit;
+  const marginRate = price > 0 ? (marginPerUnit / price) * 100 : 0;
+
+  $('bep-out-price').textContent = krw(price);
+  $('bep-var-cost').textContent = krw(variableCostPerUnit);
+  $('bep-margin').textContent = krw(marginPerUnit);
+  $('bep-margin-rate').textContent = pct(marginRate);
+
+  // ── 마케팅 미반영 BEP hero ──
+  const hero = $('bepHero');
+  let baseBepQty = null;
+  if (marginPerUnit > 0 && fixedTotal > 0) {
+    baseBepQty = Math.ceil(fixedTotal / marginPerUnit);
+    $('bep-qty').textContent = baseBepQty.toLocaleString('ko-KR') + ' 개';
+    $('bep-revenue').textContent = '손익분기 매출 ' + krw(baseBepQty * price);
+    hero.classList.remove('unreachable');
+  } else if (fixedTotal === 0) {
+    baseBepQty = 0;
+    $('bep-qty').textContent = '0 개';
+    $('bep-revenue').textContent = '고정비 없음 (1개부터 흑자)';
+    hero.classList.remove('unreachable');
+  } else {
+    $('bep-qty').textContent = '∞';
+    $('bep-revenue').textContent = '개당 공헌이익 ≤ 0 — 팔수록 손실';
+    hero.classList.add('unreachable');
+  }
+
+  // ── 마케팅 ROAS 반영 BEP ──
+  const mktOn = $('bep-mkt-on') && $('bep-mkt-on').checked;
+  const mktModeEl = document.querySelector('input[name=bepMktMode]:checked');
+  const mktMode = mktModeEl ? mktModeEl.value : 'pct';
+  let adCost = 0;
+  if (mktMode === 'pct') {
+    const r = num('bep-mkt-pct');
+    adCost = r > 0 ? price / (r / 100) : 0;
+  } else {
+    adCost = num('bep-mkt-cost');
+  }
+  const marginAfterAd = marginPerUnit - adCost;
+
+  $('bep-mkt-adcost').textContent = krw(adCost);
+  $('bep-mkt-margin').textContent = krw(marginAfterAd);
+
+  const heroMkt = $('bepHeroMkt');
+  let mktBepQty = null;
+  if (mktOn) {
+    if (marginAfterAd > 0 && fixedTotal > 0) {
+      mktBepQty = Math.ceil(fixedTotal / marginAfterAd);
+      $('bep-mkt-qty').textContent = mktBepQty.toLocaleString('ko-KR') + ' 개';
+      $('bep-mkt-revenue').textContent = '손익분기 매출 ' + krw(mktBepQty * price);
+      heroMkt.classList.remove('unreachable');
+    } else if (fixedTotal === 0 && marginAfterAd > 0) {
+      mktBepQty = 0;
+      $('bep-mkt-qty').textContent = '0 개';
+      $('bep-mkt-revenue').textContent = '고정비 없음 (1개부터 흑자)';
+      heroMkt.classList.remove('unreachable');
+    } else {
+      $('bep-mkt-qty').textContent = '∞';
+      $('bep-mkt-revenue').textContent = '광고비가 공헌이익을 잠식 — 도달 불가';
+      heroMkt.classList.add('unreachable');
+    }
+    // 차이 표시
+    if (baseBepQty != null && mktBepQty != null) {
+      const diff = mktBepQty - baseBepQty;
+      $('bep-mkt-diff').innerHTML = diff > 0
+        ? `📈 마케팅 미반영 대비 <b style="color:#dc2626;">+${diff.toLocaleString('ko-KR')}개</b> 더 팔아야 BEP 도달`
+        : (diff === 0 ? '광고비 미반영과 동일' : '');
+    } else if (baseBepQty != null && mktBepQty == null) {
+      $('bep-mkt-diff').innerHTML = `⚠ 미반영 BEP는 <b>${baseBepQty.toLocaleString('ko-KR')}개</b> 였으나, 광고비 적용 시 <b style="color:#dc2626;">도달 불가</b>`;
+    } else {
+      $('bep-mkt-diff').textContent = '';
+    }
+  }
+
+  // ── 시뮬레이션 (마케팅 옵션 반영) ──
+  const simQty = Math.max(0, num('bep-sim-qty'));
+  const simMonthly = Math.max(0, num('bep-sim-monthly'));
+  const effMargin = mktOn ? marginAfterAd : marginPerUnit;
+  const effBepQty = mktOn ? mktBepQty : baseBepQty;
+  const simRevenue = simQty * price;
+  const simContri = simQty * effMargin;
+  const simFinal = simContri - fixedTotal;
+  $('bep-sim-revenue').textContent = krw(simRevenue);
+  $('bep-sim-contri').textContent = krw(simContri) + (mktOn ? ' (마케팅 반영)' : '');
+  $('bep-sim-final').textContent = krw(simFinal);
+  $('bep-sim-final-row').classList.toggle('loss', simFinal < 0);
+
+  if (effMargin > 0 && fixedTotal > 0 && simMonthly > 0 && effBepQty != null) {
+    const months = effBepQty / simMonthly;
+    const wholeMonths = Math.floor(months);
+    let txt;
+    if (months < 1) {
+      const days = Math.ceil(months * 30);
+      txt = `약 ${days}일 후`;
+    } else if (months < 12) {
+      const days = Math.round((months - wholeMonths) * 30);
+      txt = `약 ${wholeMonths}개월${days > 0 ? ' ' + days + '일' : ''} 후`;
+    } else {
+      const years = Math.floor(months / 12);
+      const restMonths = wholeMonths - years * 12;
+      txt = `약 ${years}년${restMonths > 0 ? ' ' + restMonths + '개월' : ''} 후`;
+    }
+    $('bep-sim-when').textContent = txt + (mktOn ? ' (마케팅 반영)' : '');
+  } else if (simMonthly === 0) {
+    $('bep-sim-when').textContent = '월 판매수량 입력 시 계산';
+  } else {
+    $('bep-sim-when').textContent = '도달 불가';
+  }
+}
+// BEP 입력 변경 시 자동 재계산
+['bep-mold','bep-dev','bep-cert','bep-test','bep-etc',
+ 'bep-cost','bep-fx','bep-price','bep-vat','bep-fee',
+ 'bep-sim-qty','bep-sim-monthly',
+ 'bep-mkt-pct','bep-mkt-cost'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', runBep);
+});
+
+// 마케팅 ROAS 토글 / 모드
+$('bep-mkt-on').addEventListener('change', () => {
+  $('bepMktBody').hidden = !$('bep-mkt-on').checked;
+  runBep();
+});
+document.querySelectorAll('input[name=bepMktMode]').forEach(el => {
+  el.addEventListener('change', () => {
+    const mode = document.querySelector('input[name=bepMktMode]:checked').value;
+    $('bep-mkt-panel-pct').hidden = (mode !== 'pct');
+    $('bep-mkt-panel-cost').hidden = (mode !== 'cost');
+    runBep();
+  });
+});
+// ROAS 섹션 접기/펼치기
+$('roasToggleBtn').addEventListener('click', () => {
+  const body = $('roasBody');
+  const btn = $('roasToggleBtn');
+  const willHide = !body.hidden;
+  body.hidden = willHide;
+  btn.textContent = willHide ? '펼치기 ▼' : '접기 ▲';
+  btn.setAttribute('aria-expanded', String(!willHide));
+});
+document.querySelectorAll('input[name=expMode]').forEach(el => {
+  el.addEventListener('change', calc);
+});
+document.querySelectorAll('input[name=fclType]').forEach(el => {
+  el.addEventListener('change', () => { applyFclDefault(); calc(); });
+});
+$('refreshBtn').addEventListener('click', loadFx);
+$('syncBtn').addEventListener('click', syncToForwarder);
+
+/* ---------- 기록표 (localStorage) ---------- */
+const STORAGE_KEY = 'calc-history-v1';
+const RADIO_GROUPS = ['currency', 'fwdType', 'expMode', 'fclType', 'roasMode'];
+
+function captureState() {
+  const state = {};
+  document.querySelectorAll('input').forEach(el => {
+    if (el.type === 'radio') {
+      if (el.checked) state['__' + el.name] = el.value;
+    } else if (el.id) {
+      state[el.id] = el.value;
+    }
+  });
+  return state;
+}
+
+function applyState(state) {
+  // 라디오 버튼 먼저 복원 (패널 visibility 때문)
+  RADIO_GROUPS.forEach(name => {
+    const v = state['__' + name];
+    if (v) {
+      const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(v)}"]`);
+      if (el) el.checked = true;
+    }
+  });
+  // 나머지 input 복원
+  Object.entries(state).forEach(([k, v]) => {
+    if (k.startsWith('__')) return;
+    const el = document.getElementById(k);
+    if (el) el.value = v;
+  });
+  updateFwdPanelVisibility();
+  updateExpSubVisibility();
+  calc();
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function writeHistory(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+function saveRecord() {
+  const state = captureState();
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+  const records = loadHistory();
+  const seq = records.length + 1;
+  const record = {
+    id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+    name: `계산 #${seq}`,
+    date: dateStr,
+    state: state
+  };
+  records.unshift(record);
+  writeHistory(records);
+  renderHistory();
+}
+
+function updateRecord(id, field, value) {
+  const records = loadHistory();
+  const r = records.find(x => x.id === id);
+  if (r) { r[field] = value; writeHistory(records); }
+}
+
+function loadRecord(id) {
+  const records = loadHistory();
+  const r = records.find(x => x.id === id);
+  if (!r) {
+    console.warn('[loadRecord] id 매칭 실패:', id, 'history ids =', records.map(x => x.id));
+    alert('해당 기록을 찾을 수 없습니다. (id=' + id + ')\n진단 버튼을 눌러 저장된 기록을 확인해보세요.');
+    return;
+  }
+  if (!r.state || typeof r.state !== 'object') {
+    console.error('[loadRecord] state 손상:', r);
+    alert('기록은 있으나 데이터(state)가 손상되었습니다.\n진단 버튼에서 raw 데이터를 확인하세요.');
+    return;
+  }
+  try {
+    applyState(r.state);
+  } catch (err) {
+    console.error('[loadRecord] applyState 실패:', err, r);
+    alert('불러오던 중 오류:\n' + (err && err.message ? err.message : err) +
+          '\n\nF12 → Console 의 빨간 메시지를 보여주시면 원인 파악에 도움이 됩니다.');
+  }
+}
+
+function deleteRecord(id) {
+  if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+  writeHistory(loadHistory().filter(x => x.id !== id));
+  renderHistory();
+}
+
+function summarize(state) {
+  // 저장된 state에서 모든 결과값 역산 (저장 시점의 환율·입력 기준)
+  const cost = parseFloat(state.cost) || 0;
+  const fx = parseFloat(state.fx) || 0;
+  const price = parseFloat(state.price) || 0;
+  const shipping = parseFloat(state.shipping) || 0;
+  const customsTotal = parseFloat(state.customs) || 0;
+  const feeRate = (parseFloat(state.fee) || 0) / 100;
+  const vatRate = (parseFloat(state.vat) || 0) / 100;
+  const qty = Math.max(1, parseInt(state.totalQty) || 1);
+  const costKrw = cost * fx;
+
+  let fwdTotal = 0;
+  const type = state.__fwdType || 'LCL';
+  if (type === 'FCL') {
+    fwdTotal = parseFloat(state['fcl-cost']) || 0;
+  } else if (type === 'LCL') {
+    const base = parseFloat(state['lcl-base']) || 0;
+    const baseCbm = parseFloat(state['lcl-base-cbm']) || 0.5;
+    const extra = parseFloat(state['lcl-extra']) || 0;
+    const cbm = parseFloat(state['lcl-cbm']) || 0;
+    fwdTotal = base;
+    if (cbm > baseCbm) {
+      const extraCbm = Math.round((cbm - baseCbm) * 10000) / 10000;
+      fwdTotal += Math.ceil(extraCbm * 10) * extra;
+    }
+  } else if (type === 'EXP') {
+    const mode = state.__expMode || 'VOL';
+    if (mode === 'VOL') {
+      const div = parseFloat(state['exp-div']) || 5000;
+      const volBase = parseFloat(state['exp-vol-base']) || 0;
+      const volBaseKg = parseFloat(state['exp-vol-base-kg']) || 0.5;
+      const extraRate = parseFloat(state['exp-rate-vol']) || 0;
+      const roundUnit = parseFloat(state['exp-round']) || 0.5;
+      const cbm = parseFloat(state['exp-cbm']) || 0;
+      const actual = parseFloat(state['exp-actual']) || 0;
+      const volW = cbm * 1000000 / div;
+      const chargeable = Math.max(actual, volW);
+      fwdTotal = volBase;
+      if (chargeable > volBaseKg) {
+        const extraKg = Math.round((chargeable - volBaseKg) * 10000) / 10000;
+        const extraUnits = roundUnit > 0 ? Math.ceil(extraKg / roundUnit) : 0;
+        fwdTotal += extraUnits * extraRate;
+      }
+    } else {
+      const rtBase = parseFloat(state['exp-rt-base']) || 0;
+      const rtBaseRT = parseFloat(state['exp-rt-base-rt']) || 1;
+      const extraRate = parseFloat(state['exp-rate-rt']) || 0;
+      const cbm = parseFloat(state['exp-cbm-rt']) || 0;
+      const kg = parseFloat(state['exp-kg-rt']) || 0;
+      const rt = Math.max(cbm, kg / 1000);
+      fwdTotal = rtBase;
+      if (rt > rtBaseRT) {
+        const extraRT = Math.round((rt - rtBaseRT) * 10000) / 10000;
+        fwdTotal += Math.ceil(extraRT * 10) * extraRate;
+      }
+    }
+  }
+
+  const fwdPU = fwdTotal / qty;
+  const customsPU = customsTotal / qty;
+  const totalCost = costKrw + shipping + fwdPU + customsPU;
+  const supply = price / (1 + vatRate);
+  const feeAmount = price * feeRate;
+  const net = supply - feeAmount;
+  const profit = net - totalCost;
+  const rate = price > 0 ? (profit / price) * 100 : 0;
+  const breakEven = fx > 0 ? (net - shipping - fwdPU - customsPU) / fx : 0;
+
+  return {
+    currency: state.__currency || 'CNY',
+    cost, fx, costKrw, qty, price, shipping,
+    fwdType: type,
+    fwdTotal, fwdPU,
+    customsTotal, customsPU,
+    feePercent: (parseFloat(state.fee) || 0),
+    vatPercent: (parseFloat(state.vat) || 0),
+    supply, feeAmount, net,
+    totalCost, profit, rate, breakEven
+  };
+}
+
+function updateSelCount() {
+  const boxes = document.querySelectorAll('.hist-check');
+  const n = document.querySelectorAll('.hist-check:checked').length;
+  const el = $('selCount');
+  if (el) el.textContent = n;
+  const btn = $('selectAllBtn');
+  if (btn) {
+    btn.textContent = (boxes.length > 0 && n === boxes.length) ? '☐ 전체 해제' : '☑ 전체 선택';
+  }
+}
+
+function renderHistory() {
+  const records = loadHistory();
+  const body = $('historyBody');
+  if (!records.length) {
+    body.innerHTML = '<div class="sidebar-empty">저장된 기록이 없습니다.<br>상단의 "+ 현재 계산 저장" 버튼을 눌러보세요.</div>';
+    updateSelCount();
+    return;
+  }
+  body.innerHTML = records.map(r => {
+    const s = summarize(r.state);
+    const cls = s.profit >= 0 ? 'positive' : 'negative';
+    const sign = s.rate >= 0 ? '+' : '';
+    return `
+    <div class="hist-card">
+      <div class="hist-card-head">
+        <input type="checkbox" class="hist-check" data-id="${r.id}">
+        <input class="hist-name" data-id="${r.id}" value="${r.name.replace(/"/g, '&quot;')}">
+      </div>
+      <input type="date" class="hist-date" data-id="${r.id}" value="${r.date}">
+      <div class="hist-profit ${cls}">${krw(s.profit)} <span style="font-size:12px;opacity:0.9;">(${sign}${s.rate.toFixed(1)}%)</span></div>
+      <div class="hist-detail">
+        ${s.currency} ${(+s.cost).toLocaleString('ko-KR')} × ${s.qty.toLocaleString('ko-KR')}개<br>
+        판매가 ₩${Math.round(s.price).toLocaleString('ko-KR')} · 환율 ${(+s.fx).toLocaleString('ko-KR')}
+      </div>
+      <div class="hist-actions">
+        <button class="load" data-id="${r.id}">불러오기</button>
+        <button class="single-dl" data-id="${r.id}" title="이 기록만 엑셀로 다운로드">⬇</button>
+        <button class="del" data-id="${r.id}">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  body.querySelectorAll('.hist-name').forEach(el =>
+    el.addEventListener('change', e => updateRecord(e.target.dataset.id, 'name', e.target.value)));
+  body.querySelectorAll('.hist-date').forEach(el =>
+    el.addEventListener('change', e => updateRecord(e.target.dataset.id, 'date', e.target.value)));
+  body.querySelectorAll('.load').forEach(el =>
+    el.addEventListener('click', e => loadRecord(e.target.dataset.id)));
+  body.querySelectorAll('.del').forEach(el =>
+    el.addEventListener('click', e => deleteRecord(e.target.dataset.id)));
+  body.querySelectorAll('.single-dl').forEach(el =>
+    el.addEventListener('click', e => exportSingle(e.currentTarget.dataset.id)));
+  body.querySelectorAll('.hist-check').forEach(el =>
+    el.addEventListener('change', updateSelCount));
+  updateSelCount();
+}
+
+function downloadRecords(records, suffix = '') {
+  if (!records.length) {
+    alert('다운로드할 기록이 없습니다.');
+    return;
+  }
+
+  // 컬럼 A 여백 + B~O 14개 핵심 항목
+  const headers = [
+    '',             // A (여백)
+    '이름',         // B
+    '날짜',         // C
+    '통화',         // D
+    '원가(외화)',   // E
+    '환율',         // F
+    '원가(원화)',   // G
+    '발주수량',     // H
+    '판매가(원)',   // I
+    '운임 방식',    // J
+    '개당 운임비',  // K
+    '개당 부대비용',// L
+    '총 비용(개당)',// M
+    '영업이익(개당)',// N
+    '이익률(%)'     // O
+  ];
+
+  const rows = records.map(r => {
+    const s = r.state;
+    const m = summarize(s);
+    return [
+      '',                                   // A
+      r.name,                               // B
+      r.date,                               // C
+      m.currency,                           // D
+      s.cost || '',                         // E
+      s.fx || '',                           // F
+      Math.round(m.costKrw),                // G
+      m.qty,                                // H
+      s.price || '',                        // I
+      m.fwdType,                            // J
+      Math.round(m.fwdPU),                  // K
+      Math.round(m.customsPU),              // L
+      Math.round(m.totalCost),              // M
+      Math.round(m.profit),                 // N
+      m.rate.toFixed(2)                     // O
+    ];
+  });
+
+  const esc = v => {
+    const s = String(v ?? '');
+    return (s.includes(',') || s.includes('"') || s.includes('\n'))
+      ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+
+  const BOM = '\uFEFF'; // Excel UTF-8 인식용
+  const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const ds = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  a.download = `원가계산기록${suffix}_${ds}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function toggleSelectAll() {
+  const boxes = document.querySelectorAll('.hist-check');
+  if (!boxes.length) return;
+  const allChecked = Array.from(boxes).every(b => b.checked);
+  boxes.forEach(b => { b.checked = !allChecked; });
+  updateSelCount();
+  $('selectAllBtn').textContent = allChecked ? '☑ 전체 선택' : '☐ 전체 해제';
+}
+
+function exportSelected() {
+  const ids = Array.from(document.querySelectorAll('.hist-check:checked')).map(el => el.dataset.id);
+  if (!ids.length) {
+    alert('선택된 기록이 없습니다. 카드 좌측의 체크박스를 선택해주세요.');
+    return;
+  }
+  const records = loadHistory().filter(r => ids.includes(r.id));
+  downloadRecords(records, `_선택${records.length}건`);
+}
+
+function exportSingle(id) {
+  const r = loadHistory().find(x => x.id === id);
+  if (!r) return;
+  const safeName = (r.name || '').replace(/[\\\/\:\*\?\"\<\>\|]/g, '_').trim().slice(0, 30) || '기록';
+  downloadRecords([r], '_' + safeName);
+}
+
+$('saveBtn').addEventListener('click', saveRecord);
+$('selectAllBtn').addEventListener('click', toggleSelectAll);
+$('exportSelBtn').addEventListener('click', exportSelected);
+function toggleSidebar(force) {
+  const willOpen = typeof force === 'boolean' ? force : !document.body.classList.contains('sidebar-open');
+  document.body.classList.toggle('sidebar-open', willOpen);
+  $('sidebarToggle').textContent = willOpen ? '◀ 닫기' : '📋 기록';
+}
+$('sidebarToggle').addEventListener('click', () => toggleSidebar());
+$('sidebarOverlay').addEventListener('click', () => toggleSidebar(false));
+$('mSave').addEventListener('click', () => {
+  saveRecord();
+  // 저장 후 시각적 피드백: 잠깐 색상 변화
+  const btn = $('mSave');
+  const orig = btn.textContent;
+  btn.textContent = '✓ 저장됨';
+  setTimeout(() => btn.textContent = orig, 900);
+});
+$('mSaveOpen').addEventListener('click', () => toggleSidebar());
+// ESC 키로 사이드바 닫기
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) toggleSidebar(false);
+});
+renderHistory();
+
+/* ---------- 기록 진단 / 강제 복원 ---------- */
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openDiagnostic() {
+  // 모든 calc 관련 키 스캔
+  const allKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (k.includes('calc') || k.includes('history') || k.includes('record'))) allKeys.push(k);
+  }
+
+  let html = '<div style="background:#fef3c7; padding:10px; border-radius:6px; margin-bottom:14px; color:#78350f; font-size:13px;">🔍 이 기기 브라우저(localStorage)에서 발견된 모든 기록입니다. 항목을 클릭하면 강제 복원됩니다.</div>';
+
+  // 정상 키
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let parsed = null;
+  try { parsed = JSON.parse(raw || '[]'); } catch(e) {}
+
+  html += `<div style="font-size:13px; font-weight:700; color:#111827; margin-bottom:8px;">📦 ${STORAGE_KEY}: ${Array.isArray(parsed) ? parsed.length + '건' : '❌ 손상'}</div>`;
+
+  if (Array.isArray(parsed) && parsed.length) {
+    parsed.forEach((r, idx) => {
+      let summary = '';
+      try {
+        const s = summarize(r.state || {});
+        summary = `${s.currency} ${(+s.cost).toLocaleString('ko-KR')} × ${s.qty}개 · 판매가 ₩${Math.round(s.price).toLocaleString('ko-KR')} · 영업이익 ${krw(s.profit)} (${s.rate.toFixed(1)}%)`;
+      } catch(e) {
+        summary = '<span style="color:#dc2626;">⚠ summarize 실패: ' + escHtml(e.message) + '</span>';
+      }
+      html += `
+        <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-bottom:8px; background:#fff;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div style="flex:1;">
+              <div style="font-weight:700; color:#111827; font-size:14px;">${escHtml(r.name || '(이름 없음)')}</div>
+              <div style="font-size:12px; color:#6b7280; margin-top:3px;">📅 ${escHtml(r.date || '(날짜 없음)')}</div>
+              <div style="font-size:12px; color:#374151; margin-top:5px;">${summary}</div>
+              <div style="font-size:10.5px; color:#9ca3af; margin-top:4px; font-family:monospace;">id: ${escHtml(r.id || '(없음)')}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <button onclick="diagForceLoad(${idx})" style="padding:7px 12px; background:#4f46e5; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap;">▶ 강제 복원</button>
+              <button onclick="diagDump(${idx})" style="padding:5px 10px; background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:6px; cursor:pointer; font-size:11px;">🔍 콘솔 출력</button>
+            </div>
+          </div>
+        </div>`;
+    });
+  } else {
+    html += '<div style="color:#dc2626; padding:10px; background:#fee2e2; border-radius:6px; font-size:13px;">⚠️ 정상 키에는 저장된 기록이 없습니다.</div>';
+  }
+
+  // 모든 관련 키
+  html += '<div style="font-size:13px; font-weight:700; color:#111827; margin:18px 0 8px;">🗝 이 도메인에 저장된 모든 관련 키</div>';
+  if (allKeys.length === 0) {
+    html += `<div style="color:#dc2626; padding:10px; background:#fee2e2; border-radius:6px; font-size:13px;">
+      ❌ 관련 localStorage 키가 전혀 없습니다.<br><br>
+      <b>가능한 원인:</b><br>
+      • 다른 브라우저(Chrome/Edge/Safari)에서 저장 → 그 브라우저로 열어야 합니다<br>
+      • 다른 PC/핸드폰에서 저장 → localStorage는 기기별로 분리됨<br>
+      • 시크릿/프라이빗 모드에서 저장 → 창 닫으면 사라짐<br>
+      • 브라우저 사이트 데이터/쿠키 삭제 실행됨<br>
+      • HTML 파일을 다른 폴더로 이동 → file:// Origin이 달라져 별도 저장소
+    </div>`;
+  } else {
+    allKeys.forEach(k => {
+      const v = localStorage.getItem(k);
+      const size = v ? (v.length / 1024).toFixed(1) : '0';
+      let preview = '';
+      try {
+        const p = JSON.parse(v);
+        if (Array.isArray(p)) preview = `[배열 ${p.length}건]`;
+        else if (typeof p === 'object') preview = `{객체, 키 ${Object.keys(p).length}개}`;
+      } catch(e) { preview = '(JSON 아님)'; }
+      const isCurrent = k === STORAGE_KEY;
+      html += `<div style="padding:7px 10px; background:${isCurrent ? '#ecfdf5' : '#f9fafb'}; border:1px solid ${isCurrent ? '#a7f3d0' : '#e5e7eb'}; border-radius:6px; margin-bottom:4px; font-size:12px;">
+        <span style="color:#4f46e5; font-family:monospace; font-weight:600;">${escHtml(k)}</span>
+        <span style="color:#6b7280;"> — ${size} KB · ${escHtml(preview)}</span>
+        ${!isCurrent ? `<button onclick="diagMigrate('${escHtml(k)}')" style="margin-left:8px; padding:3px 8px; background:#fff; border:1px solid #d1d5db; border-radius:4px; cursor:pointer; font-size:11px;">📥 이 키에서 가져오기</button>` : ''}
+      </div>`;
+    });
+  }
+
+  showDiagModal(html);
+}
+
+function showDiagModal(inner) {
+  let m = document.getElementById('diagModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'diagModal';
+    m.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(17,24,39,0.55); z-index:99999; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;';
+    m.innerHTML = `
+      <div style="background:#fff; border-radius:14px; width:100%; max-width:720px; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;">
+        <div style="padding:16px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:16px; font-weight:700;">🔧 기록 진단 / 강제 복원</div>
+          <button onclick="document.getElementById('diagModal').style.display='none'" style="background:none; border:none; font-size:24px; color:#6b7280; cursor:pointer;">×</button>
+        </div>
+        <div id="diagBody" style="padding:18px 22px; max-height:75vh; overflow-y:auto;"></div>
+      </div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+  }
+  document.getElementById('diagBody').innerHTML = inner;
+  m.style.display = 'flex';
+}
+
+function diagForceLoad(idx) {
+  const arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const r = arr[idx];
+  if (!r) { alert('기록을 찾을 수 없습니다.'); return; }
+  if (!r.id) { r.id = 'r' + Date.now(); arr[idx] = r; localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+  document.getElementById('diagModal').style.display = 'none';
+  if (!document.body.classList.contains('sidebar-open')) document.body.classList.add('sidebar-open');
+  loadRecord(r.id);
+  setTimeout(() => alert('"' + (r.name||'(이름없음)') + '" 복원 완료'), 100);
+}
+
+function diagDump(idx) {
+  const arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  console.log('━━━ 기록 #' + idx + ' raw 데이터 ━━━');
+  console.log(arr[idx]);
+  alert('F12 → Console 탭에 raw 데이터가 출력되었습니다.');
+}
+
+function diagMigrate(key) {
+  if (!confirm(`"${key}" 의 데이터를 정상 저장소(${STORAGE_KEY})로 가져옵니다.\n기존 기록 뒤에 합쳐집니다. 계속할까요?`)) return;
+  try {
+    const src = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!Array.isArray(src)) { alert('해당 키는 배열이 아니라 가져올 수 없습니다.'); return; }
+    const cur = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const existingIds = new Set(cur.map(x => x.id));
+    let added = 0;
+    src.forEach(r => {
+      if (!r) return;
+      if (!r.id) r.id = 'r' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      if (!existingIds.has(r.id)) { cur.push(r); added++; }
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cur));
+    renderHistory();
+    document.getElementById('diagModal').style.display = 'none';
+    alert(`${added}건 추가되었습니다.`);
+  } catch (err) {
+    alert('가져오기 실패: ' + err.message);
+  }
+}
+
+$('diagBtn').addEventListener('click', openDiagnostic);
+/* ---------- /진단 ---------- */
+
+/* ---------- /기록표 ---------- */
+
+updateFwdPanelVisibility();
+updateExpSubVisibility();
+loadFx();
+</script>
+</body>
+</html>
