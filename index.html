@@ -2016,7 +2016,7 @@
     <div class="po-form-grid">
       <div class="form-row">
         <label>발주일 *</label>
-        <input type="date" id="poDate" />
+        <input type="date" id="poDate" onchange="onPOCurrencyOrDateChange()" />
       </div>
       <div class="form-row">
         <label>거래처 *</label>
@@ -2025,7 +2025,7 @@
       </div>
       <div class="form-row">
         <label>통화</label>
-        <select id="poCurrency" onchange="recalcPOTotal()">
+        <select id="poCurrency" onchange="onPOCurrencyOrDateChange()">
           <option value="KRW">₩ 원 (KRW)</option>
           <option value="USD">$ 달러 (USD)</option>
           <option value="CNY">¥ 위안 (CNY)</option>
@@ -2039,6 +2039,16 @@
           <option value="completed">완료</option>
           <option value="cancelled">취소</option>
         </select>
+      </div>
+      <div class="form-row" id="poFxRow" style="grid-column:span 2;display:none;">
+        <label>발주일 기준 환율</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:13px;color:#7f8c8d;" id="poFxBase">1 USD =</span>
+          <input type="number" id="poFxRate" step="0.0001" style="width:140px;" oninput="recalcPOTotal()" />
+          <span style="font-size:13px;color:#7f8c8d;">원</span>
+          <button type="button" class="ghost small" onclick="refetchPOFxRate()" title="발주일 기준 환율 다시 가져오기">🔄</button>
+          <span style="font-size:11px;color:#95a5a6;" id="poFxStatus"></span>
+        </div>
       </div>
     </div>
 
@@ -4192,9 +4202,8 @@ function saveContact() {
   closeContactModal();
   saveData();
   if (type !== contactFilter) switchContactFilter(type);
-  else renderContacts();
-  // 거래처 관리 모달 열려있으면 같이 새로고침
-  if (document.getElementById('vendorMgrModal')?.classList.contains('show')) renderVendorMgr();
+  // 모든 거래처 의존 화면 한 번에 갱신
+  refreshAfterVendorChange();
 }
 
 function closeContactModal() {
@@ -4209,8 +4218,7 @@ function deleteContact(id) {
   state.contacts = (state.contacts || []).filter(x => x.id !== id);
   if (_vendorMgrSelected === id) _vendorMgrSelected = null;
   saveData();
-  renderContacts();
-  if (document.getElementById('vendorMgrModal')?.classList.contains('show')) renderVendorMgr();
+  refreshAfterVendorChange();
 }
 
 function renderContacts() {
@@ -4955,6 +4963,27 @@ window.addEventListener('message', function (ev) {
   }
 });
 
+// ===== 거래처 ↔ 발주일지 실시간 연동 도우미 =====
+// 거래처 변경 시 발주 목록·발주 폼·우측 패널까지 한 번에 갱신
+function refreshAfterVendorChange() {
+  // 1) 우측 패널 거래처 탭 다시 그리기
+  try { if (typeof renderContacts === 'function') renderContacts(); } catch (e) {}
+  // 2) 거래처 관리 풀스크린 열려있으면 갱신
+  if (document.getElementById('vendorMgrModal')?.classList.contains('show')) {
+    try { renderVendorMgr(); } catch (e) {}
+  }
+  // 3) 발주일지 모달 열려있으면 목록 다시 그리기 (거래처명 즉시 반영)
+  if (document.getElementById('poModal')?.classList.contains('show')) {
+    try { renderPOList(); } catch (e) {}
+  }
+  // 4) 발주 추가/수정 폼 열려있으면 거래처 드롭다운 + 품목 자동완성 갱신
+  if (document.getElementById('poFormModal')?.classList.contains('show')) {
+    const curSelected = document.getElementById('poVendor')?.value || '';
+    try { populateVendorSelect(curSelected); } catch (e) {}
+    try { renderPOItemsForm(); } catch (e) {}
+  }
+}
+
 // ===== 거래처 관리 풀스크린 모달 =====
 let _vendorMgrSelected = null;   // 선택된 거래처 ID
 let _vendorMgrFilter = 'all';    // 'all' | 'domestic' | 'overseas'
@@ -5125,6 +5154,11 @@ function updateVendorItem(vid, idx, key, val) {
   if (key === 'unitPrice') v.items[idx][key] = parseFloat(val) || 0;
   else v.items[idx][key] = val;
   saveData();
+  // 발주 폼이 열려있고 같은 거래처면 자동완성 단가도 즉시 반영
+  if (document.getElementById('poFormModal')?.classList.contains('show') &&
+      document.getElementById('poVendor')?.value === vid) {
+    try { renderPOItemsForm(); } catch (e) {}
+  }
 }
 
 function addVendorItem(vid) {
@@ -5133,7 +5167,7 @@ function addVendorItem(vid) {
   v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
   v.items.push({ name: '', unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' });
   saveData();
-  renderVendorMgr();
+  refreshAfterVendorChange();
 }
 
 function removeVendorItem(vid, idx) {
@@ -5143,7 +5177,7 @@ function removeVendorItem(vid, idx) {
   v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i);
   v.items.splice(idx, 1);
   saveData();
-  renderVendorMgr();
+  refreshAfterVendorChange();
 }
 
 // ===== 발주일지 =====
@@ -5163,6 +5197,15 @@ function toKRW(amount, currency) {
   const r = state.fxRates && state.fxRates[currency];
   if (!r) return 0;
   return amount * r;
+}
+
+// 발주의 저장된 환율 우선 사용 (없으면 현재 환율로 폴백)
+function poToKRW(po) {
+  if (!po) return 0;
+  const cur = po.currency || 'KRW';
+  if (cur === 'KRW') return po.total || 0;
+  if (po.exchangeRate && po.exchangeRate > 0) return (po.total || 0) * po.exchangeRate;
+  return toKRW(po.total || 0, cur);
 }
 
 // 환율 로딩 (open.er-api.com — 무료, 키 불필요)
@@ -5192,6 +5235,27 @@ async function loadFxRates() {
   } catch (e) {
     console.warn('환율 로딩 실패:', e);
     if (info) info.textContent = '⚠ 환율 자동조회 실패 — 직접 입력 필요';
+  }
+}
+
+// 특정 날짜의 환율 조회 (frankfurter.app — 과거 환율 지원, 무료, 키 X)
+// 반환: { rate: 숫자, date: 'YYYY-MM-DD' } 또는 null
+async function fetchHistoricalRate(currency, date) {
+  if (!currency || currency === 'KRW') return { rate: 1, date };
+  if (!date) date = todayStr();
+  try {
+    // frankfurter: 미래 날짜·휴장일은 가장 가까운 영업일로 자동 매칭
+    const url = `https://api.frankfurter.app/${date}?from=${currency}&to=KRW`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('환율 API ' + res.status);
+    const data = await res.json();
+    if (!data.rates || !data.rates.KRW) throw new Error('KRW 환율 없음');
+    return { rate: data.rates.KRW, date: data.date || date };
+  } catch (e) {
+    console.warn('과거 환율 조회 실패:', e);
+    // 폴백: 현재 환율 캐시
+    const fallback = (state.fxRates && state.fxRates[currency]) || null;
+    return fallback ? { rate: fallback, date: '(현재값)' } : null;
   }
 }
 
@@ -5325,7 +5389,7 @@ function renderPOList() {
     const vname = getVendorName(vid);
     const unpaidCount = arr.filter(p => p.status !== 'cancelled' && (!p.balance || !p.balance.paid)).length;
     const isCollapsed = !!collapsed[vid];
-    const totalKRW = arr.reduce((s, p) => s + toKRW(p.total || 0, p.currency || 'KRW'), 0);
+    const totalKRW = arr.reduce((s, p) => s + poToKRW(p), 0);
     const stats = `${arr.length}건 · 총 ${fmtMoney(totalKRW, 'KRW')}${unpaidCount > 0 ? ` · <span style="color:#e67e22;">미결 ${unpaidCount}</span>` : ''}`;
     const rows = arr.map(po => poItemRowHtml(po, today)).join('');
     return `
@@ -5345,7 +5409,7 @@ function poItemRowHtml(po, today) {
   const items = poItemsSummary(po);
   const cur = po.currency || 'KRW';
   const totalCur = fmtMoney(po.total || 0, cur);
-  const totalKrw = cur === 'KRW' ? '' : `<span class="pir-amount-krw">≈ ${fmtMoney(toKRW(po.total || 0, cur), 'KRW')}</span>`;
+  const totalKrw = cur === 'KRW' ? '' : `<span class="pir-amount-krw" title="${po.exchangeRate ? `발주일 환율 1${cur}=${po.exchangeRate.toFixed(4)}원` : '저장된 환율 없음 → 현재 환율로 추정'}">≈ ${fmtMoney(poToKRW(po), 'KRW')}${!po.exchangeRate ? ' *' : ''}</span>`;
   // 결제 상태
   const depositPaid = po.deposit && po.deposit.paid;
   const balancePaid = po.balance && po.balance.paid;
@@ -5401,6 +5465,9 @@ function addPO() {
   document.getElementById('poBalanceAmount').value = '';
   document.getElementById('poBalanceDueDate').value = '';
   document.getElementById('poNote').value = '';
+  document.getElementById('poFxRate').value = '';
+  document.getElementById('poFxStatus').textContent = '';
+  document.getElementById('poFxRow').style.display = 'none';
   document.getElementById('poDeleteBtn').style.display = 'none';
   _poItemsDraft = [{ name: '', qty: 1, unitPrice: 0 }];
   populateVendorSelect();
@@ -5425,6 +5492,25 @@ function editPO(id) {
   document.getElementById('poBalanceDueDate').value = po.balance?.dueDate || '';
   document.getElementById('poNote').value = po.note || '';
   document.getElementById('poDeleteBtn').style.display = '';
+  // 저장된 환율 복원
+  const fxRow = document.getElementById('poFxRow');
+  const fxRateInput = document.getElementById('poFxRate');
+  const fxStatusEl = document.getElementById('poFxStatus');
+  if ((po.currency || 'KRW') !== 'KRW') {
+    fxRow.style.display = '';
+    document.getElementById('poFxBase').textContent = `1 ${po.currency} =`;
+    if (po.exchangeRate) {
+      fxRateInput.value = po.exchangeRate;
+      fxStatusEl.textContent = `저장됨 (${po.exchangeRateDate || po.date})`;
+    } else {
+      fxRateInput.value = '';
+      fxStatusEl.textContent = '저장된 환율 없음';
+    }
+  } else {
+    fxRow.style.display = 'none';
+    fxRateInput.value = '';
+    fxStatusEl.textContent = '';
+  }
   _poItemsDraft = (po.items || []).map(i => ({ ...i }));
   if (_poItemsDraft.length === 0) _poItemsDraft = [{ name: '', qty: 1, unitPrice: 0 }];
   populateVendorSelect(po.vendorId);
@@ -5449,9 +5535,44 @@ function onPOVendorChange() {
   const v = (state.contacts || []).find(c => c.id === vid);
   if (v && v.type === 'overseas' && document.getElementById('poCurrency').value === 'KRW') {
     document.getElementById('poCurrency').value = 'USD';
-    recalcPOTotal();
+    onPOCurrencyOrDateChange();
   }
   renderPOItemsForm();
+}
+
+// 통화/날짜 변경 → 발주일 기준 환율 자동 조회 (KRW면 환율 영역 숨김)
+async function onPOCurrencyOrDateChange() {
+  const cur = document.getElementById('poCurrency').value;
+  const fxRow = document.getElementById('poFxRow');
+  if (cur === 'KRW' || !fxRow) {
+    if (fxRow) fxRow.style.display = 'none';
+    recalcPOTotal();
+    return;
+  }
+  fxRow.style.display = '';
+  document.getElementById('poFxBase').textContent = `1 ${cur} =`;
+  await refetchPOFxRate();
+}
+
+async function refetchPOFxRate() {
+  const cur = document.getElementById('poCurrency').value;
+  if (cur === 'KRW') return;
+  const date = document.getElementById('poDate').value || todayStr();
+  const statusEl = document.getElementById('poFxStatus');
+  const rateInput = document.getElementById('poFxRate');
+  if (statusEl) statusEl.textContent = '조회 중...';
+  const result = await fetchHistoricalRate(cur, date);
+  if (result && result.rate) {
+    rateInput.value = result.rate.toFixed(4);
+    if (statusEl) {
+      statusEl.textContent = result.date === '(현재값)'
+        ? '⚠ 과거 환율 조회 실패 — 현재 환율로 채움 (수동 수정 가능)'
+        : `✓ ${result.date} 환율`;
+    }
+  } else {
+    if (statusEl) statusEl.textContent = '⚠ 환율 못 가져옴 — 직접 입력하세요';
+  }
+  recalcPOTotal();
 }
 
 function renderPOItemsForm() {
@@ -5535,8 +5656,11 @@ function recalcPOTotal() {
   });
   const totalEl = document.getElementById('poTotalDisplay');
   if (totalEl) totalEl.textContent = fmtMoney(total, cur);
+  // 폼에 입력된 환율 우선 사용 (저장 시점의 환율)
+  const formRate = parseFloat(document.getElementById('poFxRate')?.value) || 0;
+  const krwTotal = cur === 'KRW' ? total : (formRate > 0 ? total * formRate : toKRW(total, cur));
   const krwEl = document.getElementById('poTotalKrwDisplay');
-  if (krwEl) krwEl.textContent = cur === 'KRW' ? '' : ` (≈ ${fmtMoney(toKRW(total, cur), 'KRW')})`;
+  if (krwEl) krwEl.textContent = cur === 'KRW' ? '' : ` (≈ ${fmtMoney(krwTotal, 'KRW')})`;
 }
 
 function onPODepositPaidToggle() {
@@ -5569,11 +5693,17 @@ async function savePO() {
   const balanceAmount = parseFloat(document.getElementById('poBalanceAmount').value) || (total - depositAmount);
   const balanceDueDate = document.getElementById('poBalanceDueDate').value;
 
+  // 환율 캡처 (외화일 때만 의미 있음)
+  const exchangeRate = parseFloat(document.getElementById('poFxRate').value) || 0;
+  const exchangeRateDate = document.getElementById('poDate').value || todayStr();
+
   const poData = {
     id: id || 'po_' + Date.now() + Math.random().toString(36).slice(2, 6),
     date, vendorId, currency, status, note,
     items: validItems.map(i => ({ name: i.name.trim(), qty: parseFloat(i.qty) || 0, unitPrice: parseFloat(i.unitPrice) || 0 })),
     total,
+    exchangeRate: currency === 'KRW' ? 1 : exchangeRate,        // 발주 저장 시점 환율
+    exchangeRateDate: currency === 'KRW' ? null : exchangeRateDate,
     deposit: (depositAmount > 0 || depositPaid) ? { paid: depositPaid, amount: depositAmount, date: depositDate } : null,
     balance: { paid: balancePaid, amount: balanceAmount, dueDate: balanceDueDate, paidDate: balancePaid ? (todayStr()) : '' }
   };
@@ -5607,6 +5737,8 @@ async function savePO() {
   closePOForm();
   renderPOList();
   checkPODueBanner();
+  // 거래처에 자동 등록된 새 품목이 있을 수 있으니 거래처 화면도 같이 갱신
+  refreshAfterVendorChange();
 }
 
 function deletePOFromForm() {
