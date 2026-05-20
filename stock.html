@@ -885,7 +885,7 @@
     }, 1200);
   }
 
-  // 페이지 로드 후: 5초마다 localStorage 변경 감지 → 부모에 전송
+  // 페이지 로드 후: 1.5초마다 localStorage 변경 감지 → 부모에 전송 (실시간 체감)
   function startSync() {
     let lastSnap = JSON.stringify(getMyData());
     setInterval(() => {
@@ -895,7 +895,7 @@
       try {
         window.parent.postMessage({ type: 'calc-data-update', kind: KIND, data: JSON.parse(cur) }, '*');
       } catch (e) {}
-    }, 5000);
+    }, 1500);
   }
   if (document.readyState === 'complete') startSync();
   else window.addEventListener('load', startSync);

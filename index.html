@@ -4955,16 +4955,76 @@ window.addEventListener('message', function (ev) {
     sendToFrame({ type: 'calc-data-restore', kind: d.kind, data: saved });
   }
 
-  // 3) 계산기가 자기 localStorage 변경 알림 → state에 저장 + Drive 싱크
+  // 3) 계산기가 자기 localStorage 변경 알림 → state에 저장 + Drive 싱크 + 거래처 역동기화
   if (d.type === 'calc-data-update' && (d.kind === 'cost' || d.kind === 'stock')) {
     if (!state.calculatorData) state.calculatorData = { cost: {}, stock: {} };
     state.calculatorData[d.kind] = d.data || {};
+    // 재고계산기 거래처/품목을 업무일지 state.contacts로 역동기화
+    let contactsChanged = false;
+    if (d.kind === 'stock' && d.data) {
+      try {
+        const stockVendors = JSON.parse(d.data.inv_vendors || '[]');
+        const stockLibrary = JSON.parse(d.data.inv_prod_library || '[]');
+        if (!state.contacts) state.contacts = [];
+        stockVendors.forEach(sv => {
+          if (!sv || !sv.name) return;
+          const svName = sv.name.trim();
+          let existing = state.contacts.find(c => (c.name || '').trim() === svName);
+          if (!existing) {
+            // 새 거래처 추가
+            existing = {
+              id: 'c_' + Date.now() + Math.random().toString(36).slice(2, 6),
+              type: (sv.country === 'KR' || sv.scope === 'domestic') ? 'domestic' : 'overseas',
+              name: svName,
+              persons: sv.contact ? [{ name: sv.contact, phone: sv.phone || '', role: '담당', email: '' }] : [],
+              items: [],
+              memo: sv.memo || sv.nameMemo || ''
+            };
+            state.contacts.push(existing);
+            contactsChanged = true;
+          } else {
+            // 누락 필드만 보충 (덮어쓰지 않음)
+            if ((!existing.persons || existing.persons.length === 0) && sv.contact) {
+              existing.persons = [{ name: sv.contact, phone: sv.phone || '', role: '담당', email: '' }];
+              contactsChanged = true;
+            }
+            if (!existing.memo && (sv.memo || sv.nameMemo)) {
+              existing.memo = sv.memo || sv.nameMemo;
+              contactsChanged = true;
+            }
+          }
+          // 라이브러리 품목을 contact.items에 머지
+          const myProducts = stockLibrary.filter(p => p && p.vendorId === sv.id);
+          if (myProducts.length > 0) {
+            existing.items = (existing.items || []).map(i => typeof i === 'string'
+              ? { name: i, unitPrice: 0, currency: existing.type === 'overseas' ? 'USD' : 'KRW' } : i);
+            myProducts.forEach(p => {
+              if (!p.name) return;
+              const itemMatch = existing.items.find(i => i.name === p.name);
+              if (!itemMatch) {
+                existing.items.push({
+                  name: p.name,
+                  unitPrice: p.unitPrice || 0,
+                  currency: p.currency || sv.defaultCurrency || (existing.type === 'overseas' ? 'USD' : 'KRW')
+                });
+                contactsChanged = true;
+              } else if ((!itemMatch.unitPrice || itemMatch.unitPrice === 0) && p.unitPrice > 0) {
+                itemMatch.unitPrice = p.unitPrice;
+                itemMatch.currency = p.currency || itemMatch.currency;
+                contactsChanged = true;
+              }
+            });
+          }
+        });
+      } catch (e) { console.warn('재고계산기 → 업무일지 거래처 동기화 실패:', e); }
+    }
     saveData();
+    if (contactsChanged) refreshAfterVendorChange();
   }
 });
 
 // ===== 거래처 ↔ 발주일지 실시간 연동 도우미 =====
-// 거래처 변경 시 발주 목록·발주 폼·우측 패널까지 한 번에 갱신
+// 거래처 변경 시 발주 목록·발주 폼·우측 패널 + 열려있는 재고계산기까지 한 번에 갱신
 function refreshAfterVendorChange() {
   // 1) 우측 패널 거래처 탭 다시 그리기
   try { if (typeof renderContacts === 'function') renderContacts(); } catch (e) {}
@@ -4981,6 +5041,23 @@ function refreshAfterVendorChange() {
     const curSelected = document.getElementById('poVendor')?.value || '';
     try { populateVendorSelect(curSelected); } catch (e) {}
     try { renderPOItemsForm(); } catch (e) {}
+  }
+  // 5) 재고계산기 iframe 열려있으면 즉시 거래처 푸시 (실시간 반영)
+  if (_currentCalcFrameKind === 'stock') {
+    const iframe = document.getElementById('calcFrameIframe');
+    if (iframe && iframe.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage({
+          type: 'worklog-vendors',
+          contacts: (state.contacts || []).map(c => ({
+            name: c.name, type: c.type || 'domestic',
+            memo: c.memo || '',
+            persons: c.persons || [],
+            items: c.items || []
+          }))
+        }, '*');
+      } catch (e) {}
+    }
   }
 }
 
