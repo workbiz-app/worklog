@@ -1,12 +1,13 @@
 // 업무일지 Service Worker (v1)
 // 오프라인 지원 + 앱 쉘 캐싱
 
-const CACHE = 'worklog-v17';
+const CACHE = 'worklog-v18';
 const ASSETS = [
   './',
   './index.html',
   './cost.html',
   './stock.html',
+  './remit.html',
   './manifest.webmanifest',
   './icon.svg',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',

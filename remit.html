@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="송금요청">
+<meta name="mobile-web-app-capable" content="yes">
+<title>송금요청 문구 생성기</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+    background: #f4f6fa;
+    margin: 0;
+    padding: 24px;
+    color: #1f2937;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  h1 {
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+    font-size: 24px;
+  }
+  .sub {
+    grid-column: 1 / -1;
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .card h2 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: #111827;
+  }
+  .full { grid-column: 1 / -1; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: #374151;
+    margin: 10px 0 4px;
+    font-weight: 500;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fff;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #4f46e5;
+  }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .row .narrow { flex: 0 0 110px; }
+  .row .tight { flex: 0 0 80px; }
+
+  .seg {
+    display: flex;
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .seg button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #6b7280;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .seg button.active {
+    background: #4f46e5;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3);
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-light { background: #f3f4f6; color: #374151; }
+  .btn-light:hover { background: #e5e7eb; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-ok { background: #10b981 !important; color: #fff !important; }
+
+  /* 라이브러리 */
+  .lib-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .lib-head h2 { margin: 0; }
+  .lib-actions { display: flex; gap: 6px; }
+
+  .chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 38px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    background: #eef2ff;
+    color: #312e81;
+    border: 1px solid #c7d2fe;
+    border-radius: 999px;
+    padding: 6px 4px 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    gap: 4px;
+  }
+  .chip:hover { background: #c7d2fe; }
+  .chip.active {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+  }
+  .chip .x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.08);
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 2px;
+  }
+  .chip .x:hover { background: rgba(220,38,38,0.7); color: #fff; }
+  .chip.active .x { background: rgba(255,255,255,0.25); }
+  .chip .file-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    background: rgba(79, 70, 229, 0.15);
+    transition: all 0.15s;
+  }
+  .chip .file-icon:hover { background: #4f46e5; color: #fff; transform: scale(1.1); }
+  .chip.active .file-icon { background: rgba(255,255,255,0.2); }
+  .chip.active .file-icon:hover { background: #fff; color: #4f46e5; }
+  .chip-empty {
+    color: #9ca3af;
+    font-size: 13px;
+    padding: 8px 4px;
+  }
+
+  /* 미니 칩 (받는 사람) */
+  .mini-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .mini-chip {
+    display: inline-flex;
+    align-items: center;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 3px 3px 3px 10px;
+    font-size: 12px;
+    gap: 2px;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.15s;
+  }
+  .mini-chip:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+  .mini-chip .x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    color: #9ca3af;
+  }
+  .mini-chip .x:hover { background: rgba(220,38,38,0.7); color: #fff; }
+  .mini-chips .empty { color: #9ca3af; font-size: 11px; padding: 4px 0; }
+
+  /* 파일 링크 */
+  .file-display {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6b7280;
+    word-break: break-all;
+  }
+  .file-display a {
+    color: #4f46e5;
+    text-decoration: none;
+  }
+  .file-display a:hover { text-decoration: underline; }
+
+  /* 결과 */
+  .result-card {
+    grid-column: 1 / -1;
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .result-head h2 { margin: 0; font-size: 16px; }
+
+  .preview {
+    width: 100%;
+    min-height: 220px;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+    resize: vertical;
+    color: #1f2937;
+  }
+
+  .calc-line {
+    background: #eef2ff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #4338ca;
+  }
+  .calc-line strong { font-size: 16px; color: #312e81; }
+  .calc-line .small { color: #6366f1; font-size: 12px; margin-top: 4px; }
+
+  /* 모달 */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .modal h3 { margin: 0 0 14px; font-size: 17px; }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 720px) {
+    .wrap { grid-template-columns: 1fr; }
+    body { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>송금요청 문구 생성기</h1>
+  <div class="sub">발주 입금 요청 메시지를 자동으로 만들어 줍니다.</div>
+
+  <!-- 제품 라이브러리 -->
+  <div class="card full">
+    <div class="lib-head">
+      <h2>저장된 제품</h2>
+      <div class="lib-actions">
+        <button class="btn btn-primary" id="saveCurrentBtn">+ 현재 정보 저장</button>
+      </div>
+    </div>
+    <div class="chip-list" id="productList">
+      <div class="chip-empty">저장된 제품이 없습니다. 입력 후 "+ 현재 정보 저장"을 눌러보세요.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>거래 정보</h2>
+
+    <label>받는 사람 이름</label>
+    <div class="row">
+      <input type="text" id="name" placeholder="이름 입력 (자동완성 지원)" list="receiverList" autocomplete="off">
+      <button class="btn btn-light tight" id="saveReceiverBtn" type="button">+ 저장</button>
+    </div>
+    <datalist id="receiverList"></datalist>
+    <div class="mini-chips" id="receiverChips"></div>
+
+    <label>제품명</label>
+    <input type="text" id="product" placeholder="예: 아크릴 키링">
+
+    <label>발주 수량</label>
+    <input type="number" id="qty" placeholder="예: 500" min="0" step="1">
+
+    <label>1개 단가</label>
+    <div class="row">
+      <input type="number" id="unitPrice" placeholder="예: 1.20" min="0" step="0.01">
+      <select id="currency" class="narrow">
+        <option value="USD">USD ($)</option>
+        <option value="CNY" selected>CNY (¥)</option>
+        <option value="JPY">JPY (¥)</option>
+        <option value="EUR">EUR (€)</option>
+        <option value="KRW">KRW (₩)</option>
+      </select>
+    </div>
+
+    <label>발주 파일 링크 (선택)</label>
+    <div class="row">
+      <input type="text" id="fileLink" placeholder="예: C:\Users\...\발주서.xlsx">
+      <button class="btn btn-light tight" id="openFileBtn" type="button">열기</button>
+    </div>
+    <div class="file-display" id="fileDisplay"></div>
+  </div>
+
+  <div class="card">
+    <h2>결제 조건</h2>
+
+    <label>선금 / 잔금 비율 (%)</label>
+    <div class="row">
+      <input type="number" id="depositPct" value="30" min="0" max="100" step="1">
+      <input type="number" id="balancePct" value="70" min="0" max="100" step="1">
+    </div>
+
+    <label style="margin-top: 18px;">금번 입금 단계</label>
+    <div class="seg" id="stageSeg">
+      <button type="button" class="active" data-stage="deposit">선금</button>
+      <button type="button" data-stage="balance">잔금</button>
+    </div>
+
+    <div class="calc-line" id="calcLine">
+      총 금액: <strong>-</strong><br>
+      <span class="small">금번 입금 요청 금액이 자동 계산됩니다.</span>
+    </div>
+  </div>
+
+  <div class="result-card">
+    <div class="result-head">
+      <h2>생성된 문구</h2>
+      <button class="btn btn-primary" id="copyBtn">📋 복사하기</button>
+    </div>
+    <textarea class="preview" id="output" readonly></textarea>
+  </div>
+</div>
+
+<!-- 저장 모달 -->
+<div class="modal-bg" id="saveModal">
+  <div class="modal">
+    <h3 id="saveModalTitle">제품 저장</h3>
+    <label>저장 이름 (제품명이 기본값)</label>
+    <input type="text" id="saveName" placeholder="예: 아크릴 키링 v2">
+    <div class="modal-actions">
+      <button class="btn btn-light" id="saveCancelBtn">취소</button>
+      <button class="btn btn-primary" id="saveOkBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const symbols = { USD: '$', CNY: '¥', JPY: '¥', EUR: '€', KRW: '₩' };
+  const STORAGE_KEY = 'remit_products_v1';
+  const RECEIVERS_KEY = 'remit_receivers_v1';
+
+  let stage = 'deposit';
+  let products = [];
+  let receivers = [];
+  let activeProductId = null;
+
+  // ─── 저장소 ───────────────────────────────
+  function loadProducts() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      products = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      products = [];
+    }
+  }
+  function saveProducts() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  }
+
+  function loadReceivers() {
+    try {
+      const raw = localStorage.getItem(RECEIVERS_KEY);
+      receivers = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      receivers = [];
+    }
+  }
+  function saveReceivers() {
+    localStorage.setItem(RECEIVERS_KEY, JSON.stringify(receivers));
+  }
+
+  function renderReceivers() {
+    // datalist (자동완성)
+    const dl = $('receiverList');
+    dl.innerHTML = '';
+    receivers.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r;
+      dl.appendChild(opt);
+    });
+
+    // 칩 리스트 (클릭으로 불러오기)
+    const chips = $('receiverChips');
+    if (receivers.length === 0) {
+      chips.innerHTML = '<span class="empty">등록된 사람 없음 — 입력 후 "+ 저장"을 눌러보세요</span>';
+      return;
+    }
+    chips.innerHTML = '';
+    receivers.forEach(r => {
+      const chip = document.createElement('span');
+      chip.className = 'mini-chip';
+      chip.innerHTML = '<span class="mc-label"></span><span class="x" title="삭제">×</span>';
+      chip.querySelector('.mc-label').textContent = r;
+      chip.addEventListener('click', (e) => {
+        if (e.target.classList.contains('x')) {
+          e.stopPropagation();
+          if (confirm(`"${r}" 을(를) 삭제할까요?`)) {
+            receivers = receivers.filter(x => x !== r);
+            saveReceivers();
+            renderReceivers();
+          }
+          return;
+        }
+        $('name').value = r;
+        render();
+      });
+      chips.appendChild(chip);
+    });
+  }
+
+  // ─── 칩 리스트 렌더 ───────────────────────
+  function renderChips() {
+    const list = $('productList');
+    if (products.length === 0) {
+      list.innerHTML = '<div class="chip-empty">저장된 제품이 없습니다. 입력 후 "+ 현재 정보 저장"을 눌러보세요.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    products
+      .slice()
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+      .forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (p.id === activeProductId ? ' active' : '');
+        const hasFile = !!(p.fileLink && p.fileLink.trim());
+        chip.innerHTML = `<span class="chip-label"></span>${hasFile ? '<span class="file-icon" title="발주 파일 바로 열기">📎</span>' : ''}<span class="x" title="삭제">×</span>`;
+        chip.querySelector('.chip-label').textContent = p.label || p.product || '(이름 없음)';
+        chip.addEventListener('click', (e) => {
+          if (e.target.classList.contains('x')) {
+            e.stopPropagation();
+            if (confirm(`"${p.label}" 을(를) 삭제할까요?`)) {
+              products = products.filter(x => x.id !== p.id);
+              if (activeProductId === p.id) activeProductId = null;
+              saveProducts();
+              renderChips();
+            }
+            return;
+          }
+          if (e.target.classList.contains('file-icon')) {
+            e.stopPropagation();
+            if (p.fileLink) {
+              window.open(buildFileUrl(p.fileLink), '_blank');
+            }
+            return;
+          }
+          loadProductToForm(p);
+        });
+        list.appendChild(chip);
+      });
+  }
+
+  function loadProductToForm(p) {
+    $('name').value = p.name || '';
+    $('product').value = p.product || '';
+    $('unitPrice').value = p.unitPrice ?? '';
+    $('currency').value = p.currency || 'CNY';
+    $('fileLink').value = p.fileLink || '';
+    if (typeof p.depositPct === 'number') {
+      $('depositPct').value = p.depositPct;
+      $('balancePct').value = 100 - p.depositPct;
+    }
+    activeProductId = p.id;
+    renderChips();
+    render();
+  }
+
+  // ─── 저장 모달 ────────────────────────────
+  $('saveCurrentBtn').addEventListener('click', () => {
+    const productName = $('product').value.trim();
+    const defaultLabel = productName || '새 제품';
+    $('saveName').value = defaultLabel;
+    $('saveModalTitle').textContent = activeProductId ? '제품 업데이트' : '제품 저장';
+    $('saveModal').classList.add('show');
+    setTimeout(() => $('saveName').focus(), 50);
+  });
+
+  $('saveCancelBtn').addEventListener('click', () => {
+    $('saveModal').classList.remove('show');
+  });
+
+  $('saveOkBtn').addEventListener('click', () => {
+    const label = $('saveName').value.trim();
+    if (!label) { alert('저장 이름을 입력해주세요.'); return; }
+
+    const data = {
+      label,
+      name: $('name').value.trim(),
+      product: $('product').value.trim(),
+      unitPrice: parseFloat($('unitPrice').value) || 0,
+      currency: $('currency').value,
+      fileLink: $('fileLink').value.trim(),
+      depositPct: parseFloat($('depositPct').value) || 30,
+      updatedAt: Date.now()
+    };
+
+    if (activeProductId) {
+      // 업데이트
+      const idx = products.findIndex(p => p.id === activeProductId);
+      if (idx >= 0) {
+        products[idx] = { ...products[idx], ...data };
+      } else {
+        data.id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        products.push(data);
+        activeProductId = data.id;
+      }
+    } else {
+      // 신규
+      data.id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      products.push(data);
+      activeProductId = data.id;
+    }
+
+    saveProducts();
+    renderChips();
+    $('saveModal').classList.remove('show');
+  });
+
+  // 모달 배경 클릭 시 닫기
+  $('saveModal').addEventListener('click', (e) => {
+    if (e.target === $('saveModal')) $('saveModal').classList.remove('show');
+  });
+  // Enter 키로 저장
+  $('saveName').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('saveOkBtn').click();
+  });
+
+  // ─── 받는 사람 저장 ───────────────────────
+  $('saveReceiverBtn').addEventListener('click', () => {
+    const v = $('name').value.trim();
+    if (!v) { alert('받는 사람 이름을 입력해주세요.'); return; }
+    if (receivers.includes(v)) {
+      alert('이미 등록된 이름입니다.');
+      return;
+    }
+    receivers.push(v);
+    saveReceivers();
+    renderReceivers();
+  });
+
+  // ─── 단계 토글 ────────────────────────────
+  document.querySelectorAll('#stageSeg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#stageSeg button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      stage = btn.dataset.stage;
+      render();
+    });
+  });
+
+  // ─── 비율 연동 ────────────────────────────
+  $('depositPct').addEventListener('input', () => {
+    const v = parseFloat($('depositPct').value) || 0;
+    $('balancePct').value = Math.max(0, Math.min(100, 100 - v));
+    render();
+  });
+  $('balancePct').addEventListener('input', () => {
+    const v = parseFloat($('balancePct').value) || 0;
+    $('depositPct').value = Math.max(0, Math.min(100, 100 - v));
+    render();
+  });
+
+  // ─── 입력 변경 → 렌더 ─────────────────────
+  ['name', 'product', 'qty', 'unitPrice', 'currency', 'fileLink'].forEach(id => {
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+
+  // ─── 파일 열기 ────────────────────────────
+  function buildFileUrl(path) {
+    if (!path) return '';
+    if (/^(https?:|file:|mailto:)/i.test(path)) return path;
+    // Windows 경로 → file:///
+    let p = path.replace(/\\/g, '/');
+    if (/^[a-zA-Z]:/.test(p)) p = '/' + p;
+    return 'file://' + p;
+  }
+  $('openFileBtn').addEventListener('click', () => {
+    const path = $('fileLink').value.trim();
+    if (!path) { alert('발주 파일 링크를 먼저 입력해주세요.'); return; }
+    const url = buildFileUrl(path);
+    window.open(url, '_blank');
+  });
+
+  // ─── 숫자 포맷 ────────────────────────────
+  function fmtNum(n, cur) {
+    if (n === null || isNaN(n)) return '-';
+    if (cur === 'KRW' || cur === 'JPY') {
+      return Math.round(n).toLocaleString('ko-KR');
+    }
+    return n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ─── 메인 렌더 ────────────────────────────
+  function render() {
+    const name = $('name').value.trim();
+    const product = $('product').value.trim();
+    const qty = parseFloat($('qty').value) || 0;
+    const unit = parseFloat($('unitPrice').value) || 0;
+    const cur = $('currency').value;
+    const sym = symbols[cur];
+    const dep = parseFloat($('depositPct').value) || 0;
+    const bal = parseFloat($('balancePct').value) || 0;
+    const fileLink = $('fileLink').value.trim();
+
+    const total = unit * qty;
+    const stagePct = stage === 'deposit' ? dep : bal;
+    const stageAmt = total * (stagePct / 100);
+    const stageLabel = stage === 'deposit' ? '선금' : '잔금';
+
+    $('calcLine').innerHTML =
+      `총 금액: <strong>${sym}${fmtNum(total, cur)} ${cur}</strong><br>` +
+      `<span class="small">${stageLabel} ${stagePct}% → ${sym}${fmtNum(stageAmt, cur)} ${cur}</span>`;
+
+    // 파일 링크 표시
+    if (fileLink) {
+      const url = buildFileUrl(fileLink);
+      $('fileDisplay').innerHTML = `📎 <a href="${url}" target="_blank">${fileLink}</a>`;
+    } else {
+      $('fileDisplay').innerHTML = '';
+    }
+
+    const text =
+`안녕하세요 ${name || '(   )'}님,
+발주관련 입금 요청 드립니다.
+제품 : ${product || '(제품명)'}
+수량 : ${qty ? qty.toLocaleString('ko-KR') : '(발주 수량)'}
+단가 : ${sym}${unit ? fmtNum(unit, cur) : '(단가)'} ${cur} * ${qty ? qty.toLocaleString('ko-KR') : '(수량)'} = ${sym}${fmtNum(total, cur)} ${cur}
+페이먼트 조건 : 선금 (${dep}%) 잔금 (${bal}%)
+
+금번 입금 요청 금액
+->  ${stageLabel} ${stagePct}%, ${sym}${fmtNum(stageAmt, cur)} ${cur}`;
+
+    $('output').value = text;
+  }
+
+  // ─── 복사 ─────────────────────────────────
+  $('copyBtn').addEventListener('click', async () => {
+    const btn = $('copyBtn');
+    const orig = btn.textContent;
+    try {
+      await navigator.clipboard.writeText($('output').value);
+    } catch (e) {
+      $('output').select();
+      document.execCommand('copy');
+    }
+    btn.textContent = '✓ 복사됨';
+    btn.classList.add('btn-ok');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('btn-ok');
+    }, 1500);
+  });
+
+  // ─── 초기화 ──────────────────────────────
+  loadProducts();
+  loadReceivers();
+  renderChips();
+  renderReceivers();
+  render();
+</script>
+</body>
+</html>
