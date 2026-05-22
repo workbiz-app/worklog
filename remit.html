@@ -523,8 +523,10 @@
   }
 
   // ─── 업무일지 데이터 읽기 (read-only) ─────
-  // 실제 데이터는 workDiaryData_v2.contacts 안에 통합되어 있음
-  // (재고소진 계산기에서 등록한 거래처도 자동으로 여기로 역동기화됨)
+  // 데이터 위치 가능성:
+  //   1) state.contacts (업무일지 메인 거래처 — 가장 정확)
+  //   2) state.calculatorData.stock.inv_vendors / .inv_prod_library (raw stock 데이터)
+  // 둘 다 시도하여 합침 (중복은 이름 기준 제거)
   function loadWorklogState() {
     try {
       const raw = localStorage.getItem(WORKLOG_KEY);
@@ -533,7 +535,6 @@
   }
 
   function getContactDefaultCurrency(c) {
-    // items 중 첫 번째 currency 또는 type 기반 추정
     const items = c.items || [];
     for (const it of items) {
       if (typeof it === 'object' && it && it.currency) return it.currency;
@@ -543,36 +544,149 @@
 
   function loadStockVendors() {
     const state = loadWorklogState();
-    return (state.contacts || []).map(c => ({
-      id: c.id,
-      name: c.name,
-      type: c.type || 'domestic',
-      country: c.type === 'overseas' ? '해외' : '국내',
-      defaultCurrency: getContactDefaultCurrency(c),
-      memo: c.memo,
-      persons: c.persons || [],
-      items: c.items || []
-    }));
+    const out = [];
+    const seenNames = new Set();
+
+    // (1) state.contacts
+    (state.contacts || []).forEach(c => {
+      if (!c || !c.name) return;
+      const name = String(c.name).trim();
+      if (!name || seenNames.has(name)) return;
+      seenNames.add(name);
+      out.push({
+        id: c.id || ('c_' + name),
+        name,
+        type: c.type || 'domestic',
+        country: c.type === 'overseas' ? '해외' : '국내',
+        defaultCurrency: getContactDefaultCurrency(c),
+        memo: c.memo || '',
+        items: c.items || [],
+        _src: 'contacts'
+      });
+    });
+
+    // (2) state.calculatorData.stock.inv_vendors (부모가 stock에서 받아 저장한 raw)
+    try {
+      const stockBlob = state.calculatorData && state.calculatorData.stock;
+      if (stockBlob && stockBlob.inv_vendors) {
+        const stockVendors = JSON.parse(stockBlob.inv_vendors);
+        (stockVendors || []).forEach(sv => {
+          if (!sv || !sv.name) return;
+          const name = String(sv.name).trim();
+          if (!name || seenNames.has(name)) return;
+          seenNames.add(name);
+          out.push({
+            id: sv.id || ('v_' + name),
+            name,
+            type: sv.country === 'KR' ? 'domestic' : 'overseas',
+            country: sv.country || '',
+            defaultCurrency: sv.defaultCurrency || (sv.country === 'KR' ? 'KRW' : 'CNY'),
+            memo: sv.memo || sv.nameMemo || '',
+            items: [],
+            _src: 'stock_raw'
+          });
+        });
+      }
+    } catch (e) { console.warn('[remit] stock vendors parse 실패', e); }
+
+    // (3) localStorage.inv_vendors 직접 (stock.html이 같은 origin에서 직접 쓴 거)
+    try {
+      const raw = localStorage.getItem('inv_vendors');
+      if (raw) {
+        const direct = JSON.parse(raw);
+        (direct || []).forEach(sv => {
+          if (!sv || !sv.name) return;
+          const name = String(sv.name).trim();
+          if (!name || seenNames.has(name)) return;
+          seenNames.add(name);
+          out.push({
+            id: sv.id || ('v_' + name),
+            name,
+            type: sv.country === 'KR' ? 'domestic' : 'overseas',
+            country: sv.country || '',
+            defaultCurrency: sv.defaultCurrency || (sv.country === 'KR' ? 'KRW' : 'CNY'),
+            memo: sv.memo || sv.nameMemo || '',
+            items: [],
+            _src: 'inv_direct'
+          });
+        });
+      }
+    } catch (e) { console.warn('[remit] inv_vendors direct parse 실패', e); }
+
+    return out;
   }
 
   function loadStockLibrary() {
     const state = loadWorklogState();
     const out = [];
+    const seen = new Set(); // vendorId__name 중복 방지
+
+    // (1) state.contacts.items
     (state.contacts || []).forEach(c => {
       (c.items || []).forEach(it => {
-        const item = typeof it === 'string' ? { name: it, unitPrice: 0 } : it;
-        if (!item || !item.name) return;
+        const item = typeof it === 'string' ? { name: it, unitPrice: 0 } : (it || {});
+        if (!item.name) return;
+        const dup = (c.id || c.name) + '__' + item.name;
+        if (seen.has(dup)) return;
+        seen.add(dup);
         out.push({
-          id: c.id + '__' + item.name,
+          id: dup,
           name: item.name,
           cname: item.cname || '',
           price: item.unitPrice || 0,
           currency: item.currency || (c.type === 'overseas' ? 'USD' : 'KRW'),
-          vendorId: c.id,
+          vendorId: c.id || ('c_' + c.name),
           memo: item.memo || ''
         });
       });
     });
+
+    // (2) state.calculatorData.stock.inv_prod_library
+    try {
+      const stockBlob = state.calculatorData && state.calculatorData.stock;
+      if (stockBlob && stockBlob.inv_prod_library) {
+        const stockLib = JSON.parse(stockBlob.inv_prod_library);
+        (stockLib || []).forEach(p => {
+          if (!p || !p.name) return;
+          const dup = (p.vendorId || 'novendor') + '__' + p.name;
+          if (seen.has(dup)) return;
+          seen.add(dup);
+          out.push({
+            id: dup,
+            name: p.name,
+            cname: p.cname || '',
+            price: p.price || 0,
+            currency: p.currency || 'CNY',
+            vendorId: p.vendorId || '',
+            memo: p.memo || ''
+          });
+        });
+      }
+    } catch (e) { console.warn('[remit] stock library parse 실패', e); }
+
+    // (3) localStorage.inv_prod_library 직접
+    try {
+      const raw = localStorage.getItem('inv_prod_library');
+      if (raw) {
+        const direct = JSON.parse(raw);
+        (direct || []).forEach(p => {
+          if (!p || !p.name) return;
+          const dup = (p.vendorId || 'novendor') + '__' + p.name;
+          if (seen.has(dup)) return;
+          seen.add(dup);
+          out.push({
+            id: dup,
+            name: p.name,
+            cname: p.cname || '',
+            price: p.price || 0,
+            currency: p.currency || 'CNY',
+            vendorId: p.vendorId || '',
+            memo: p.memo || ''
+          });
+        });
+      }
+    } catch (e) { console.warn('[remit] inv_prod_library direct parse 실패', e); }
+
     return out;
   }
 
@@ -993,6 +1107,34 @@
   renderChips();
   renderReceivers();
   render();
+
+  // ─── 진단 로그 (F12 콘솔에서 확인) ────────
+  (function diag() {
+    const has = !!localStorage.getItem(WORKLOG_KEY);
+    const state = loadWorklogState();
+    const contacts = (state.contacts || []).length;
+    const calcStock = state.calculatorData && state.calculatorData.stock;
+    let rawVendors = 0, rawLib = 0, directVendors = 0, directLib = 0;
+    try { rawVendors = JSON.parse((calcStock || {}).inv_vendors || '[]').length; } catch(e) {}
+    try { rawLib = JSON.parse((calcStock || {}).inv_prod_library || '[]').length; } catch(e) {}
+    try { directVendors = JSON.parse(localStorage.getItem('inv_vendors') || '[]').length; } catch(e) {}
+    try { directLib = JSON.parse(localStorage.getItem('inv_prod_library') || '[]').length; } catch(e) {}
+    const v = loadStockVendors().length;
+    const l = loadStockLibrary().length;
+    console.group('%c[remit.html 통합 진단]', 'background:#4f46e5;color:#fff;padding:2px 6px;border-radius:4px;');
+    console.log('origin:', location.origin || '(file://)');
+    console.log('workDiaryData_v2 존재:', has, '/ state.contacts 개수:', contacts);
+    console.log('state.calculatorData.stock 키들:', calcStock ? Object.keys(calcStock) : '(없음)');
+    console.log('(1) state.contacts:', contacts);
+    console.log('(2) raw stock (calculatorData) — vendors:', rawVendors, '/ library:', rawLib);
+    console.log('(3) direct localStorage — inv_vendors:', directVendors, '/ inv_prod_library:', directLib);
+    console.log('→ 합쳐서 표시되는 거래처 칩:', v, '개 / 품목 칩:', l, '개');
+    if (v === 0 && l === 0) {
+      console.warn('⚠️ 0개 — origin이 재고소진계산기와 같은지 확인해주세요. 같은데도 0이면 콘솔에서 다음 실행:');
+      console.warn('Object.keys(localStorage)');
+    }
+    console.groupEnd();
+  })();
 </script>
 </body>
 </html>

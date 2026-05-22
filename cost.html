@@ -2496,37 +2496,104 @@ loadFx();
 // 재고소진 계산기 품목 라이브러리 통합 (read-only)
 // ============================================================
 (function costLibIntegration() {
-  // 업무일지 메인 state (workDiaryData_v2.contacts에 거래처+품목 다 들어있음)
+  // 업무일지 메인 state — 두 곳에 데이터 있을 수 있음 (양쪽 다 시도)
+  //   1) state.contacts (업무일지 메인 거래처+품목)
+  //   2) state.calculatorData.stock.inv_vendors / inv_prod_library (raw stock 데이터)
   const WORKLOG_KEY = 'workDiaryData_v2';
   let q = '';
 
-  function load() {
+  function loadState() {
     try {
       const raw = localStorage.getItem(WORKLOG_KEY);
-      const state = raw ? JSON.parse(raw) : {};
-      const contacts = state.contacts || [];
-      const vendors = contacts.map(c => ({
-        id: c.id, name: c.name,
-        type: c.type || 'domestic',
-        defaultCurrency: c.type === 'overseas' ? 'USD' : 'KRW'
-      }));
-      const lib = [];
-      contacts.forEach(c => {
-        (c.items || []).forEach(it => {
-          const item = typeof it === 'string' ? { name: it, unitPrice: 0 } : it;
-          if (!item || !item.name) return;
-          lib.push({
-            name: item.name,
-            cname: item.cname || '',
-            price: item.unitPrice || 0,
-            currency: item.currency || (c.type === 'overseas' ? 'USD' : 'KRW'),
-            vendorId: c.id,
-            memo: item.memo || ''
-          });
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function load() {
+    const state = loadState();
+    const vendors = [];
+    const lib = [];
+    const seenVendorNames = new Set();
+    const seenLib = new Set();
+
+    // (1) state.contacts
+    (state.contacts || []).forEach(c => {
+      if (!c || !c.name) return;
+      const name = String(c.name).trim();
+      if (name && !seenVendorNames.has(name)) {
+        seenVendorNames.add(name);
+        vendors.push({
+          id: c.id || ('c_' + name),
+          name,
+          type: c.type || 'domestic',
+          defaultCurrency: c.type === 'overseas' ? 'USD' : 'KRW'
+        });
+      }
+      (c.items || []).forEach(it => {
+        const item = typeof it === 'string' ? { name: it, unitPrice: 0 } : (it || {});
+        if (!item.name) return;
+        const dup = (c.id || c.name) + '__' + item.name;
+        if (seenLib.has(dup)) return;
+        seenLib.add(dup);
+        lib.push({
+          name: item.name,
+          cname: item.cname || '',
+          price: item.unitPrice || 0,
+          currency: item.currency || (c.type === 'overseas' ? 'USD' : 'KRW'),
+          vendorId: c.id || ('c_' + name),
+          memo: item.memo || ''
         });
       });
-      return { lib, vendors };
-    } catch (e) { return { lib: [], vendors: [] }; }
+    });
+
+    // 헬퍼: 거래처/품목 데이터 머지
+    function mergeVendors(arr) {
+      (arr || []).forEach(v => {
+        if (!v || !v.name) return;
+        const name = String(v.name).trim();
+        if (name && !seenVendorNames.has(name)) {
+          seenVendorNames.add(name);
+          vendors.push({
+            id: v.id, name,
+            type: v.country === 'KR' ? 'domestic' : 'overseas',
+            defaultCurrency: v.defaultCurrency || 'CNY'
+          });
+        }
+      });
+    }
+    function mergeLib(arr) {
+      (arr || []).forEach(p => {
+        if (!p || !p.name) return;
+        const dup = (p.vendorId || 'novendor') + '__' + p.name;
+        if (seenLib.has(dup)) return;
+        seenLib.add(dup);
+        lib.push({
+          name: p.name,
+          cname: p.cname || '',
+          price: p.price || 0,
+          currency: p.currency || 'CNY',
+          vendorId: p.vendorId || '',
+          memo: p.memo || ''
+        });
+      });
+    }
+
+    // (2) state.calculatorData.stock.inv_vendors / inv_prod_library
+    try {
+      const stockBlob = state.calculatorData && state.calculatorData.stock;
+      if (stockBlob) {
+        mergeVendors(JSON.parse(stockBlob.inv_vendors || '[]'));
+        mergeLib(JSON.parse(stockBlob.inv_prod_library || '[]'));
+      }
+    } catch (e) { console.warn('[cost] stock data parse 실패', e); }
+
+    // (3) localStorage.inv_vendors / inv_prod_library 직접
+    try { mergeVendors(JSON.parse(localStorage.getItem('inv_vendors') || '[]')); }
+    catch (e) { console.warn('[cost] inv_vendors direct parse 실패', e); }
+    try { mergeLib(JSON.parse(localStorage.getItem('inv_prod_library') || '[]')); }
+    catch (e) { console.warn('[cost] inv_prod_library direct parse 실패', e); }
+
+    return { lib, vendors };
   }
 
   function fmtPrice(n) {
@@ -2634,6 +2701,30 @@ loadFx();
   } else {
     init();
   }
+
+  // 진단 로그 (F12 콘솔)
+  setTimeout(() => {
+    const state = loadState();
+    const has = !!localStorage.getItem(WORKLOG_KEY);
+    const contacts = (state.contacts || []).length;
+    const calcStock = state.calculatorData && state.calculatorData.stock;
+    let rv = 0, rl = 0, dv = 0, dl = 0;
+    try { rv = JSON.parse((calcStock || {}).inv_vendors || '[]').length; } catch(e) {}
+    try { rl = JSON.parse((calcStock || {}).inv_prod_library || '[]').length; } catch(e) {}
+    try { dv = JSON.parse(localStorage.getItem('inv_vendors') || '[]').length; } catch(e) {}
+    try { dl = JSON.parse(localStorage.getItem('inv_prod_library') || '[]').length; } catch(e) {}
+    const { lib } = load();
+    console.group('%c[cost.html 통합 진단]', 'background:#059669;color:#fff;padding:2px 6px;border-radius:4px;');
+    console.log('origin:', location.origin || '(file://)');
+    console.log('(1) state.contacts:', contacts);
+    console.log('(2) raw stock (calculatorData) — vendors:', rv, '/ library:', rl);
+    console.log('(3) direct localStorage — inv_vendors:', dv, '/ inv_prod_library:', dl);
+    console.log('→ 합쳐서 표시되는 품목 칩:', lib.length, '개');
+    if (lib.length === 0) {
+      console.warn('⚠️ 0개 — origin이 재고소진계산기와 같은지 확인 / 콘솔에서 Object.keys(localStorage) 실행');
+    }
+    console.groupEnd();
+  }, 100);
 })();
 </script>
 </body>
