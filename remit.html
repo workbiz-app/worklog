@@ -487,9 +487,8 @@
   const symbols = { USD: '$', CNY: '¥', JPY: '¥', EUR: '€', KRW: '₩' };
   const STORAGE_KEY = 'remit_products_v1';
   const RECEIVERS_KEY = 'remit_receivers_v1';
-  // stock.html(재고소진 계산기) 공유 키
-  const STOCK_VENDORS_KEY = 'inv_vendors';
-  const STOCK_LIBRARY_KEY = 'inv_prod_library';
+  // 업무일지 메인 데이터 (state.contacts에 거래처+품목 다 통합되어 있음)
+  const WORKLOG_KEY = 'workDiaryData_v2';
 
   let stage = 'deposit';
   let products = [];
@@ -523,20 +522,65 @@
     localStorage.setItem(RECEIVERS_KEY, JSON.stringify(receivers));
   }
 
-  // ─── stock.html 데이터 읽기 (read-only) ──
+  // ─── 업무일지 데이터 읽기 (read-only) ─────
+  // 실제 데이터는 workDiaryData_v2.contacts 안에 통합되어 있음
+  // (재고소진 계산기에서 등록한 거래처도 자동으로 여기로 역동기화됨)
+  function loadWorklogState() {
+    try {
+      const raw = localStorage.getItem(WORKLOG_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function getContactDefaultCurrency(c) {
+    // items 중 첫 번째 currency 또는 type 기반 추정
+    const items = c.items || [];
+    for (const it of items) {
+      if (typeof it === 'object' && it && it.currency) return it.currency;
+    }
+    return c.type === 'overseas' ? 'USD' : 'KRW';
+  }
+
   function loadStockVendors() {
-    try { return JSON.parse(localStorage.getItem(STOCK_VENDORS_KEY)) || []; }
-    catch (e) { return []; }
+    const state = loadWorklogState();
+    return (state.contacts || []).map(c => ({
+      id: c.id,
+      name: c.name,
+      type: c.type || 'domestic',
+      country: c.type === 'overseas' ? '해외' : '국내',
+      defaultCurrency: getContactDefaultCurrency(c),
+      memo: c.memo,
+      persons: c.persons || [],
+      items: c.items || []
+    }));
   }
+
   function loadStockLibrary() {
-    try { return JSON.parse(localStorage.getItem(STOCK_LIBRARY_KEY)) || []; }
-    catch (e) { return []; }
+    const state = loadWorklogState();
+    const out = [];
+    (state.contacts || []).forEach(c => {
+      (c.items || []).forEach(it => {
+        const item = typeof it === 'string' ? { name: it, unitPrice: 0 } : it;
+        if (!item || !item.name) return;
+        out.push({
+          id: c.id + '__' + item.name,
+          name: item.name,
+          cname: item.cname || '',
+          price: item.unitPrice || 0,
+          currency: item.currency || (c.type === 'overseas' ? 'USD' : 'KRW'),
+          vendorId: c.id,
+          memo: item.memo || ''
+        });
+      });
+    });
+    return out;
   }
+
   function getStockVendorById(id) {
     return loadStockVendors().find(v => v.id === id);
   }
 
-  // 통합 거래처 목록 (자체 + stock)
+  // 통합 거래처 목록 (자체 + 업무일지)
   function getAllReceivers() {
     const out = [];
     receivers.forEach(name => out.push({ name, source: 'local' }));
@@ -549,7 +593,7 @@
     return out;
   }
 
-  // 통합 제품 목록 (자체 + stock)
+  // 통합 제품 목록 (자체 + 업무일지 거래처별 품목)
   function getAllProducts() {
     const out = [];
     products.forEach(p => out.push({ ...p, source: 'local' }));
@@ -810,7 +854,7 @@
     }
   });
   window.addEventListener('storage', (e) => {
-    if (e.key === STOCK_VENDORS_KEY || e.key === STOCK_LIBRARY_KEY) {
+    if (e.key === WORKLOG_KEY) {
       renderChips();
       renderReceivers();
     }

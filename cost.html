@@ -2496,14 +2496,35 @@ loadFx();
 // 재고소진 계산기 품목 라이브러리 통합 (read-only)
 // ============================================================
 (function costLibIntegration() {
-  const STOCK_LIB = 'inv_prod_library';
-  const STOCK_VENDORS = 'inv_vendors';
+  // 업무일지 메인 state (workDiaryData_v2.contacts에 거래처+품목 다 들어있음)
+  const WORKLOG_KEY = 'workDiaryData_v2';
   let q = '';
 
   function load() {
     try {
-      const lib = JSON.parse(localStorage.getItem(STOCK_LIB)) || [];
-      const vendors = JSON.parse(localStorage.getItem(STOCK_VENDORS)) || [];
+      const raw = localStorage.getItem(WORKLOG_KEY);
+      const state = raw ? JSON.parse(raw) : {};
+      const contacts = state.contacts || [];
+      const vendors = contacts.map(c => ({
+        id: c.id, name: c.name,
+        type: c.type || 'domestic',
+        defaultCurrency: c.type === 'overseas' ? 'USD' : 'KRW'
+      }));
+      const lib = [];
+      contacts.forEach(c => {
+        (c.items || []).forEach(it => {
+          const item = typeof it === 'string' ? { name: it, unitPrice: 0 } : it;
+          if (!item || !item.name) return;
+          lib.push({
+            name: item.name,
+            cname: item.cname || '',
+            price: item.unitPrice || 0,
+            currency: item.currency || (c.type === 'overseas' ? 'USD' : 'KRW'),
+            vendorId: c.id,
+            memo: item.memo || ''
+          });
+        });
+      });
       return { lib, vendors };
     } catch (e) { return { lib: [], vendors: [] }; }
   }
@@ -2604,7 +2625,7 @@ loadFx();
       if (!document.hidden) render();
     });
     window.addEventListener('storage', (e) => {
-      if (e.key === STOCK_LIB || e.key === STOCK_VENDORS) render();
+      if (e.key === WORKLOG_KEY) render();
     });
   }
 
