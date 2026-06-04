@@ -1946,9 +1946,12 @@ function simulate(product) {
   let stock = initialStock;
   let preOrderDepletion = null; // 현재 재고만으로 소진되는 날 (발주 없을 시)
   let finalDepletion = null;    // 발주 반영한 최종 소진일
-  let soldByArrival = 0;
+  let soldByArrival = 0;        // 입고 전 실제 판매량 (재고 한도 내 — 품절 시 더 못 팜)
+  let demandByArrival = 0;      // 입고 전 수요량 (재고와 무관한 순수 예상 판매 수요)
+  let stockoutBeforeArrival = false;
 
   // 최대 2년까지 시뮬레이션
+  // 모델: 품절 손실(lost sales) — 재고가 0이 되면 그 이상은 못 판다(마이너스 재고 없음).
   const horizon = 730;
   for (let i = 0; i < horizon; i++) {
     const day = addDays(start, i);
@@ -1958,24 +1961,31 @@ function simulate(product) {
       stock += qty;
     }
 
-    const sold = daily * multiplierFor(day);
-    if (i < arrivalDays) soldByArrival += sold;
-    stock -= sold;
+    const demand = daily * multiplierFor(day);
+    const avail = Math.max(0, stock);
+    const sold = Math.min(demand, avail);   // 재고 한도 내에서만 판매 (품절이면 0)
+    if (i < arrivalDays) { soldByArrival += sold; demandByArrival += demand; }
+    stock = avail - sold;                    // 항상 0 이상 (마이너스 재고 없음)
 
     // 현재재고 소진일: 발주 도착 전에 먼저 소진되는 날
     if (i < arrivalDays && stock <= 0 && !preOrderDepletion) {
       preOrderDepletion = day;
+      stockoutBeforeArrival = true;
     }
 
-    // 발주반영 최종 소진일: 발주 도착 이후, 혹은 발주가 없는 경우
+    // 발주반영 최종 소진일: 발주 도착 이후, 혹은 발주가 없는 경우 (한 번만 기록, 루프는 계속 — 수요 누적 위해)
     if (stock <= 0 && !finalDepletion && (i >= arrivalDays || qty === 0)) {
       finalDepletion = day;
-      break;
     }
+    // 모든 결과가 확정되면 조기 종료 (입고 전 수요 누적이 끝났고 최종 소진일도 잡힌 경우)
+    if (finalDepletion && i >= arrivalDays) break;
   }
 
-  const stockAtArrival = initialStock - soldByArrival;
+  // 입고 전 실제 판매는 보유 재고를 넘을 수 없음 → 입고 시점 잔여 재고는 0 이상
+  const stockAtArrival = Math.max(0, initialStock - soldByArrival);
   const totalStock = stockAtArrival + qty;
+  // 품절로 놓친 수요(발주 규모 판단용 참고치)
+  const shortageByArrival = Math.max(0, demandByArrival - soldByArrival);
 
   // 발주 없을 경우의 현재재고 소진일도 계산 (발주 도착 전에 소진되지 않았다면, 현재재고 ÷ 평균일판매량)
   if (!preOrderDepletion && daily > 0) {
@@ -1987,9 +1997,9 @@ function simulate(product) {
   const preOrderDays = preOrderDepletion ? daysBetween(start, preOrderDepletion) : null;
   const finalSellableDays = finalDepletion ? daysBetween(start, finalDepletion) : null;
 
-  // 입고 전 상태 (stockAtArrival 기준)
+  // 입고 전 상태: 발주 도착 전에 품절되면 'bad', 도착 시점 재고가 1주 미만이면 'warn'
   let status = 'good';
-  if (stockAtArrival < 0) status = 'bad';
+  if (stockoutBeforeArrival) status = 'bad';
   else if (stockAtArrival < daily * 7) status = 'warn';
 
   // 발주반영 최종 상태 (finalSellableDays 기준)
@@ -2001,6 +2011,9 @@ function simulate(product) {
 
   return {
     soldByArrival,
+    demandByArrival,
+    shortageByArrival,
+    stockoutBeforeArrival,
     stockAtArrival,
     totalStock,
     preOrderDepletion,
@@ -3664,8 +3677,11 @@ function recalc() {
           ${p.cname ? `<div class="pcname">${escapeHtml(p.cname)}</div>` : ''}
         </td>
         <!-- 발주 없을 시 -->
-        <td class="num">${fmtNum(r.soldByArrival)}</td>
-        <td class="num ${r.stockAtArrival<0?'status-bad':''}">${fmtNum(r.stockAtArrival)}</td>
+        <td class="num">
+          ${fmtNum(r.soldByArrival)}
+          ${r.stockoutBeforeArrival ? `<div class="d-sub" style="color:#dc2626;">수요 ${fmtNum(r.demandByArrival)} · ${fmtNum(r.shortageByArrival)} 부족</div>` : ''}
+        </td>
+        <td class="num ${r.stockoutBeforeArrival?'status-bad':''}">${fmtNum(r.stockAtArrival)}${r.stockoutBeforeArrival?'<div class="d-sub" style="color:#dc2626;">품절</div>':''}</td>
         <td>${preDateCell}</td>
         <td><span class="${p1.cls}">${p1.txt}</span></td>
         <!-- 발주 반영 후 -->
