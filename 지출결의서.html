@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지출결의서 생성기 (외화지급용)</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212b; --line:#2a2f3a;
+    --text:#e7eaf0; --muted:#9aa3b2; --accent:#4f8cff; --accent2:#3a6fd8;
+    --ok:#3ecf8e; --danger:#ff5c6c; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Malgun Gothic","맑은 고딕",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:linear-gradient(180deg,#0d0f14,#11141b); color:var(--text);
+    padding:32px 16px 90px;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 24px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; margin-bottom:18px;
+  }
+  .card h2{font-size:15px;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:6px;background:var(--accent2);color:#fff;
+    font-size:12px;font-weight:700;flex:none;
+  }
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  input,select,textarea{
+    width:100%; padding:10px 12px; background:var(--card2); border:1px solid var(--line);
+    border-radius:8px; color:var(--text); font-size:14px; font-family:inherit;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  input[type="date"]{color-scheme:dark;cursor:pointer}
+  input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}
+  textarea{resize:vertical;min-height:60px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row > div{flex:1;min-width:150px}
+  button{
+    padding:10px 16px;border:1px solid var(--line);background:var(--card2);color:var(--text);
+    border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap;
+    transition:.15s;
+  }
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{background:var(--accent2)}
+  button.ghost{background:transparent}
+  button.danger{color:var(--danger)}
+  button.danger:hover{border-color:var(--danger)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:6px 6px;font-size:11px}
+  td{padding:4px 3px;vertical-align:middle}
+  td input{padding:8px 8px}
+  .t-amount{padding:8px 6px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .t-del{width:34px}
+  .t-del button{padding:6px 9px}
+  .totbar{
+    display:flex;justify-content:space-between;align-items:center;margin-top:14px;
+    padding-top:14px;border-top:1px solid var(--line);gap:14px;flex-wrap:wrap;
+  }
+  .totbar .lbl{font-size:13px;color:var(--muted)}
+  .tot-grp{display:flex;gap:26px;flex-wrap:wrap}
+  .tot-grp .it .k{font-size:11px;color:var(--muted)}
+  .tot-grp .it .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .kor{font-size:12px;color:var(--muted);margin-top:4px}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px}
+  .generate{
+    width:100%;padding:16px;font-size:16px;font-weight:700;
+    background:linear-gradient(135deg,#4f8cff,#6a5cff);border:none;color:#fff;border-radius:12px;cursor:pointer;
+  }
+  .generate:hover{filter:brightness(1.08)}
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:#222834;border:1px solid var(--line);color:var(--text);padding:12px 20px;
+    border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:50;
+    box-shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.ok{border-color:var(--ok)}
+  .toast.err{border-color:var(--danger)}
+  .small{font-size:11px}
+  .payee{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;background:var(--card2)}
+  .payee-head{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+  .payee-head2{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+  .payee-head .pidx{font-weight:700;color:var(--accent);font-size:13px;align-self:center;flex:0 0 auto}
+  .payee-head .del-payee{margin-left:auto;align-self:center}
+  .payee-head .save-payee{align-self:center}
+  .payee table{margin-top:2px}
+  .payee-sub{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13px;color:var(--muted);line-height:1.5}
+  .payee-sub b{color:var(--text)}
+  .addrbook{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .addrbook .lbl{font-size:11px;color:var(--muted);margin-right:2px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--card2)}
+  .chip .rg{font-size:10px;color:var(--muted)}
+  .chip.dom{border-color:#3a6fd8}
+  .chip.ovs{border-color:#3ecf8e}
+  .chip button{padding:0 2px;border:none;background:none;color:var(--danger);cursor:pointer;font-size:13px;line-height:1}
+  @media(max-width:620px){ .tot-grp .it .v{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>지출결의서 생성기 <span class="small" style="color:var(--muted)">· 외화지급용</span></h1>
+  <p class="sub">결재라인·거래처 저장 · 실시간 환율 + 선금/잔금 자동계산 · 내부결재용 <b>.xlsx 다운로드</b></p>
+
+  <!-- 0. 기본 정보 -->
+  <div class="card">
+    <h2><span class="num">0</span> 기본 정보</h2>
+    <div class="row">
+      <div style="flex:2">
+        <label>수신 회사 (대표이사 귀하)</label>
+        <input id="company" placeholder="주식회사 스탠다다">
+      </div>
+      <div>
+        <label>결재구분</label>
+        <input id="kind" placeholder="외화지급용">
+      </div>
+      <div style="flex:0 0 140px">
+        <label>외화 통화</label>
+        <select id="currency">
+          <option value="USD">$ USD</option>
+          <option value="CNY">¥ CNY</option>
+          <option value="EUR">€ EUR</option>
+          <option value="JPY">¥ JPY</option>
+          <option value="KRW">₩ KRW</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:0 0 220px">
+        <label>적용 환율 (1 외화 = ? 원)</label>
+        <input id="rate" inputmode="decimal" placeholder="예: 1353.40">
+      </div>
+      <div style="flex:0 0 auto;display:flex;align-items:flex-end">
+        <button id="fetchRate" class="primary" type="button">🔄 실시간 환율</button>
+      </div>
+      <div style="flex:1;display:flex;align-items:flex-end">
+        <span class="hint" id="rateInfo" style="margin:0">실시간 환율을 불러옵니다.</span>
+      </div>
+    </div>
+    <p class="hint">공개 <b>시장환율(참고용)</b> 기준입니다. 원화 금액은 환산 참고액이며, 실제 송금액은 송금일 은행 적용환율에 따라 차이가 날 수 있습니다.</p>
+  </div>
+
+  <!-- 1. 결재 라인 -->
+  <div class="card">
+    <h2><span class="num">1</span> 결재 라인</h2>
+    <div class="row">
+      <div><label>담당</label><input id="app1" placeholder="김정희"></div>
+      <div><label>계약검토</label><input id="app2" placeholder="조현재"></div>
+      <div><label>승인</label><input id="app3" placeholder="박정현"></div>
+    </div>
+    <p class="hint">입력값은 자동 저장되어 다음에 열 때 그대로 불러옵니다.</p>
+  </div>
+
+  <!-- 2. 날짜 -->
+  <div class="card">
+    <h2><span class="num">2</span> 날짜</h2>
+    <div class="row">
+      <div><label>원인행위일</label><input type="date" id="causeDate"></div>
+      <div><label>지출결의일</label><input type="date" id="resolveDate"></div>
+      <div><label>작성일</label><input type="date" id="writeDate"></div>
+    </div>
+  </div>
+
+  <!-- 3. 지출 내역 (거래처별) -->
+  <div class="card">
+    <h2><span class="num">3</span> 지출 내역 <span class="small" style="color:var(--muted)">· 거래처별</span></h2>
+    <div id="payeesWrap"></div>
+    <button id="addPayee" class="primary" style="width:100%">+ 거래처 추가</button>
+    <div class="totbar">
+      <div class="tot-grp">
+        <div class="it"><div class="k">계약 총액 (외화)</div><div class="v" id="totFx">$0</div></div>
+        <div class="it"><div class="k">계약 총액 (한화 약)</div><div class="v" id="totKrw">₩0</div></div>
+        <div class="it"><div class="k">이번 총 지급액 (외화) — 확정</div><div class="v" id="payFx">$0</div></div>
+        <div class="it"><div class="k">이번 총 지급액 (한화 약)</div><div class="v" id="payKrw">₩0</div></div>
+      </div>
+    </div>
+    <div class="kor" id="payDesc">—</div>
+    <div class="addrbook" id="addrBook"></div>
+    <p class="hint">거래처마다 항목·선금/잔금을 따로 입력합니다. 거래처는 <b>💾 저장</b>(국내/해외)해 두면 다음에 <b>불러오기</b>로 바로 채워집니다. 「지출 금액」에는 이번 총 지급액(전 거래처 합)이 들어갑니다.</p>
+  </div>
+
+  <!-- 4. 지급사유 -->
+  <div class="card">
+    <h2><span class="num">4</span> 지급사유</h2>
+    <textarea id="reason" placeholder="지급 사유를 입력하세요"></textarea>
+  </div>
+
+  <!-- 5. 증빙서류 -->
+  <div class="card">
+    <h2><span class="num">5</span> 증빙서류</h2>
+    <input id="docs" placeholder="계약서 / 사업자등록증 / 인보이스 또는 PI">
+  </div>
+
+  <!-- 6. 작성자 -->
+  <div class="card">
+    <h2><span class="num">6</span> 작성자</h2>
+    <input id="writer" placeholder="작성자명" style="max-width:280px">
+  </div>
+
+  <button class="generate" id="genBtn">📊  지출결의서 .xlsx 다운로드</button>
+</div>
+
+<datalist id="payeeList"></datalist>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============ 저장소 (localStorage, 실패 시 메모리 폴백) ============ */
+const mem={};
+const store={
+  get(k){ try{return localStorage.getItem(k);}catch(e){return (k in mem)?mem[k]:null;} },
+  set(k,v){ try{localStorage.setItem(k,v);}catch(e){mem[k]=v;} }
+};
+const LS_SET='jichul_settings_v1', LS_PAYEE='jichul_payees_v2';
+function getSettings(){ try{return JSON.parse(store.get(LS_SET))||{};}catch(e){return{};} }
+function setSettings(o){ store.set(LS_SET,JSON.stringify(o)); }
+/* 거래처 주소록: { 상호: {rep, region:'국내'|'해외'} } */
+function getPayees(){
+  try{ const v=JSON.parse(store.get(LS_PAYEE)); if(v&&typeof v==='object') return v; }catch(e){}
+  try{ const old=JSON.parse(store.get('jichul_payees_v1'));   // 구버전(상호→대표자) 자동 이전
+    if(old&&typeof old==='object'){ const m={}; Object.keys(old).forEach(k=>m[k]={rep:String(old[k]||''),region:'해외'}); setPayees(m); return m; } }catch(e){}
+  return {};
+}
+function setPayees(o){ store.set(LS_PAYEE,JSON.stringify(o)); }
+
+/* ============ 토스트 ============ */
+let toastTimer;
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.className='toast';},2200);
+}
+
+/* ============ 숫자/통화/날짜 ============ */
+function parseNum(v){ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+function fmt(n){ return (Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:2}); }
+const CUR={USD:'$',CNY:'¥',EUR:'€',JPY:'¥',KRW:'₩'};
+function curSym(){ const el=document.getElementById('currency'); return el?(CUR[el.value]||''):'$'; }
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtDateK(iso){
+  if(!iso) return '20      .          .          .';
+  const [y,m,d]=iso.split('-');
+  return `${y}. ${Number(m)}. ${Number(d)}.`;
+}
+
+/* ============ 한글 금액 변환 ============ */
+function numToKorean(num){
+  num=Math.floor(Math.abs(Number(num)||0));
+  if(num===0) return '영';
+  const dig=['','일','이','삼','사','오','육','칠','팔','구'];
+  const small=['','십','백','천'];
+  const big=['','만','억','조','경'];
+  let res='', gi=0;
+  while(num>0){
+    let grp=num%10000;
+    if(grp>0){
+      let s='', g=grp, pos=0;
+      while(g>0){
+        const dd=g%10;
+        if(dd>0) s=dig[dd]+small[pos]+s;
+        g=Math.floor(g/10); pos++;
+      }
+      res=s+big[gi]+res;
+    }
+    num=Math.floor(num/10000); gi++;
+  }
+  return res;
+}
+
+/* ============ 거래처/내역 UI ============ */
+const payeesWrap=document.getElementById('payeesWrap');
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function rateVal(){ return parseNum(document.getElementById('rate').value); }
+function won(n,isFx){ return (isFx?'약 ₩':'₩')+fmt(n); }
+
+function addItem(tbody,it){
+  it=it||{};
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input class="i-attach" value="${escAttr(it.attach||'')}"></td>
+    <td><input class="i-desc" placeholder="계약내용" value="${escAttr(it.desc||'')}"></td>
+    <td><input class="i-unit" inputmode="decimal" placeholder="0" style="text-align:right" value="${it.unit==null?'':escAttr(it.unit)}"></td>
+    <td><input class="i-qty" inputmode="decimal" placeholder="1" style="text-align:right" value="${it.qty==null?'1':escAttr(it.qty)}"></td>
+    <td class="t-amount i-total">—</td>
+    <td class="t-del"><button class="danger ghost" type="button">✕</button></td>`;
+  tr.querySelector('.t-del button').onclick=()=>{ tr.remove(); recalc(); };
+  tr.querySelectorAll('.i-unit,.i-qty').forEach(el=>el.addEventListener('input',recalc));
+  tbody.appendChild(tr);
+  recalc();
+}
+function addPayee(p){
+  p=p||{};
+  const div=document.createElement('div');
+  div.className='payee';
+  div.innerHTML=`
+    <div class="payee-head">
+      <span class="pidx">거래처</span>
+      <div style="flex:0 0 150px"><label>저장된 거래처 불러오기</label><select class="p-load"></select></div>
+      <div style="flex:2;min-width:130px"><label>상호(소속)</label><input class="p-company" list="payeeList" placeholder="상호" value="${escAttr(p.company||'')}"></div>
+      <div style="flex:1;min-width:80px"><label>대표자</label><input class="p-rep" placeholder="대표자" value="${escAttr(p.rep||'')}"></div>
+      <div style="flex:0 0 96px"><label>구분</label><select class="p-region"><option value="해외">해외</option><option value="국내">국내</option></select></div>
+      <button class="save-payee primary" type="button">💾 저장</button>
+      <button class="danger ghost del-payee" type="button">거래처 삭제</button>
+    </div>
+    <div class="payee-head2">
+      <div style="flex:0 0 96px"><label>지급 구분</label><select class="p-type"><option value="선금">선금</option><option value="잔금">잔금</option><option value="전액">전액</option></select></div>
+      <div style="flex:0 0 90px"><label>선금 %</label><input class="p-adv" inputmode="decimal" value="${p.advPct==null?'30':escAttr(p.advPct)}"></div>
+      <div style="flex:0 0 90px"><label>잔금 %</label><input class="p-bal" inputmode="decimal" value="${p.balPct==null?'70':escAttr(p.balPct)}"></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th style="width:54px">첨부</th>
+        <th>계약내용</th>
+        <th style="width:110px;text-align:right">단가(외화)</th>
+        <th style="width:56px;text-align:right">개수</th>
+        <th style="width:120px;text-align:right">총금액</th>
+        <th class="t-del"></th>
+      </tr></thead>
+      <tbody class="p-items"></tbody>
+    </table>
+    <div style="margin-top:10px"><button class="add-item ghost" type="button">+ 행 추가</button></div>
+    <div class="payee-sub">—</div>`;
+  div.querySelector('.p-type').value=p.payType||'선금';
+  div.querySelector('.p-region').value=p.region||'해외';
+  const tb=div.querySelector('.p-items');
+  div.querySelector('.del-payee').onclick=()=>{ div.remove(); renumberPayees(); recalc(); };
+  div.querySelector('.add-item').onclick=()=>addItem(tb);
+  div.querySelector('.save-payee').onclick=()=>savePayeeBlock(div);
+  const adv=div.querySelector('.p-adv'), bal=div.querySelector('.p-bal'), type=div.querySelector('.p-type');
+  adv.addEventListener('input',()=>{ bal.value=String(Math.max(0,Math.round((100-parseNum(adv.value))*100)/100)); recalc(); });
+  bal.addEventListener('input',()=>{ adv.value=String(Math.max(0,Math.round((100-parseNum(bal.value))*100)/100)); recalc(); });
+  type.addEventListener('change',recalc);
+  const comp=div.querySelector('.p-company'), rep=div.querySelector('.p-rep');
+  comp.addEventListener('change',()=>{ const rec=getPayees()[comp.value]; if(rec && !rep.value) rep.value=rec.rep||''; });
+  const load=div.querySelector('.p-load');
+  load.onchange=()=>{ const nm=load.value; const rec=nm&&getPayees()[nm]; if(rec){ comp.value=nm; rep.value=rec.rep||''; div.querySelector('.p-region').value=rec.region||'해외'; } load.value=''; recalc(); };
+  payeesWrap.appendChild(div);
+  if(p.items&&p.items.length) p.items.forEach(it=>addItem(tb,it)); else addItem(tb);
+  renumberPayees();
+  refreshAddrUI();
+  recalc();
+}
+function savePayeeBlock(div){
+  const name=div.querySelector('.p-company').value.trim();
+  if(!name){ toast('상호를 입력하세요','err'); return; }
+  const region=div.querySelector('.p-region').value;
+  const m=getPayees();
+  m[name]={ rep:div.querySelector('.p-rep').value.trim(), region };
+  setPayees(m); refreshAddrUI();
+  toast(`거래처 저장됨 · ${region}`,'ok');
+}
+function renumberPayees(){
+  payeesWrap.querySelectorAll('.payee').forEach((d,i)=>{ d.querySelector('.pidx').textContent='거래처 '+(i+1); });
+}
+function payeeCalc(d,rate){
+  let sub=0;
+  d.querySelectorAll('.p-items tr').forEach(tr=>{
+    const u=parseNum(tr.querySelector('.i-unit').value), q=parseNum(tr.querySelector('.i-qty').value);
+    sub+=u*q;
+  });
+  const type=d.querySelector('.p-type').value;
+  const adv=parseNum(d.querySelector('.p-adv').value), bal=parseNum(d.querySelector('.p-bal').value);
+  const pct=type==='선금'?adv:(type==='잔금'?bal:100);
+  const payFx=sub*pct/100;
+  return {sub, type, pct, payFx, payKrw:Math.round(payFx*rate)};
+}
+function recalc(){
+  const rate=rateVal(), C=curSym();
+  const isFx=document.getElementById('currency').value!=='KRW';
+  let totFx=0, payFxSum=0, payKrwSum=0;
+  payeesWrap.querySelectorAll('.payee').forEach(d=>{
+    d.querySelectorAll('.p-items tr').forEach(tr=>{
+      const u=parseNum(tr.querySelector('.i-unit').value), q=parseNum(tr.querySelector('.i-qty').value);
+      const t=u*q; tr.querySelector('.i-total').textContent=t?C+fmt(t):'—';
+    });
+    const r=payeeCalc(d,rate);
+    totFx+=r.sub; payFxSum+=r.payFx; payKrwSum+=r.payKrw;
+    d.querySelector('.payee-sub').innerHTML =
+      `소계 <b>${C}${fmt(r.sub)}</b> (${won(Math.round(r.sub*rate),isFx)}) &nbsp;·&nbsp; ${r.type} ${r.pct}% → 이번 지급 <b>${C}${fmt(r.payFx)}</b> 확정 = <b>${won(r.payKrw,isFx)}</b>`;
+  });
+  const totKrw=Math.round(totFx*rate);
+  document.getElementById('totFx').textContent=C+fmt(totFx);
+  document.getElementById('totKrw').textContent=won(totKrw,isFx);
+  document.getElementById('payFx').textContent=C+fmt(payFxSum);
+  document.getElementById('payKrw').textContent=won(payKrwSum,isFx);
+  const n=payeesWrap.querySelectorAll('.payee').length;
+  document.getElementById('payDesc').textContent =
+    `이번 총 지급액  ${C}${fmt(payFxSum)} 확정 = ${won(payKrwSum,isFx)}  · 거래처 ${n}곳`;
+  return {totFx,totKrw,payFx:payFxSum,payKrw:payKrwSum,rate};
+}
+function getPayeesData(){
+  const out=[];
+  payeesWrap.querySelectorAll('.payee').forEach(d=>{
+    const items=[];
+    d.querySelectorAll('.p-items tr').forEach(tr=>{
+      const u=parseNum(tr.querySelector('.i-unit').value), q=parseNum(tr.querySelector('.i-qty').value);
+      const o={attach:tr.querySelector('.i-attach').value.trim(),desc:tr.querySelector('.i-desc').value.trim(),unit:u,qty:q,total:u*q};
+      if(o.attach||o.desc||u) items.push(o);
+    });
+    const company=d.querySelector('.p-company').value.trim();
+    const rep=d.querySelector('.p-rep').value.trim();
+    if(company||rep||items.length){
+      out.push({company,rep,region:d.querySelector('.p-region').value,payType:d.querySelector('.p-type').value,advPct:parseNum(d.querySelector('.p-adv').value),balPct:parseNum(d.querySelector('.p-bal').value),items});
+    }
+  });
+  return out;
+}
+
+/* ============ 실시간 환율 ============ */
+let lastRate={date:'',src:''};
+async function fetchRate(){
+  const cur=document.getElementById('currency').value;
+  const info=document.getElementById('rateInfo');
+  if(cur==='KRW'){ document.getElementById('rate').value='1'; lastRate={date:'',src:'원화'}; info.textContent='원화 — 환율 1'; recalc(); saveSettings(); return; }
+  info.textContent='실시간 환율 불러오는 중…';
+  let res=null;
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/'+cur);
+    const j=await r.json();
+    if(j&&j.result==='success'&&j.rates&&j.rates.KRW) res={rate:j.rates.KRW, date:(j.time_last_update_utc||'').slice(5,16), src:'er-api'};
+  }catch(e){}
+  if(!res){ try{
+    const r=await fetch('https://api.frankfurter.app/latest?from='+cur+'&to=KRW');
+    const j=await r.json();
+    if(j&&j.rates&&j.rates.KRW) res={rate:j.rates.KRW, date:j.date, src:'frankfurter'};
+  }catch(e){} }
+  if(res){
+    document.getElementById('rate').value=res.rate.toFixed(2);
+    lastRate={date:res.date, src:res.src};
+    info.textContent=`1 ${cur} = ${fmt(res.rate)} KRW  ·  ${res.src} ${res.date}`;
+    toast('실시간 환율 적용됨','ok');
+  }else{
+    lastRate={date:'', src:'수동'};
+    info.textContent='실시간 환율 실패 — 환율을 직접 입력하세요';
+    toast('환율 불러오기 실패 — 직접 입력','err');
+  }
+  recalc(); saveSettings();
+}
+
+document.getElementById('addPayee').onclick=()=>addPayee();
+document.getElementById('currency').addEventListener('change',()=>{ saveSettings(); fetchRate(); });
+document.getElementById('fetchRate').onclick=fetchRate;
+document.getElementById('rate').addEventListener('input',()=>{ lastRate={date:'',src:'수동'}; recalc(); saveSettings(); });
+
+/* ============ 설정 자동 저장/복원 + 거래처 datalist ============ */
+const SET_FIELDS=['company','kind','currency','rate','app1','app2','app3','docs','writer'];
+function saveSettings(){
+  const o={};
+  SET_FIELDS.forEach(id=>o[id]=document.getElementById(id).value);
+  setSettings(o);
+}
+function refreshAddrUI(){
+  const m=getPayees();
+  const names=Object.keys(m);
+  document.getElementById('payeeList').innerHTML=names.map(n=>`<option value="${escAttr(n)}">`).join('');
+  const dom=names.filter(n=>m[n].region!=='해외'), ovs=names.filter(n=>m[n].region==='해외');
+  const opts='<option value="">— 불러오기 —</option>'
+    +(ovs.length?'<optgroup label="해외">'+ovs.map(n=>`<option value="${escAttr(n)}">${escAttr(n)}</option>`).join('')+'</optgroup>':'')
+    +(dom.length?'<optgroup label="국내">'+dom.map(n=>`<option value="${escAttr(n)}">${escAttr(n)}</option>`).join('')+'</optgroup>':'');
+  document.querySelectorAll('.p-load').forEach(sel=>{ sel.innerHTML=opts; });
+  const book=document.getElementById('addrBook');
+  if(!book) return;
+  if(!names.length){ book.innerHTML='<span class="lbl">저장된 거래처 없음 — 상호 입력 후 💾 저장</span>'; return; }
+  book.innerHTML='<span class="lbl">저장된 거래처:</span>'+names.map(n=>{
+    const ovsF=m[n].region==='해외';
+    return `<span class="chip ${ovsF?'ovs':'dom'}" data-name="${escAttr(n)}">${escAttr(n)} <span class="rg">${ovsF?'해외':'국내'}</span> <button type="button" title="주소록에서 삭제">✕</button></span>`;
+  }).join('');
+  book.querySelectorAll('.chip button').forEach(btn=>{
+    btn.onclick=()=>{ const nm=btn.closest('.chip').dataset.name; const mm=getPayees(); delete mm[nm]; setPayees(mm); refreshAddrUI(); toast('거래처 삭제됨','ok'); };
+  });
+}
+function rememberPayees(payees){
+  const m=getPayees();
+  payees.forEach(p=>{ if(p.company){ const ex=m[p.company]||{}; m[p.company]={rep:p.rep||ex.rep||'', region:p.region||ex.region||'해외'}; } });
+  setPayees(m); refreshAddrUI();
+}
+
+/* ============ XLSX 생성 ============ */
+function xesc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function colL(i){ let s='',n=i+1; while(n>0){ const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26); } return s; }
+/* 스타일 인덱스 = styles.xml cellXfs 순서 */
+const S={NORMAL:0,TITLE:1,SUB:2,HEADER:3,LABEL:4,TEXT:5,CENTER:6,NUMFX:7,QTY:8,GROUP:9,SUBTOT:10,GRAND:11,AMOUNT:12,NOTE:13,RECV:14};
+
+function buildSheet(d){
+  const C=d.curSym, isFx=d.curCode!=='KRW', wpx=isFx?'한화 약 ₩':'₩';
+  const model=[];
+  const R=(h,cells)=>model.push({h,cells});
+  const T=(v,s,cs,rs)=>({v,s,cs:cs||1,rs:rs||1});      // 텍스트 셀
+  const N=(v,s,cs)=>({v,s,cs:cs||1,rs:1,num:true});    // 숫자 셀
+
+  R(30,[T('지 출 결 의 서',S.TITLE,6)]);
+  R(18,[T('( '+(d.kind||'외화지급용')+' )',S.SUB,6)]);
+  // 결재란
+  R(22,[T('결재구분 : '+(d.kind||'외화지급용'),S.TEXT,3,3), T('담당',S.HEADER), T('계약검토',S.HEADER), T('승인',S.HEADER)]);
+  R(22,[T(d.app1||'',S.CENTER), T(d.app2||'',S.CENTER), T(d.app3||'',S.CENTER)]);
+  R(40,[T('',S.CENTER), T('',S.CENTER), T('',S.CENTER)]);
+  // 지출금액
+  const amountText = isFx
+    ? `지출 금액 :   ${C}${fmt(d.payFx)}   ( 한화 약 ${fmt(d.payKrw)}원 )`
+    : `지출 금액 :   ₩${fmt(d.payKrw)}   ( 금${numToKorean(d.payKrw)} )원정`;
+  R(30,[T(amountText,S.AMOUNT,6)]);
+  // 날짜
+  R(22,[T('원인행위일',S.LABEL), T(fmtDateK(d.causeDate),S.CENTER,2), T('지출결의일',S.LABEL), T(fmtDateK(d.resolveDate),S.CENTER,2)]);
+  // 내역
+  R(20,[T('내 역',S.HEADER,6)]);
+  R(22,[T('첨부번호',S.HEADER), T('계약내용',S.HEADER), T('단가('+d.curCode+')',S.HEADER), T('개수',S.HEADER), T('총금액('+d.curCode+')',S.HEADER,2)]);
+  (d.payees||[]).forEach((p,i)=>{
+    const sub=(p.items||[]).reduce((a,b2)=>a+(b2.total||0),0);
+    const pct=p.payType==='선금'?p.advPct:(p.payType==='잔금'?p.balPct:100);
+    const pf=sub*pct/100, pk=Math.round(pf*d.rate);
+    R(22,[T(`지급처 ${i+1}.   ${p.company||''}${p.rep?'      (대표자 : '+p.rep+')':''}`,S.GROUP,6)]);
+    const its=(p.items&&p.items.length)?p.items:[{}];
+    its.forEach(it=>{
+      R(18,[
+        T(it.attach||'',S.CENTER),
+        T(it.desc||'',S.TEXT),
+        (it.unit?N(it.unit,S.NUMFX):T('',S.NUMFX)),
+        (it.qty?N(it.qty,S.QTY):T('',S.QTY)),
+        (it.total?N(it.total,S.NUMFX,2):T('',S.NUMFX,2))
+      ]);
+    });
+    const payTxt = p.payType==='전액' ? '전액 100%' : `${p.payType} ${pct}%`;
+    R(18,[T(`└ 소계 ${C}${fmt(sub)} = ${wpx}${fmt(Math.round(sub*d.rate))}   |   ${payTxt} 지급 ${C}${fmt(pf)} 확정 = ${wpx}${fmt(pk)}`,S.SUBTOT,6)]);
+  });
+  R(20,[T(`■ 합계   계약총액 ${C}${fmt(d.totFx)} = ${wpx}${fmt(d.totKrw)}   |   이번 총지급 ${C}${fmt(d.payFx)} 확정 = ${wpx}${fmt(d.payKrw)}`,S.GRAND,6)]);
+  // 환율 + 주의
+  const rateLine = `1 ${d.curCode} = ${fmt(d.rate)} KRW` + (d.rateSrc?`   (${d.rateSrc} 시장환율 · ${d.rateDate||'기준일 미상'})`:'   (수동 입력)');
+  R(20,[T('적용 환율',S.LABEL), T(rateLine,S.TEXT,5)]);
+  if(isFx) R(30,[T('※ 외화 금액이 실제 지급(송금) 기준이며, 원화는 위 시장환율 기준 환산 참고액입니다. 실제 송금액은 송금일 은행 적용환율에 따라 차이가 날 수 있습니다.',S.NOTE,6)]);
+  // 사유/증빙
+  R(24,[T('지급사유',S.LABEL), T(d.reason||'',S.TEXT,5)]);
+  R(24,[T('증빙서류',S.LABEL), T(d.docs||'',S.TEXT,5)]);
+  // 확인문
+  R(18,[T('위 금액을 지급하여 주시기 바랍니다.',S.TEXT,6)]);
+  R(18,[T('본 지급사항은 진실되었으며, 해당 서류들이 온전함을 확인합니다.',S.TEXT,6)]);
+  R(20,[T(fmtDateK(d.writeDate),S.CENTER,6)]);
+  R(26,[T(`작성자 :  ${d.writer||''}                              (서명)`,S.TEXT,6)]);
+  // 수신
+  R(10,[T('',S.NORMAL,6)]);
+  R(24,[T((d.company||'주식회사 스탠다다')+' 대표이사 귀하',S.RECV,6)]);
+
+  return renderSheet(model,6);
+}
+
+function renderSheet(model,NCOL){
+  const grid=[], merges=[], occ={};
+  for(let r=0;r<model.length;r++){
+    if(!grid[r]) grid[r]=[];
+    let c=0;
+    for(const cell of model[r].cells){
+      while(occ[r+'_'+c]) c++;
+      const cs=cell.cs||1, rs=cell.rs||1;
+      grid[r][c]={v:cell.v,s:cell.s,num:cell.num};
+      for(let dr=0;dr<rs;dr++) for(let dc=0;dc<cs;dc++){
+        if(dr===0&&dc===0) continue;
+        occ[(r+dr)+'_'+(c+dc)]=true;
+        if(!grid[r+dr]) grid[r+dr]=[];
+        grid[r+dr][c+dc]={v:'',s:cell.s};
+      }
+      if(cs>1||rs>1) merges.push(colL(c)+(r+1)+':'+colL(c+cs-1)+(r+rs));
+      c+=cs;
+    }
+  }
+  let body='';
+  const nrows=grid.length;
+  for(let r=0;r<nrows;r++){
+    const grow=grid[r]||[]; let cellsXml='';
+    for(let c=0;c<NCOL;c++){
+      const g=grow[c]; if(!g) continue;
+      const ref=colL(c)+(r+1);
+      if(g.num && g.v!=='' && g.v!=null) cellsXml+=`<c r="${ref}" s="${g.s}"><v>${g.v}</v></c>`;
+      else if(g.v!=='' && g.v!=null) cellsXml+=`<c r="${ref}" t="inlineStr" s="${g.s}"><is><t xml:space="preserve">${xesc(g.v)}</t></is></c>`;
+      else cellsXml+=`<c r="${ref}" s="${g.s}"/>`;
+    }
+    const h=model[r]&&model[r].h;
+    body+=`<row r="${r+1}"${h?` ht="${h}" customHeight="1"`:''}>${cellsXml}</row>`;
+  }
+  const mergeXml = merges.length?`<mergeCells count="${merges.length}">`+merges.map(m=>`<mergeCell ref="${m}"/>`).join('')+'</mergeCells>':'';
+  return {body, mergeXml, dim:'A1:'+colL(NCOL-1)+nrows};
+}
+
+/* ---- ZIP (STORE, 무압축) → 진짜 .docx ---- */
+function crc32(bytes){
+  let crc=~0;
+  for(let i=0;i<bytes.length;i++){ crc^=bytes[i];
+    for(let j=0;j<8;j++) crc=(crc>>>1)^(0xEDB88320 & -(crc&1)); }
+  return (~crc)>>>0;
+}
+function makeZip(files,mime){
+  const enc=new TextEncoder(); const chunks=[]; const central=[]; let offset=0;
+  function push(arr){ chunks.push(arr); offset+=arr.length; }
+  for(const f of files){
+    const nameBytes=enc.encode(f.name); const data=f.data; const crc=crc32(data);
+    const lh=new Uint8Array(30+nameBytes.length); const dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true); dv.setUint16(4,20,true); dv.setUint16(6,0x0800,true);
+    dv.setUint16(8,0,true); dv.setUint16(10,0,true); dv.setUint16(12,0,true);
+    dv.setUint32(14,crc,true); dv.setUint32(18,data.length,true); dv.setUint32(22,data.length,true);
+    dv.setUint16(26,nameBytes.length,true); dv.setUint16(28,0,true); lh.set(nameBytes,30);
+    const localOffset=offset; push(lh); push(data);
+    central.push({nameBytes,crc,size:data.length,localOffset});
+  }
+  const cStart=offset;
+  for(const c of central){
+    const ch=new Uint8Array(46+c.nameBytes.length); const dv=new DataView(ch.buffer);
+    dv.setUint32(0,0x02014b50,true); dv.setUint16(4,20,true); dv.setUint16(6,20,true);
+    dv.setUint16(8,0x0800,true); dv.setUint16(10,0,true); dv.setUint16(12,0,true); dv.setUint16(14,0,true);
+    dv.setUint32(16,c.crc,true); dv.setUint32(20,c.size,true); dv.setUint32(24,c.size,true);
+    dv.setUint16(28,c.nameBytes.length,true); dv.setUint16(30,0,true); dv.setUint16(32,0,true);
+    dv.setUint16(34,0,true); dv.setUint16(36,0,true); dv.setUint32(38,0,true);
+    dv.setUint32(42,c.localOffset,true); ch.set(c.nameBytes,46); push(ch);
+  }
+  const cSize=offset-cStart;
+  const eo=new Uint8Array(22); const dv=new DataView(eo.buffer);
+  dv.setUint32(0,0x06054b50,true); dv.setUint16(4,0,true); dv.setUint16(6,0,true);
+  dv.setUint16(8,central.length,true); dv.setUint16(10,central.length,true);
+  dv.setUint32(12,cSize,true); dv.setUint32(16,cStart,true); dv.setUint16(20,0,true); push(eo);
+  return new Blob(chunks,{type:mime||'application/octet-stream'});
+}
+
+const XL_CT=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+const XL_RELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+const XL_WB=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="지출결의서" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+const XL_WBR=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+const XL_STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="6"><font><sz val="11"/><name val="Malgun Gothic"/></font><font><b/><sz val="11"/><name val="Malgun Gothic"/></font><font><b/><sz val="20"/><name val="Malgun Gothic"/></font><font><sz val="9"/><name val="Malgun Gothic"/></font><font><b/><sz val="14"/><name val="Malgun Gothic"/></font><font><b/><sz val="13"/><name val="Malgun Gothic"/></font></fonts><fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEFEFEF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F1"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FF808080"/></left><right style="thin"><color rgb="FF808080"/></right><top style="thin"><color rgb="FF808080"/></top><bottom style="thin"><color rgb="FF808080"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="15"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="4" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+
+function buildXlsxBlob(d){
+  const sh=buildSheet(d);
+  const cols=`<cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="32" customWidth="1"/><col min="3" max="3" width="13" customWidth="1"/><col min="4" max="4" width="8" customWidth="1"/><col min="5" max="5" width="13" customWidth="1"/><col min="6" max="6" width="12" customWidth="1"/></cols>`;
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="${sh.dim}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="16"/>${cols}<sheetData>${sh.body}</sheetData>${sh.mergeXml}<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  const enc=new TextEncoder();
+  return makeZip([
+    {name:'[Content_Types].xml',data:enc.encode(XL_CT)},
+    {name:'_rels/.rels',data:enc.encode(XL_RELS)},
+    {name:'xl/workbook.xml',data:enc.encode(XL_WB)},
+    {name:'xl/_rels/workbook.xml.rels',data:enc.encode(XL_WBR)},
+    {name:'xl/styles.xml',data:enc.encode(XL_STYLES)},
+    {name:'xl/worksheets/sheet1.xml',data:enc.encode(sheet)},
+  ],'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+window.buildXlsxBlob=buildXlsxBlob; // 디버그/테스트용
+
+function collectData(){
+  const t=recalc();
+  return {
+    company:document.getElementById('company').value.trim(),
+    kind:document.getElementById('kind').value.trim()||'외화지급용',
+    curSym:curSym(), curCode:document.getElementById('currency').value,
+    rate:t.rate, rateDate:lastRate.date, rateSrc:lastRate.src,
+    app1:document.getElementById('app1').value.trim(),
+    app2:document.getElementById('app2').value.trim(),
+    app3:document.getElementById('app3').value.trim(),
+    causeDate:document.getElementById('causeDate').value,
+    resolveDate:document.getElementById('resolveDate').value,
+    writeDate:document.getElementById('writeDate').value,
+    payees:getPayeesData(),
+    totFx:t.totFx, totKrw:t.totKrw, payFx:t.payFx, payKrw:t.payKrw,
+    reason:document.getElementById('reason').value.trim(),
+    docs:document.getElementById('docs').value.trim(),
+    writer:document.getElementById('writer').value.trim()
+  };
+}
+
+/* ============ 다운로드 ============ */
+document.getElementById('genBtn').onclick=()=>{
+  const d=collectData();
+  if(!d.payees.length){ toast('거래처를 1곳 이상 입력하세요','err'); return; }
+  rememberPayees(d.payees);
+  const blob=buildXlsxBlob(d);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const safe=(d.company||'스탠다다').replace(/[\\/:*?"<>|]/g,'_');
+  a.href=url; a.download=`지출결의서_${safe}_${d.writeDate||todayISO()}.xlsx`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('지출결의서 .xlsx 다운로드 완료','ok');
+};
+
+/* ============ 초기화 ============ */
+(function init(){
+  const s=getSettings();
+  const def={company:'주식회사 스탠다다',kind:'외화지급용',currency:'USD',rate:'',app1:'김정희',app2:'조현재',app3:'박정현',docs:'계약서 / 사업자등록증 / 인보이스 또는 PI',writer:''};
+  SET_FIELDS.forEach(id=>{ document.getElementById(id).value=(s[id]!=null&&s[id]!=='')?s[id]:def[id]; });
+  SET_FIELDS.forEach(id=>document.getElementById(id).addEventListener('input',saveSettings));
+  document.getElementById('causeDate').value=todayISO();
+  document.getElementById('resolveDate').value=todayISO();
+  document.getElementById('writeDate').value=todayISO();
+  document.querySelectorAll('input[type="date"]').forEach(el=>{
+    el.addEventListener('click',()=>{ try{ el.showPicker(); }catch(e){} });
+  });
+  addPayee();
+  refreshAddrUI();
+  recalc();
+  fetchRate();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>발주 계약서 생성기</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212b; --line:#2a2f3a;
+    --text:#e7eaf0; --muted:#9aa3b2; --accent:#4f8cff; --accent2:#3a6fd8;
+    --ok:#3ecf8e; --danger:#ff5c6c; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Malgun Gothic","맑은 고딕",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:linear-gradient(180deg,#0d0f14,#11141b); color:var(--text);
+    padding:32px 16px 80px;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 24px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; margin-bottom:18px;
+  }
+  .card h2{font-size:15px;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:6px;background:var(--accent2);color:#fff;
+    font-size:12px;font-weight:700;flex:none;
+  }
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  input,select,textarea{
+    width:100%; padding:10px 12px; background:var(--card2); border:1px solid var(--line);
+    border-radius:8px; color:var(--text); font-size:14px; font-family:inherit;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  input[type="date"]{color-scheme:dark;cursor:pointer}
+  input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row > div{flex:1;min-width:160px}
+  .mt{margin-top:12px}
+  button{
+    padding:10px 16px;border:1px solid var(--line);background:var(--card2);color:var(--text);
+    border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap;
+    transition:.15s;
+  }
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{background:var(--accent2)}
+  button.ghost{background:transparent}
+  button.danger{color:var(--danger)}
+  button.danger:hover{border-color:var(--danger)}
+  .langs{display:flex;gap:18px;flex-wrap:wrap}
+  .chk{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text)}
+  .chk input{width:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:6px 8px;font-size:12px}
+  td{padding:4px 4px}
+  td input{padding:8px 10px}
+  .t-amount{padding:8px 10px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .t-del{width:36px}
+  .t-del button{padding:6px 10px}
+  .totbar{
+    display:flex;justify-content:space-between;align-items:center;margin-top:14px;
+    padding-top:14px;border-top:1px solid var(--line);
+  }
+  .totbar .lbl{font-size:13px;color:var(--muted)}
+  .totbar .val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px}
+  .warn{font-size:12px;color:var(--danger);font-weight:700;margin:16px 0 8px}
+  details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-bottom:10px}
+  .generate{
+    width:100%;padding:16px;font-size:16px;font-weight:700;
+    background:linear-gradient(135deg,#4f8cff,#6a5cff);border:none;color:#fff;border-radius:12px;cursor:pointer;
+  }
+  .generate:hover{filter:brightness(1.08)}
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:#222834;border:1px solid var(--line);color:var(--text);padding:12px 20px;
+    border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:50;
+    box-shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.ok{border-color:var(--ok)}
+  .toast.err{border-color:var(--danger)}
+  .small{font-size:11px}
+  @media(max-width:560px){ .totbar .val{font-size:18px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>발주 계약서 생성기</h1>
+  <p class="sub">발주자·판매자 저장 · 제품/단가 자동 로딩 · 선금/잔금 자동계산 · 13개 조항 · 한/영/중 계약서 → <b>.xlsx 다운로드</b></p>
+
+  <!-- 언어 -->
+  <div class="card">
+    <h2><span class="num">✓</span> 계약서 언어 선택</h2>
+    <div class="langs">
+      <label class="chk"><input type="checkbox" class="lang" value="ko" checked> 한국어 (한문)</label>
+      <label class="chk"><input type="checkbox" class="lang" value="en"> English (영문)</label>
+      <label class="chk"><input type="checkbox" class="lang" value="zh"> 中文 (중문)</label>
+    </div>
+  </div>
+
+  <!-- 발주자 -->
+  <div class="card">
+    <h2><span class="num">1</span> 발주자명</h2>
+    <div class="row">
+      <div style="flex:2">
+        <label>저장된 발주자 불러오기</label>
+        <select id="buyerSelect"><option value="">— 선택 —</option></select>
+      </div>
+      <div style="flex:2">
+        <label>발주자명</label>
+        <input id="buyerName" placeholder="갑 (바이어)">
+      </div>
+      <div style="flex:0 0 auto;display:flex;gap:8px">
+        <button id="buyerSave" class="primary">저장</button>
+        <button id="buyerDelete" class="danger ghost">삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 판매자 -->
+  <div class="card">
+    <h2><span class="num">2</span> 판매자명</h2>
+    <div class="row">
+      <div style="flex:2">
+        <label>저장된 판매자 불러오기 <span class="small">(선택 시 제품·단가·은행정보 자동 로딩)</span></label>
+        <select id="sellerSelect"><option value="">— 선택 —</option></select>
+      </div>
+      <div style="flex:2">
+        <label>판매자명</label>
+        <input id="sellerName" placeholder="을 (셀러)">
+      </div>
+      <div style="flex:0 0 auto;display:flex;gap:8px">
+        <button id="sellerSave" class="primary">판매자 저장</button>
+        <button id="sellerDelete" class="danger ghost">삭제</button>
+      </div>
+    </div>
+    <p class="hint">「판매자 저장」은 아래 제품·단가·은행정보를 함께 저장합니다. 다음에 이 판매자를 선택하면 그대로 불러옵니다.</p>
+  </div>
+
+  <!-- 제품/단가 -->
+  <div class="card">
+    <h2><span class="num">3</span> 발주 제품 및 단가</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:42%">제품명</th>
+          <th style="width:22%">단가 (수정 가능)</th>
+          <th style="width:14%">수량</th>
+          <th style="width:18%;text-align:right;padding-right:10px">금액</th>
+          <th class="t-del"></th>
+        </tr>
+      </thead>
+      <tbody id="prodBody"></tbody>
+    </table>
+    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <button id="addRow" class="ghost">+ 제품 추가</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="margin:0">통화</label>
+        <select id="currency" style="width:auto">
+          <option value="KRW">₩ 원 (KRW)</option>
+          <option value="USD">$ 달러 (USD)</option>
+          <option value="CNY">¥ 위안 (CNY)</option>
+        </select>
+      </div>
+    </div>
+    <!-- 발주 총 금액 -->
+    <div class="totbar">
+      <span class="lbl">4. 발주 총 금액</span>
+      <span class="val" id="grandTotal">0</span>
+    </div>
+  </div>
+
+  <!-- 대금 지급 (선금/잔금) -->
+  <div class="card">
+    <h2><span class="num">5</span> 대금 지급 (선금 / 잔금)</h2>
+    <div class="row">
+      <div style="flex:0 0 130px"><label>선금 비율 %</label><input id="depositPct" inputmode="decimal" value="30"></div>
+      <div style="flex:0 0 130px"><label>잔금 비율 %</label><input id="balancePct" inputmode="decimal" value="70"></div>
+      <div style="flex:0 0 150px"><label>선금 지급기한(일)</label><input id="depositDays" inputmode="numeric" value="7"></div>
+    </div>
+    <div id="payPreview" class="hint"></div>
+  </div>
+
+  <!-- 조항 세부값 -->
+  <div class="card">
+    <h2><span class="num">6</span> 계약 조건 세부값 <span class="small" style="color:var(--muted)">· 13개 조항 빈칸에 들어감</span></h2>
+    <details open><summary>조항 빈칸 값 (기본값 채워둠 · 비우면 ____ 로 출력)</summary>
+      <div class="row">
+        <div style="flex:0 0 150px"><label>납기 (선금 후 일)</label><input id="deliveryDays" inputmode="numeric" value="30"></div>
+        <div style="flex:0 0 150px"><label>검수 기한(영업일)</label><input id="inspectDays" inputmode="numeric" value="7"></div>
+        <div style="flex:0 0 150px"><label>하자 배상률 %</label><input id="compensatePct" inputmode="decimal" value="10"></div>
+        <div style="flex:0 0 160px"><label>불가항력 통지(일)</label><input id="fmDays" inputmode="numeric" value="15"></div>
+      </div>
+      <div class="row mt">
+        <div style="flex:0 0 140px"><label>인코텀즈</label>
+          <select id="incoterms"><option>FOB</option><option>CIF</option><option>CFR</option><option>EXW</option><option>DAP</option><option>DDP</option></select></div>
+        <div><label>선적항 / 목적항</label><input id="port"></div>
+        <div><label>분쟁 관할 / 중재기관</label><input id="venue"></div>
+      </div>
+      <div class="row mt">
+        <div style="flex:0 0 150px"><label>유효기간 시작</label><input type="date" id="validFrom"></div>
+        <div style="flex:0 0 150px"><label>유효기간 종료</label><input type="date" id="validTo"></div>
+        <div style="flex:0 0 170px"><label>해석 우선 언어</label>
+          <select id="prevail"><option>中文</option><option>English</option><option>한국어</option></select></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- 판매자측 은행 정보 (송금정보 고정 항목 — 양식 그대로) -->
+  <div class="card">
+    <h2><span class="num">7</span> 판매자측 은행 정보 <span class="small" style="color:var(--muted)">· 항목 고정 출력 — 공란이면 공란 그대로 나가서 상대방(판매자)이 채움</span></h2>
+    <div class="row">
+      <div><label>은행명</label><input id="b0Bank"></div>
+      <div><label>은행 주소</label><input id="b0BankAddr"></div>
+      <div><label>SWIFT</label><input id="b0Swift"></div>
+    </div>
+    <div class="row mt">
+      <div><label>공장명</label><input id="bkFactory"></div>
+      <div><label>담당자명</label><input id="bkPerson"></div>
+      <div><label>연락처</label><input id="bkTel"></div>
+    </div>
+    <div class="row mt">
+      <div><label>영문 이름</label><input id="bkName"></div>
+      <div style="flex:2"><label>영문 주소</label><input id="bkAddr"></div>
+    </div>
+    <div class="row mt">
+      <div><label>입금계좌번호</label><input id="bkAcct"></div>
+      <div><label>지급은행 SWIFTCODE</label><input id="bkSwift"></div>
+      <div><label>은행소재국</label><input id="bkCountry"></div>
+    </div>
+    <div class="row mt">
+      <div><label>지급은행명</label><input id="bkBank"></div>
+      <div style="flex:2"><label>지급은행주소</label><input id="bkBankAddr"></div>
+    </div>
+    <p class="warn">중계은행 있는 경우 (상대방 확인필!!)</p>
+    <div class="row">
+      <div><label>중계은행 SWIFTCODE</label><input id="imSwift"></div>
+      <div><label>은행소재국</label><input id="imCountry"></div>
+    </div>
+    <div class="row mt">
+      <div><label>송금중계은행명</label><input id="imBank"></div>
+      <div style="flex:2"><label>송금중계은행주소</label><input id="imAddr"></div>
+    </div>
+  </div>
+
+  <!-- 계약 정보 -->
+  <div class="card">
+    <h2><span class="num">8</span> 계약 정보</h2>
+    <div class="row">
+      <div><label>계약서 계약번호</label><input id="contractNo"></div>
+      <div><label>계약서 계약일자</label><input type="date" id="issueDate"></div>
+      <div><label>해외은행 수수료부담하는 곳</label>
+        <select id="feeBearer">
+          <option value="">— 선택 안 하면 공란 출력 —</option>
+          <option value="buyer">우리회사</option>
+          <option value="seller">상대회사</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="generate" id="genBtn">📊  계약서 .xlsx 다운로드</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============ 저장소 (localStorage, 실패 시 메모리 폴백) ============ */
+const mem = {};
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return (k in mem)?mem[k]:null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
+};
+const LS_BUYERS='po_buyers_v1', LS_SELLERS='po_sellers_v1';
+function getBuyers(){ try{return JSON.parse(store.get(LS_BUYERS))||[]}catch(e){return[]} }
+function setBuyers(a){ store.set(LS_BUYERS, JSON.stringify(a)); }
+function getSellers(){ try{return JSON.parse(store.get(LS_SELLERS))||{}}catch(e){return{}} }
+function setSellers(o){ store.set(LS_SELLERS, JSON.stringify(o)); }
+
+/* ============ 토스트 ============ */
+let toastTimer;
+function toast(msg, type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ t.className='toast'; }, 2200);
+}
+
+/* ============ 숫자/날짜 포맷 ============ */
+function parseNum(v){ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+function fmt(n){ return (Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:2}); }
+const CURRENCIES={ KRW:'₩', USD:'$', CNY:'¥' };
+function curSym(){ const el=document.getElementById('currency'); return el?(CURRENCIES[el.value]||''):''; }
+function money(n){ return curSym()+fmt(n); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmtDate(lang, iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-');
+  if(lang==='ko') return `${y}년 ${m}월 ${d}일`;
+  if(lang==='zh') return `${y}年${m}月${d}日`;
+  return `${y}-${m}-${d}`;
+}
+function B(x){ return (x==null||x==='')?'____':String(x); }
+
+/* ============ 제품 테이블 UI ============ */
+const prodBody=document.getElementById('prodBody');
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function addRow(name='', price='', qty=1){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input class="p-name" placeholder="제품명" value="${escAttr(name)}"></td>
+    <td><input class="p-price" inputmode="decimal" placeholder="0" value="${price===''?'':escAttr(price)}"></td>
+    <td><input class="p-qty" inputmode="numeric" value="${escAttr(qty)}"></td>
+    <td class="t-amount p-amount">0</td>
+    <td class="t-del"><button class="danger ghost" type="button">✕</button></td>`;
+  tr.querySelector('.t-del button').onclick=()=>{ tr.remove(); recalc(); };
+  tr.querySelectorAll('.p-price,.p-qty').forEach(el=>el.addEventListener('input',recalc));
+  prodBody.appendChild(tr);
+  recalc();
+}
+function payPreview(total){
+  const d=parseNum(document.getElementById('depositPct').value), b=parseNum(document.getElementById('balancePct').value);
+  document.getElementById('payPreview').innerHTML=
+    `선금 ${d}% = <b>${money(total*d/100)}</b> &nbsp;·&nbsp; 잔금 ${b}% = <b>${money(total*b/100)}</b>`+
+    (Math.round(d+b)!==100?` &nbsp;<span style="color:var(--danger)">⚠ 합계 ${d+b}% (100% 아님)</span>`:'');
+}
+function recalc(){
+  let total=0;
+  prodBody.querySelectorAll('tr').forEach(tr=>{
+    const price=parseNum(tr.querySelector('.p-price').value);
+    const qty=parseNum(tr.querySelector('.p-qty').value);
+    const amt=price*qty; total+=amt;
+    tr.querySelector('.p-amount').textContent=money(amt);
+  });
+  document.getElementById('grandTotal').textContent=money(total);
+  payPreview(total);
+  return total;
+}
+function getProducts(){
+  const out=[];
+  prodBody.querySelectorAll('tr').forEach(tr=>{
+    const name=tr.querySelector('.p-name').value.trim();
+    const price=parseNum(tr.querySelector('.p-price').value);
+    const qty=parseNum(tr.querySelector('.p-qty').value);
+    if(name||price||qty) out.push({name,price,qty});
+  });
+  return out;
+}
+function setProducts(list){
+  prodBody.innerHTML='';
+  if(!list||!list.length){ addRow(); return; }
+  list.forEach(p=>addRow(p.name, p.price, p.qty==null?1:p.qty));
+}
+document.getElementById('addRow').onclick=()=>addRow();
+document.getElementById('currency').addEventListener('change',recalc);
+document.getElementById('balancePct').addEventListener('input',recalc);
+document.getElementById('depositPct').addEventListener('input',()=>{
+  const d=parseNum(document.getElementById('depositPct').value);
+  if(d>=0&&d<=100){ document.getElementById('balancePct').value=+(100-d).toFixed(2); }
+  recalc();
+});
+
+/* ============ 은행정보 필드 ============ */
+const BK_IDS=['b0Bank','b0BankAddr','b0Swift','bkFactory','bkPerson','bkTel','bkName','bkAddr','bkAcct','bkSwift','bkCountry','bkBank','bkBankAddr','imSwift','imCountry','imBank','imAddr'];
+function $v(id){ return document.getElementById(id).value.trim(); }
+
+/* ============ 발주자 저장/불러오기 ============ */
+const buyerSelect=document.getElementById('buyerSelect');
+const buyerName=document.getElementById('buyerName');
+function refreshBuyers(sel){
+  const arr=getBuyers();
+  buyerSelect.innerHTML='<option value="">— 선택 —</option>'+arr.map(n=>`<option ${n===sel?'selected':''}>${escAttr(n)}</option>`).join('');
+}
+buyerSelect.onchange=()=>{ if(buyerSelect.value) buyerName.value=buyerSelect.value; };
+document.getElementById('buyerSave').onclick=()=>{
+  const name=buyerName.value.trim();
+  if(!name){ toast('발주자명을 입력하세요','err'); return; }
+  const arr=getBuyers();
+  if(!arr.includes(name)) arr.push(name);
+  setBuyers(arr); refreshBuyers(name);
+  toast('발주자 저장됨','ok');
+};
+document.getElementById('buyerDelete').onclick=()=>{
+  const name=buyerSelect.value||buyerName.value.trim();
+  if(!name){ toast('삭제할 발주자를 선택하세요','err'); return; }
+  setBuyers(getBuyers().filter(n=>n!==name));
+  refreshBuyers(); buyerName.value='';
+  toast('발주자 삭제됨','ok');
+};
+
+/* ============ 판매자 저장/불러오기 (제품·은행정보 포함) ============ */
+const sellerSelect=document.getElementById('sellerSelect');
+const sellerName=document.getElementById('sellerName');
+function refreshSellers(sel){
+  const obj=getSellers();
+  const names=Object.keys(obj);
+  sellerSelect.innerHTML='<option value="">— 선택 —</option>'+names.map(n=>`<option ${n===sel?'selected':''}>${escAttr(n)}</option>`).join('');
+}
+sellerSelect.onchange=()=>{
+  const name=sellerSelect.value;
+  if(!name) return;
+  sellerName.value=name;
+  const rec=getSellers()[name]||{};
+  setProducts(rec.products||[]);
+  BK_IDS.forEach(id=>{ document.getElementById(id).value=(rec.bk&&rec.bk[id])||''; });
+  document.getElementById('feeBearer').value=rec.fee||'';
+  if(rec.currency){ document.getElementById('currency').value=rec.currency; }
+  recalc();
+  toast('판매자 정보 불러옴','ok');
+};
+document.getElementById('sellerSave').onclick=()=>{
+  const name=sellerName.value.trim();
+  if(!name){ toast('판매자명을 입력하세요','err'); return; }
+  const obj=getSellers();
+  const bk={}; BK_IDS.forEach(id=>bk[id]=$v(id));
+  obj[name]={ products:getProducts(), bk, fee:document.getElementById('feeBearer').value, currency:document.getElementById('currency').value };
+  setSellers(obj); refreshSellers(name);
+  toast('판매자 정보 저장됨 (제품·은행정보 포함)','ok');
+};
+document.getElementById('sellerDelete').onclick=()=>{
+  const name=sellerSelect.value||sellerName.value.trim();
+  if(!name){ toast('삭제할 판매자를 선택하세요','err'); return; }
+  const obj=getSellers(); delete obj[name]; setSellers(obj);
+  refreshSellers();
+  toast('판매자 삭제됨','ok');
+};
+
+/* ============ 다국어 라벨 ============ */
+const LABELS={
+  ko:{ font:'Malgun Gothic', sheet:'계약서 (KO)',
+    title:'발 주 계 약 서', dateLabel:'계약일자', contractNo:'계약번호', buyer:'발주자 (갑)', seller:'판매자 (을)',
+    productsHeading:'발주 제품 및 단가', colName:'제품명', colPrice:'단가', colQty:'수량', colAmount:'금액',
+    total:'합계', totalAmount:'발주 총 금액',
+    payHeading:'대금 지급 일정', payStage:'지급 단계', payPct:'비율', payAmt:'금액',
+    payDeposit:'선금  (계약 체결 시 T/T 선지급)', payBalance:'잔금  (선적 전 / B/L 사본 제시 시)', payTotal:'합 계',
+    bankTitle:'판매자측 은행 정보 (공란은 판매자가 기재)',
+    bk:{ b0Bank:'은행명 :', b0BankAddr:'은행 주소 :', b0Swift:'SWIFT :',
+      bkFactory:'공장명 :', bkPerson:'담당자명 :', bkTel:'연락처 :',
+      bkName:'영문 이름 :', bkAddr:'영문 주소 :', bkAcct:'입금계좌번호 :',
+      bkSwift:'지급은행 SWIFTCODE :', bkCountry:'은행소재국 :', bkBank:'지급은행명 :', bkBankAddr:'지급은행주소 :' },
+    im:{ header:'중계은행 있는 경우 (상대방 확인필!!)',
+      imSwift:'중계은행 SWIFTCODE :', imCountry:'은행소재국 :', imBank:'송금중계은행명 :', imAddr:'송금중계은행주소 :' },
+    cn2:{ no:'계약서 계약번호 :', date:'계약서 계약일자 :' },
+    fee:{ label:'해외은행 수수료부담하는 곳 :', buyer:'우리회사', seller:'상대회사' },
+    termsHeading:'계약 조건',
+    clauses:(v,cur)=>[
+      `1. 대금지급조건: 매수인은 본 계약 체결 후 ${B(v.depositDays)}일 이내에 계약 총액의 ${B(v.depositPct)}%를 전신환(T/T)으로 선금 지급하며, 잔금 ${B(v.balancePct)}%는 선적 전 / 선하증권(B/L) 사본 제시 시 지급한다. 매도인은 선금 수령 후 생산을 진행한다(상기 대금 지급 일정 참조).`,
+      `2. 무역조건: 가격은 ${B(v.incoterms)} 조건(Incoterms® 2020), ${B(v.port)} 기준이며 결제통화는 ${cur}이다. 별도 합의가 없는 한 가격은 세금을 포함하지 않으며, 운임 및 보험은 합의된 인코텀즈에 따라 부담한다.`,
+      `3. 납기: 매도인은 선금 수령 및 매수인의 시안/샘플 확인 후 ${B(v.deliveryDays)}일 이내에 인도한다. 분할선적/환적은 별도 합의에 따른다.`,
+      `4. 포장: 원거리 해상/항공 운송에 적합한 표준 수출 포장을 적용한다. 별도 서면 합의가 없는 한 포장재는 회수하지 않는다.`,
+      `5. 품질 및 검수: 물품은 합의된 규격·수량 및 승인 샘플에 부합하여야 한다. 매수인은 수령 즉시 검수하고 ${B(v.inspectDays)} 영업일 이내에 서면으로 이의를 제기하며, 기한 경과 시 검수 합격으로 본다.`,
+      `6. 환불 및 반품: 확인된 품질 하자에 대하여 매도인은 수리·교환 또는 환불 책임을 진다. 매도인의 중대한 하자로 반품이 발생한 경우 매도인은 전액 환불하고 그로 인한 매수인의 손실에 대해 물품가액의 ${B(v.compensatePct)}%를 배상한다. 매수인은 확인을 위해 사진/영상을 제공한다.`,
+      `7. 지식재산권: 매수인이 제공한 상표·로고(LOGO)·디자인 및 시안은 매수인의 독점적 자산이다. 매도인은 매수인의 동의 없이 매수인 표장이 부착된 제품을 사용·복제·양도하거나 제3자에게 판매할 수 없으며, 매수인의 디자인을 유출할 수 없다. 위반 시 매수인은 전액 환불과 위약금 및 관련 법적 비용을 청구할 수 있다.`,
+      `8. 불가항력: 천재지변·전쟁·전염병·정부조치 등 합리적 통제를 벗어난 사유로 인한 이행 지연·불능에 대하여 양 당사자는 책임을 지지 않는다. 영향을 받은 당사자는 ${B(v.fmDays)}일 이내에 증빙과 함께 상대방에게 통지하며, 사유 소멸 후 이행을 재개한다.`,
+      `9. 준거법 및 매매당사자 보호: 본 계약은 관련 무역법령에 따르며, 국제물품매매의 경우 적용이 배제되지 않는 한 「국제물품매매계약에 관한 유엔협약(CISG)」을 적용한다. 매수인과 매도인 쌍방의 적법한 권익은 동등하게 보호되며, 어느 일방도 본 계약을 일방적으로 변경할 수 없다.`,
+      `10. 분쟁해결: 분쟁은 우선 우호적 협의로 해결한다. 협의가 이루어지지 않는 경우 ${B(v.venue)}에 회부하여 최종 해결한다.`,
+      `11. 유효기간: 본 계약은 양 당사자의 서명·날인일로부터 발효하며(스캔본 유효), 유효기간은 ${B(v.validFrom)}부터 ${B(v.validTo)}까지로 한다. 비밀유지·분쟁해결 조항 및 미이행 채권·채무는 계약 만료의 영향을 받지 않는다.`,
+      `12. 계약서 부수 및 언어: 본 계약은 2부를 작성하여 매수인·매도인이 각 1부씩 보관하며 동등한 법적 효력을 가진다. 해석상 차이가 있는 경우 ${B(v.prevail)} 본을 기준으로 한다.`,
+      `13. 기타약정: 본 계약에 정하지 않은 사항은 양 당사자가 우호적으로 협의하여 서면 보충합의로 정하며, 보충합의는 본 계약과 동등한 효력을 가지는 불가분의 일부를 구성한다.`,
+    ],
+    buyerSign:'발주자 (서명/인)', sellerSign:'판매자 (서명/인)' },
+  en:{ font:'Arial', sheet:'PO Contract (EN)',
+    title:'PURCHASE ORDER CONTRACT', dateLabel:'Contract Date', contractNo:'Contract No.', buyer:'Buyer (Party A)', seller:'Seller (Party B)',
+    productsHeading:'Products & Unit Prices', colName:'Product', colPrice:'Unit Price', colQty:'Qty', colAmount:'Amount',
+    total:'Total', totalAmount:'Total Order Amount',
+    payHeading:'PAYMENT SCHEDULE', payStage:'Payment Stage', payPct:'%', payAmt:'Amount',
+    payDeposit:'Deposit  (T/T in advance, upon signing)', payBalance:'Balance  (before shipment / against B/L copy)', payTotal:'Total',
+    bankTitle:"Seller's Bank / Remittance Information (blanks to be filled by Seller)",
+    bk:{ b0Bank:'Bank Name :', b0BankAddr:'Bank Address :', b0Swift:'SWIFT :',
+      bkFactory:'Factory Name :', bkPerson:'Contact Person :', bkTel:'Tel :',
+      bkName:'Name in English :', bkAddr:'Address in English :', bkAcct:'Account No. :',
+      bkSwift:'Paying Bank SWIFT CODE :', bkCountry:'Bank Country :', bkBank:'Paying Bank Name :', bkBankAddr:'Paying Bank Address :' },
+    im:{ header:'Intermediary bank, if any (MUST be confirmed by Seller!!)',
+      imSwift:'Intermediary Bank SWIFT CODE :', imCountry:'Bank Country :', imBank:'Intermediary Bank Name :', imAddr:'Intermediary Bank Address :' },
+    cn2:{ no:'Contract No. :', date:'Contract Date :' },
+    fee:{ label:'Overseas bank charges borne by :', buyer:'Our company (Buyer)', seller:'Counterparty (Seller)' },
+    termsHeading:'TERMS AND CONDITIONS',
+    clauses:(v,cur)=>[
+      `1.  Payment Terms:  The Buyer shall pay ${B(v.depositPct)}% of the total contract value as a deposit by T/T within ${B(v.depositDays)} days after signing this contract; the remaining ${B(v.balancePct)}% shall be paid before shipment / against a copy of the B/L. The Seller arranges production only after the deposit is received (see the Payment Schedule above).`,
+      `2.  Trade Terms:  Prices are quoted on ${B(v.incoterms)} basis (Incoterms® 2020) at ${B(v.port)}, in ${cur}. Unless otherwise agreed, prices exclude taxes; freight and insurance are borne according to the agreed Incoterms.`,
+      `3.  Delivery:  The Seller shall deliver within ${B(v.deliveryDays)} days after receipt of the deposit and the Buyer's confirmation of artwork / sample. Partial shipment / transshipment as separately agreed.`,
+      `4.  Packing:  Standard export packing suitable for long-distance ocean / air transport. Packing materials are not returnable unless otherwise agreed in writing.`,
+      `5.  Quality & Inspection:  The goods shall conform to the agreed specifications, quantity and the approved sample. The Buyer shall inspect on receipt and submit any written objection within ${B(v.inspectDays)} working days; otherwise the goods are deemed accepted.`,
+      `6.  Refund & Return:  For confirmed quality defects, the Seller shall repair, replace or refund. If a major defect attributable to the Seller causes a return, the Seller shall make a full refund and compensate ${B(v.compensatePct)}% of the goods value for the Buyer's resulting loss. The Buyer shall provide photo / video evidence for confirmation.`,
+      `7.  Intellectual Property:  All trademarks, logos, designs and artwork supplied by the Buyer remain the Buyer's exclusive property. The Seller shall not use, copy, transfer or sell products bearing the Buyer's marks to any third party, nor disclose the Buyer's designs. Breach entitles the Buyer to a full refund plus liquidated damages and related legal costs.`,
+      `8.  Force Majeure:  Neither party is liable for delay or failure caused by events beyond its reasonable control (natural disaster, war, epidemic, government action, etc.). The affected party shall notify the other within ${B(v.fmDays)} days with evidence; obligations resume when the event ends.`,
+      `9.  Governing Law & Protection of Both Parties:  This contract is governed by the applicable trade laws; for the international sale of goods, the United Nations Convention on Contracts for the International Sale of Goods (CISG) applies where not excluded. The lawful rights and interests of both the Buyer and the Seller are equally protected, and neither party may unilaterally modify this contract.`,
+      `10.  Dispute Resolution:  Disputes shall first be settled by friendly negotiation. Failing settlement, they shall be submitted to ${B(v.venue)} for final resolution.`,
+      `11.  Validity:  This contract takes effect upon signature / seal by both parties (scanned copies are valid) and is valid from ${B(v.validFrom)} to ${B(v.validTo)}. Confidentiality, dispute resolution and outstanding claims survive its expiry.`,
+      `12.  Counterparts & Language:  This contract is made in duplicate; the Buyer and the Seller each hold one copy of equal legal effect. In case of discrepancy, the ${B(v.prevail)} version shall prevail.`,
+      `13.  Miscellaneous:  Any matter not covered herein shall be settled by friendly negotiation and recorded in a written supplementary agreement, which forms an integral part of this contract.`,
+    ],
+    buyerSign:'Buyer (Signature)', sellerSign:'Seller (Signature)' },
+  zh:{ font:'Microsoft YaHei', sheet:'采购合同 (CN)',
+    title:'采 购 合 同', dateLabel:'签订日期', contractNo:'合同编号', buyer:'采购方（甲方）', seller:'供货方（乙方）',
+    productsHeading:'采购产品及单价', colName:'产品名称', colPrice:'单价', colQty:'数量', colAmount:'金额',
+    total:'合计', totalAmount:'采购总金额',
+    payHeading:'付款计划', payStage:'付款阶段', payPct:'比例', payAmt:'金额',
+    payDeposit:'定金（签约后电汇预付）', payBalance:'尾款（发货前/凭提单副本支付）', payTotal:'合计',
+    bankTitle:'供货方银行/汇款信息（空白处请卖方填写）',
+    bk:{ b0Bank:'银行名称 :', b0BankAddr:'银行地址 :', b0Swift:'SWIFT :',
+      bkFactory:'工厂名称 :', bkPerson:'联系人 :', bkTel:'联系电话 :',
+      bkName:'英文名称 :', bkAddr:'英文地址 :', bkAcct:'收款账号 :',
+      bkSwift:'付款银行SWIFT代码 :', bkCountry:'银行所在国 :', bkBank:'付款银行名称 :', bkBankAddr:'付款银行地址 :' },
+    im:{ header:'如有中转行（请对方务必确认！！）',
+      imSwift:'中转行SWIFT代码 :', imCountry:'银行所在国 :', imBank:'汇款中转行名称 :', imAddr:'汇款中转行地址 :' },
+    cn2:{ no:'合同编号 :', date:'合同签订日期 :' },
+    fee:{ label:'境外银行手续费承担方 :', buyer:'我方（买方）', seller:'对方（卖方）' },
+    termsHeading:'合同条款',
+    clauses:(v,cur)=>[
+      `一、付款条件：买方应于本合同签订后${B(v.depositDays)}日内，以电汇（T/T）方式支付合同总金额的${B(v.depositPct)}%作为定金；余款${B(v.balancePct)}%于发货前/凭提单副本支付。卖方收到定金后方安排生产（详见上方付款计划）。`,
+      `二、贸易条款：本报价以${B(v.incoterms)}方式报价（Incoterms® 2020），交货地点为${B(v.port)}，结算币种为${cur}。除另有约定外，价格不含税；运费及保险按所约定的贸易术语承担。`,
+      `三、交货期：卖方应在收到定金并经买方确认稿件/样品后${B(v.deliveryDays)}日内交货。分批装运/转运另行约定。`,
+      `四、包装：采用适合远洋/空运长途运输的标准出口包装。除书面另行约定外，包装物不回收。`,
+      `五、质量与验收：货物应符合约定的规格、数量及确认样品。买方应于收货后${B(v.inspectDays)}个工作日内验收并提出书面异议，逾期视为验收合格。`,
+      `六、退款与退换：经确认的质量问题，卖方应负责维修、更换或退款。如因卖方重大质量问题导致退货，卖方应全额退款，并按货款的${B(v.compensatePct)}%赔偿由此给买方造成的损失。买方应提供照片/视频以供确认。`,
+      `七、知识产权：买方提供的商标、标识（LOGO）、设计及图稿均归买方专有。未经买方同意，卖方不得使用、复制、转让或向任何第三方销售带有买方标识的产品，亦不得泄露买方设计。违约的，买方有权要求全额退款并追究违约金及相关法律费用。`,
+      `八、不可抗力：因不可抗力（自然灾害、战争、疫情、政府行为等）致使迟延或不能履行的，双方均不承担责任。受影响方应在${B(v.fmDays)}日内通知对方并提供证明；不可抗力消除后继续履行。`,
+      `九、法律适用与买卖双方权益保护：本合同适用相关贸易法律；属国际货物买卖的，在不排除适用的情况下适用《联合国国际货物销售合同公约》(CISG)。买卖双方的合法权益受同等保护，任何一方不得单方变更本合同。`,
+      `十、争议解决：因本合同发生的争议，双方应首先友好协商解决；协商不成的，提交${B(v.venue)}解决。`,
+      `十一、合同有效期：本合同经双方签字盖章之日起生效（扫描件有效），有效期自${B(v.validFrom)}至${B(v.validTo)}。保密、争议解决条款及双方未了债权债务不受合同期满影响。`,
+      `十二、合同文本与文字：本合同一式两份，采、供双方各执一份，具同等法律效力。如有歧义，以${B(v.prevail)}文本为准。`,
+      `十三、其他约定：本合同未尽事宜，由双方友好协商并签订书面补充协议，补充协议与本合同具有同等效力，为本合同不可分割的组成部分。`,
+    ],
+    buyerSign:'采购方（签字/盖章）', sellerSign:'供货方（签字/盖章）' }
+};
+
+/* ============ XLSX 생성 (의존성 0, 완전 오프라인) ============ */
+function xml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+function colL(i){ let s=''; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=(i-m-1)/26; } return s; }
+function ref(r,c){ return colL(c)+r; }
+
+function Styles(){
+  this.numFmts=[]; this.fonts=[];
+  this.fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>'];
+  this.borders=['<border><left/><right/><top/><bottom/><diagonal/></border>'];
+  this.cellXfs=['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
+  this._f={}; this._fl={}; this._b={}; this._n={}; this._x={};
+  this.font({name:'Calibri',sz:11});
+}
+Styles.prototype.font=function(o){ const k=JSON.stringify(o); if(this._f[k]!=null)return this._f[k];
+  let s='<font>'; if(o.bold)s+='<b/>'; s+=`<sz val="${o.sz||11}"/>`; if(o.color)s+=`<color rgb="FF${o.color}"/>`;
+  s+=`<name val="${xml(o.name||'Calibri')}"/></font>`; const i=this.fonts.push(s)-1; this._f[k]=i; return i; };
+Styles.prototype.fill=function(c){ if(!c)return 0; if(this._fl[c]!=null)return this._fl[c];
+  const s=`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`;
+  const i=this.fills.push(s)-1; this._fl[c]=i; return i; };
+Styles.prototype.border=function(on){ if(!on)return 0; if(this._b.t!=null)return this._b.t;
+  const sd='style="thin"><color rgb="FF808080"/>';
+  const s=`<border><left ${sd}</left><right ${sd}</right><top ${sd}</top><bottom ${sd}</bottom><diagonal/></border>`;
+  const i=this.borders.push(s)-1; this._b.t=i; return i; };
+Styles.prototype.numFmt=function(code){ if(!code)return 0; if(this._n[code]!=null)return this._n[code];
+  const id=164+this.numFmts.length; this.numFmts.push({id,code}); this._n[code]=id; return id; };
+Styles.prototype.xf=function(o){ o=o||{};
+  const fontId=o.font!=null?this.font(o.font):0, fillId=o.fill?this.fill(o.fill):0,
+        borderId=o.border?this.border(true):0, numFmtId=o.fmt?this.numFmt(o.fmt):0;
+  let a='', ak=''; if(o.h||o.v||o.wrap){ a='<alignment'+(o.h?` horizontal="${o.h}"`:'')+(o.v?` vertical="${o.v}"`:'')+(o.wrap?' wrapText="1"':'')+'/>'; ak=a; }
+  const k=fontId+'|'+fillId+'|'+borderId+'|'+numFmtId+'|'+ak; if(this._x[k]!=null)return this._x[k];
+  const ap=(numFmtId?' applyNumberFormat="1"':'')+' applyFont="1"'+(fillId?' applyFill="1"':'')+(borderId?' applyBorder="1"':'')+(ak?' applyAlignment="1"':'');
+  const s=`<xf numFmtId="${numFmtId}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0"${ap}>${a}</xf>`;
+  const i=this.cellXfs.push(s)-1; this._x[k]=i; return i; };
+Styles.prototype.emit=function(){
+  const nf=this.numFmts.length?`<numFmts count="${this.numFmts.length}">`+this.numFmts.map(n=>`<numFmt numFmtId="${n.id}" formatCode="${xml(n.code)}"/>`).join('')+'</numFmts>':'';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${nf}<fonts count="${this.fonts.length}">${this.fonts.join('')}</fonts><fills count="${this.fills.length}">${this.fills.join('')}</fills><borders count="${this.borders.length}">${this.borders.join('')}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${this.cellXfs.length}">${this.cellXfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+};
+
+function Sheet(name){ this.name=name; this.rows={}; this.merges=[]; this.ht={}; this.cols=[]; }
+Sheet.prototype._put=function(r,c,x){ (this.rows[r]||(this.rows[r]=[]))[c]=x; };
+Sheet.prototype.str=function(r,c,t,s){ if(t==null||t===''){ this._put(r,c,`<c r="${ref(r,c)}"${s?` s="${s}"`:''}/>`); return; }
+  this._put(r,c,`<c r="${ref(r,c)}"${s?` s="${s}"`:''} t="inlineStr"><is><t xml:space="preserve">${xml(t)}</t></is></c>`); };
+Sheet.prototype.num=function(r,c,v,s){ this._put(r,c,`<c r="${ref(r,c)}"${s?` s="${s}"`:''}><v>${v}</v></c>`); };
+Sheet.prototype.formula=function(r,c,f,cached,s){ this._put(r,c,`<c r="${ref(r,c)}"${s?` s="${s}"`:''}><f>${xml(f)}</f><v>${cached==null?0:cached}</v></c>`); };
+Sheet.prototype.blank=function(r,c,s){ this._put(r,c,`<c r="${ref(r,c)}"${s?` s="${s}"`:''}/>`); };
+Sheet.prototype.merge=function(x){ this.merges.push(x); };
+Sheet.prototype.rowH=function(r,h){ this.ht[r]=h; };
+Sheet.prototype.emit=function(){
+  const rn=Object.keys(this.rows).map(Number).sort((a,b)=>a-b);
+  const body=rn.map(r=>{ const cs=this.rows[r],o=[]; for(let c=1;c<cs.length;c++) if(cs[c])o.push(cs[c]);
+    const h=this.ht[r]?` ht="${this.ht[r]}" customHeight="1"`:''; return `<row r="${r}"${h}>${o.join('')}</row>`; }).join('');
+  const cols=this.cols.length?`<cols>${this.cols.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`:'';
+  const mg=this.merges.length?`<mergeCells count="${this.merges.length}">${this.merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:'';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>${cols}<sheetData>${body}</sheetData>${mg}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="portrait" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+};
+
+function crc32(b){ let c=~0; for(let i=0;i<b.length;i++){ c^=b[i]; for(let j=0;j<8;j++) c=(c>>>1)^(0xEDB88320&-(c&1)); } return (~c)>>>0; }
+function zipBytes(files){
+  const enc=new TextEncoder(); const parts=[]; const central=[]; let off=0;
+  function push(a){ parts.push(a); off+=a.length; }
+  for(const f of files){ const nb=enc.encode(f.name); const d=(f.data instanceof Uint8Array)?f.data:enc.encode(f.data); const crc=crc32(d);
+    const lh=new Uint8Array(30+nb.length); const dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true); dv.setUint16(4,20,true); dv.setUint16(6,0x0800,true); dv.setUint16(8,0,true);
+    dv.setUint16(10,0,true); dv.setUint16(12,0,true); dv.setUint32(14,crc,true); dv.setUint32(18,d.length,true);
+    dv.setUint32(22,d.length,true); dv.setUint16(26,nb.length,true); dv.setUint16(28,0,true); lh.set(nb,30);
+    const lo=off; push(lh); push(d); central.push({nb,crc,size:d.length,lo}); }
+  const cs=off;
+  for(const c of central){ const ch=new Uint8Array(46+c.nb.length); const dv=new DataView(ch.buffer);
+    dv.setUint32(0,0x02014b50,true); dv.setUint16(4,20,true); dv.setUint16(6,20,true); dv.setUint16(8,0x0800,true);
+    dv.setUint16(10,0,true); dv.setUint16(12,0,true); dv.setUint16(14,0,true); dv.setUint32(16,c.crc,true);
+    dv.setUint32(20,c.size,true); dv.setUint32(24,c.size,true); dv.setUint16(28,c.nb.length,true); dv.setUint16(30,0,true);
+    dv.setUint16(32,0,true); dv.setUint16(34,0,true); dv.setUint16(36,0,true); dv.setUint32(38,0,true);
+    dv.setUint32(42,c.lo,true); ch.set(c.nb,46); push(ch); }
+  const csz=off-cs; const eo=new Uint8Array(22); const dv=new DataView(eo.buffer);
+  dv.setUint32(0,0x06054b50,true); dv.setUint16(4,0,true); dv.setUint16(6,0,true); dv.setUint16(8,central.length,true);
+  dv.setUint16(10,central.length,true); dv.setUint32(12,csz,true); dv.setUint32(16,cs,true); dv.setUint16(20,0,true); push(eo);
+  const tot=parts.reduce((a,p)=>a+p.length,0); const out=new Uint8Array(tot); let o=0; for(const p of parts){ out.set(p,o); o+=p.length; } return out;
+}
+
+function buildSheet(lang, S, L, data, st){
+  const fn=L.font;
+  const SYM={KRW:'₩',USD:'$',CNY:'¥'}[data.currency]||'';
+  const dec=(data.currency==='KRW')?'':'.00';
+  const money=`"${SYM}"#,##0${dec};-"${SYM}"#,##0${dec};""`;
+  const intF='#,##0;-#,##0;""';
+  const s_title =st.xf({font:{name:fn,bold:true,sz:18},h:'center',v:'center',wrap:true});
+  const s_metaL =st.xf({font:{name:fn,sz:10},h:'left',v:'center'});
+  const s_metaR =st.xf({font:{name:fn,sz:10},h:'right',v:'center'});
+  const s_lbl   =st.xf({font:{name:fn,bold:true,sz:11},h:'left',v:'center'});
+  const s_val   =st.xf({font:{name:fn,sz:11},h:'left',v:'center',wrap:true});
+  const s_sec   =st.xf({font:{name:fn,bold:true,sz:11},h:'left',v:'center'});
+  const s_head  =st.xf({font:{name:fn,bold:true,sz:10},fill:'EFEFEF',h:'center',v:'center',border:true});
+  const s_pname =st.xf({font:{name:fn,sz:10},h:'left',v:'center',border:true,wrap:true});
+  const s_money =st.xf({font:{name:fn,sz:10},h:'right',v:'center',border:true,fmt:money});
+  const s_qty   =st.xf({font:{name:fn,sz:10},h:'center',v:'center',border:true,fmt:intF});
+  const s_pct   =st.xf({font:{name:fn,sz:10},h:'center',v:'center',border:true,fmt:'0%'});
+  const s_pctB  =st.xf({font:{name:fn,bold:true,sz:10},fill:'EFEFEF',h:'center',v:'center',border:true,fmt:'0%'});
+  const s_totlbl=st.xf({font:{name:fn,bold:true,sz:10},fill:'EFEFEF',h:'right',v:'center',border:true});
+  const s_totamt=st.xf({font:{name:fn,bold:true,sz:10},fill:'EFEFEF',h:'right',v:'center',border:true,fmt:money});
+  const s_grandL=st.xf({font:{name:fn,bold:true,sz:13},h:'right',v:'center'});
+  const s_grandV=st.xf({font:{name:fn,bold:true,sz:13},h:'right',v:'center',fmt:money});
+  const s_clause=st.xf({font:{name:fn,sz:10},h:'left',v:'top',wrap:true});
+  const s_sig   =st.xf({font:{name:fn,sz:11},h:'left',v:'center'});
+  const s_flbl  =st.xf({font:{name:fn,bold:true,sz:10},fill:'F2F2F2',h:'left',v:'center',wrap:true,border:true});
+  const s_fval  =st.xf({font:{name:fn,sz:10},h:'left',v:'center',wrap:true,border:true});
+  const s_warn  =st.xf({font:{name:fn,bold:true,sz:10},fill:'FFF2CC',h:'left',v:'center',wrap:true,border:true});
+  S.cols=[30,16,11,19];
+
+  let r=1;
+  S.merge(`A${r}:D${r}`); S.str(r,1,L.title,s_title); S.rowH(r,34); r++;
+  S.merge(`A${r}:B${r}`); S.str(r,1,`${L.contractNo} : ${data.contractNo||''}`,s_metaL);
+  S.merge(`C${r}:D${r}`); S.str(r,3,`${L.dateLabel} : ${fmtDate(lang,data.date)}`,s_metaR); S.rowH(r,18); r++;
+  S.str(r,1,`${L.buyer} :`,s_lbl); S.merge(`B${r}:D${r}`); S.str(r,2,data.buyer,s_val); S.rowH(r,20); r++;
+  S.str(r,1,`${L.seller} :`,s_lbl); S.merge(`B${r}:D${r}`); S.str(r,2,data.seller,s_val); S.rowH(r,20); r++;
+
+  /* 제품 및 단가 */
+  S.merge(`A${r}:D${r}`); S.str(r,1,L.productsHeading,s_sec); S.rowH(r,22); r++;
+  S.str(r,1,L.colName,s_head); S.str(r,2,L.colPrice,s_head); S.str(r,3,L.colQty,s_head); S.str(r,4,L.colAmount,s_head); S.rowH(r,18); r++;
+  const firstP=r;
+  data.products.forEach(p=>{
+    S.str(r,1,p.name,s_pname);
+    if(p.price){ S.num(r,2,p.price,s_money); } else { S.blank(r,2,s_money); }
+    if(p.qty){ S.num(r,3,p.qty,s_qty); } else { S.blank(r,3,s_qty); }
+    S.formula(r,4,`B${r}*C${r}`,(p.price||0)*(p.qty||0),s_money);
+    r++;
+  });
+  const lastP=r-1;
+  const total=data.products.reduce((a,p)=>a+(p.price||0)*(p.qty||0),0);
+  S.merge(`A${r}:C${r}`); S.str(r,1,L.total,s_totlbl);
+  S.formula(r,4,`SUM(D${firstP}:D${lastP})`,total,s_totamt); const totRow=r; S.rowH(r,18); r++;
+  S.merge(`A${r}:C${r}`); S.str(r,1,L.totalAmount,s_grandL);
+  S.formula(r,4,`D${totRow}`,total,s_grandV); const grandRow=r; S.rowH(r,24); r+=2;
+
+  /* 대금 지급 일정 — 총금액 × % 자동계산 */
+  S.merge(`A${r}:D${r}`); S.str(r,1,L.payHeading,s_sec); S.rowH(r,22); r++;
+  S.merge(`A${r}:B${r}`); S.str(r,1,L.payStage,s_head); S.blank(r,2,s_head);
+  S.str(r,3,L.payPct,s_head); S.str(r,4,L.payAmt,s_head); S.rowH(r,18); r++;
+  const depP=(Number(data.depositPct)||0)/100, balP=(Number(data.balancePct)||0)/100;
+  S.merge(`A${r}:B${r}`); S.str(r,1,L.payDeposit,s_pname); S.blank(r,2,s_pname);
+  S.num(r,3,depP,s_pct); S.formula(r,4,`$D$${grandRow}*C${r}`,total*depP,s_money); const depRow=r; S.rowH(r,18); r++;
+  S.merge(`A${r}:B${r}`); S.str(r,1,L.payBalance,s_pname); S.blank(r,2,s_pname);
+  S.num(r,3,balP,s_pct); S.formula(r,4,`$D$${grandRow}*C${r}`,total*balP,s_money); const balRow=r; S.rowH(r,18); r++;
+  S.merge(`A${r}:B${r}`); S.str(r,1,L.payTotal,s_totlbl); S.blank(r,2,s_totlbl);
+  S.formula(r,3,`SUM(C${depRow}:C${balRow})`,depP+balP,s_pctB);
+  S.formula(r,4,`SUM(D${depRow}:D${balRow})`,total*(depP+balP),s_totamt); S.rowH(r,18); r+=2;
+
+  /* 은행/송금 정보 — 항목 고정, 공란은 공란 그대로 출력 */
+  S.merge(`A${r}:D${r}`); S.str(r,1,L.bankTitle,s_sec); S.rowH(r,22); r++;
+  function frow(label,val){
+    S.str(r,1,label,s_flbl);
+    S.merge(`B${r}:D${r}`); S.str(r,2,val||'',s_fval); S.blank(r,3,s_fval); S.blank(r,4,s_fval);
+    S.rowH(r,19); r++;
+  }
+  const bk=data.bk||{};
+  ['b0Bank','b0BankAddr','b0Swift','bkFactory','bkPerson','bkTel','bkName','bkAddr','bkAcct','bkSwift','bkCountry','bkBank','bkBankAddr']
+    .forEach(k=>frow(L.bk[k],bk[k]));
+  S.str(r,1,L.im.header,s_warn); S.blank(r,2,s_warn); S.blank(r,3,s_warn); S.blank(r,4,s_warn);
+  S.merge(`A${r}:D${r}`); S.rowH(r,19); r++;
+  ['imSwift','imCountry','imBank','imAddr'].forEach(k=>frow(L.im[k],bk[k]));
+  frow(L.cn2.no,data.contractNo);
+  frow(L.cn2.date,fmtDate(lang,data.date));
+  const feeVal=data.fee==='buyer'?L.fee.buyer:(data.fee==='seller'?L.fee.seller:'');
+  frow(L.fee.label,feeVal);
+  r++;
+
+  /* 13개 조항 */
+  S.merge(`A${r}:D${r}`); S.str(r,1,L.termsHeading,s_sec); S.rowH(r,22); r++;
+  const cpl=(fn==='Arial')?82:38;
+  L.clauses(data.v,data.currency).forEach(c=>{
+    S.merge(`A${r}:D${r}`); S.str(r,1,c,s_clause);
+    S.rowH(r,Math.max(1,Math.ceil(c.length/cpl))*15+6); r++;
+  });
+  r+=2;
+  S.merge(`A${r}:B${r}`); S.str(r,1,`${L.buyerSign} : ____________________`,s_sig);
+  S.merge(`C${r}:D${r}`); S.str(r,3,`${L.sellerSign} : ____________________`,s_sig); S.rowH(r,40);
+}
+
+function buildWorkbook(data){
+  const st=new Styles();
+  const langs=(data.langs&&data.langs.length)?data.langs:['ko'];
+  const sheets=langs.map(lg=>{ const L=LABELS[lg]; const S=new Sheet(L.sheet); buildSheet(lg,S,L,data,st); return S; });
+  const sheetTags=sheets.map((s,i)=>`<sheet name="${xml(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('');
+  const workbook=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheetTags}</sheets><calcPr fullCalcOnLoad="1"/></workbook>`;
+  const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const files=[
+    {name:'[Content_Types].xml',data:ct},{name:'_rels/.rels',data:rootRels},
+    {name:'xl/workbook.xml',data:workbook},{name:'xl/_rels/workbook.xml.rels',data:wbRels},{name:'xl/styles.xml',data:st.emit()},
+  ];
+  sheets.forEach((s,i)=>files.push({name:`xl/worksheets/sheet${i+1}.xml`,data:s.emit()}));
+  return zipBytes(files);
+}
+
+/* ============ 다운로드 버튼 ============ */
+document.getElementById('genBtn').onclick=()=>{
+  const langs=[...document.querySelectorAll('.lang:checked')].map(c=>c.value);
+  if(!langs.length){ toast('계약서 언어를 1개 이상 선택하세요','err'); return; }
+  const buyer=buyerName.value.trim(), seller=sellerName.value.trim();
+  if(!buyer){ toast('발주자(갑)명을 입력하세요','err'); return; }
+  if(!seller){ toast('판매자(을)명을 입력하세요','err'); return; }
+  const products=getProducts();
+  if(!products.length){ toast('발주 제품을 1개 이상 입력하세요','err'); return; }
+  const data={
+    langs, buyer, seller, products,
+    currency:document.getElementById('currency').value,
+    contractNo:$v('contractNo'),
+    date:document.getElementById('issueDate').value,
+    fee:document.getElementById('feeBearer').value,
+    depositPct:parseNum($v('depositPct')), balancePct:parseNum($v('balancePct')),
+    bk:(function(){ const o={}; BK_IDS.forEach(id=>o[id]=$v(id)); return o; })(),
+    v:{ depositPct:$v('depositPct'), balancePct:$v('balancePct'), depositDays:$v('depositDays'),
+        deliveryDays:$v('deliveryDays'), inspectDays:$v('inspectDays'), compensatePct:$v('compensatePct'),
+        fmDays:$v('fmDays'), incoterms:document.getElementById('incoterms').value, port:$v('port'),
+        venue:$v('venue'), validFrom:document.getElementById('validFrom').value, validTo:document.getElementById('validTo').value,
+        prevail:document.getElementById('prevail').value }
+  };
+  try{
+    const bytes=buildWorkbook(data);
+    const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const safe=seller.replace(/[\\/:*?"<>|]/g,'_');
+    a.href=url; a.download=`발주계약서_${safe}_${data.date||'미정'}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast('계약서 .xlsx 다운로드 완료','ok');
+  }catch(e){ console.error(e); toast('생성 오류: '+e.message,'err'); }
+};
+
+/* ============ 초기화 ============ */
+(function init(){
+  refreshBuyers(); refreshSellers();
+  addRow('', '', 1);
+  const d=new Date();
+  document.getElementById('issueDate').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  document.querySelectorAll('input[type="date"]').forEach(el=>{
+    el.addEventListener('click',()=>{ try{ el.showPicker(); }catch(e){} });
+  });
+  recalc();
+})();
+</script>
+</body>
+</html>

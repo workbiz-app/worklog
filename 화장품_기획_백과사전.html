@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화장품 기획 백과사전</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --ink:#1d2430; --sub:#6b7280; --line:#e6e8ec;
+    --brand:#3b6fe0; --brand-soft:#eaf0fd; --accent:#10a37f;
+    --warn:#e08a00; --danger:#d64545; --ok:#10a37f;
+    --chip:#f0f2f5; --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,-apple-system,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1240px;margin:0 auto;padding:18px 16px 80px}
+  header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  header.top h1{font-size:21px;margin:0;letter-spacing:-.02em}
+  header.top .tag{font-size:12px;color:var(--sub);background:var(--chip);padding:3px 9px;border-radius:999px}
+  .muted{color:var(--sub);font-size:12.5px}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+  @media(max-width:960px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card .hd{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card .hd h2{font-size:14px;margin:0;letter-spacing:-.01em}
+  .card .bd{padding:14px 16px}
+
+  /* top controls */
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  @media(max-width:680px){.controls{grid-template-columns:1fr}}
+  .field label{display:block;font-size:12px;color:var(--sub);margin:0 0 5px 2px;font-weight:600}
+  select,input[type=text]{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    font:inherit;color:inherit;outline:none}
+  select:focus,input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .ctx-note{font-size:12px;color:var(--sub);margin-top:6px;min-height:16px}
+
+  /* search */
+  .searchbar{display:flex;gap:8px;margin-bottom:12px}
+  .searchbar input{flex:1}
+
+  /* concept accordions */
+  .concepts{display:flex;flex-direction:column;gap:10px}
+  .acc{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .acc>button.acc-h{width:100%;display:flex;align-items:center;gap:10px;justify-content:space-between;
+    background:#fff;border:0;padding:13px 14px;cursor:pointer;font:inherit;text-align:left;color:inherit}
+  .acc>button.acc-h:hover{background:#fafbfc}
+  .acc-h .left{display:flex;align-items:center;gap:10px}
+  .acc-h .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+  .acc-h .nm{font-weight:700;font-size:14px}
+  .acc-h .cnt{font-size:12px;color:var(--sub);background:var(--chip);padding:2px 8px;border-radius:999px}
+  .acc-h .chev{transition:transform .18s;color:var(--sub)}
+  .acc.open .chev{transform:rotate(90deg)}
+  .acc-body{display:none;padding:6px 12px 14px;border-top:1px solid var(--line);background:#fcfcfd}
+  .acc.open .acc-body{display:block}
+  .ing-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:560px){.ing-grid{grid-template-columns:1fr}}
+
+  .ing{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:#fff;cursor:pointer;
+    transition:border-color .12s,box-shadow .12s,background .12s;position:relative}
+  .ing:hover{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .ing.added{border-color:var(--accent);background:#f1fbf7}
+  .ing.added:after{content:"✓ 담음";position:absolute;top:10px;right:11px;font-size:11px;color:var(--accent);font-weight:800}
+  .ing .nm{font-weight:800;font-size:14.5px;letter-spacing:-.01em;padding-right:48px;line-height:1.3}
+  .ing .inci{font-size:11px;color:var(--sub);margin-top:2px}
+  .ing .sens{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .ing .fn{font-size:12px;color:#5b6472;margin-top:9px;line-height:1.45}
+  .ing .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)}
+  .pill{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--chip);color:#4b5563;white-space:nowrap}
+  .pill.irr0,.pill.irr1{background:#eafaf2;color:#0c7a52}
+  .pill.irr2{background:#fff6e6;color:#9a6a00}
+  .pill.irr3{background:#fff1e0;color:#b06a00}
+  .pill.irr4{background:#fdeceb;color:#b23a3a}
+  .pill.irr5{background:#fbe2e2;color:#9e2b2b}
+  .pill.cost{background:#eef2fb;color:#3258b8}
+  /* 사용감 칩 */
+  .s{font-size:11px;padding:2px 8px;border-radius:7px;font-weight:700;white-space:nowrap}
+  .s-abs{background:#e8f1ff;color:#2b5fc4}
+  .s-fresh{background:#e3f6f1;color:#0c8a66}
+  .s-moist{background:#eaf7e8;color:#3a8a3a}
+  .s-rich{background:#fbeede;color:#a96a1e}
+  .s-clean{background:#edf7f1;color:#3a8a6a}
+  .s-tack{background:#fdeede;color:#a8651c}
+  .s-mat{background:#eef0f3;color:#566173}
+  /* 사용감 필터 바 */
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+  .filters .flabel{font-size:12px;color:var(--sub);font-weight:700;margin-right:2px}
+  .fchip{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#4b5563;cursor:pointer;font-weight:600}
+  .fchip:hover{border-color:var(--brand)}
+  .fchip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .fchip.clear{color:var(--sub)}
+  /* 총평 요약 박스 */
+  .summary-box{border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin-top:12px;background:#fafbfd}
+  .sb-row{display:flex;gap:10px;align-items:center;padding:8px 0;font-size:13px}
+  .sb-row+.sb-row{border-top:1px dashed var(--line)}
+  .sb-k{font-weight:700;color:var(--sub);min-width:82px;font-size:12px}
+  .sb-v{font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .swatch{width:20px;height:20px;border-radius:6px;border:1px solid rgba(0,0,0,.14);display:inline-block;flex:none}
+  /* 제형 호환성 */
+  .cbadge{display:none;margin-top:7px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px}
+  .ing.incompat{opacity:.5;background:#fcf7f7}
+  .ing.incompat:hover{opacity:.9}
+  .ing.incompat .cbadge{display:inline-block;background:#fbe2e2;color:#9e2b2b}
+  .ing.best .cbadge{display:inline-block;background:#e3f6ee;color:#0c7a52}
+
+  /* recipe panel */
+  .recipe{position:sticky;top:14px}
+  .recipe .list{display:flex;flex-direction:column;gap:7px;max-height:46vh;overflow:auto;padding-right:2px}
+  .empty{color:var(--sub);font-size:13px;text-align:center;padding:22px 6px}
+  .ritem{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:8px 9px;background:#fff}
+  .ritem .ri-nm{font-weight:600;font-size:13px;flex:1;min-width:0}
+  .ritem .ri-nm small{display:block;color:var(--sub);font-weight:400;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ritem .ri-irr{font-size:11px}
+  .ritem button.rm{border:0;background:#f3f4f6;color:#6b7280;border-radius:7px;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1}
+  .ritem button.rm:hover{background:#fde0e0;color:var(--danger)}
+
+  .sumrow{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px dashed var(--line)}
+  .sumrow b{font-weight:700}
+  .btn{display:block;width:100%;padding:12px;border:0;border-radius:11px;background:var(--brand);color:#fff;font:inherit;
+    font-weight:700;cursor:pointer;margin-top:12px;font-size:14.5px}
+  .btn:hover{background:#2f60cf}
+  .btn.ghost{background:var(--chip);color:#374151}
+  .btn.ghost:hover{background:#e7eaef}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-row{display:flex;gap:8px}
+  .btn-row .btn{margin-top:0}
+
+  /* result */
+  .result{margin-top:16px}
+  .verdict{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;font-weight:700}
+  .verdict .lv{font-size:22px}
+  .v-ok{background:#eafaf2;color:#0c7a52;border:1px solid #bdebd6}
+  .v-mid{background:#fff6e6;color:#9a6a00;border:1px solid #f3dca6}
+  .v-warn{background:#fdeceb;color:#b23a3a;border:1px solid #f3c0bd}
+  .res-sec{margin-top:14px}
+  .res-sec h3{font-size:13px;margin:0 0 8px;display:flex;align-items:center;gap:7px}
+  .res-sec h3 .b{font-size:11px;background:var(--chip);color:#4b5563;border-radius:999px;padding:1px 8px}
+  .alert{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;font-size:13px}
+  .alert.high{border-color:#f3c0bd;background:#fef5f4}
+  .alert.medium{border-color:#f3dca6;background:#fffaf0}
+  .alert.low{border-color:#dfe5ee;background:#f9fbfe}
+  .alert.good{border-color:#bdebd6;background:#f2fbf7}
+  .alert .a-h{font-weight:700;font-size:12.5px;margin-bottom:3px;display:flex;gap:6px;align-items:center}
+  .sev{font-size:10.5px;padding:1px 7px;border-radius:999px;font-weight:700}
+  .sev.high{background:#fbe2e2;color:#9e2b2b}.sev.medium{background:#fff1d6;color:#9a6a00}.sev.low{background:#e9eef6;color:#48566b}
+  .sev.good{background:#d6f3e6;color:#0c7a52}
+  .a-sub{color:var(--sub);font-size:12px;margin-top:3px}
+  .costbox{display:flex;align-items:baseline;gap:8px;font-size:14px}
+  .costbox .big{font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .footnote{font-size:11.5px;color:var(--sub);margin-top:6px}
+  .qa{font-size:12px;color:var(--sub);border-top:1px dashed var(--line);margin-top:14px;padding-top:10px}
+  .badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .tagk{font-size:11px;background:#eef2fb;color:#3258b8;border-radius:6px;padding:1px 6px}
+  .hidden{display:none!important}
+  .pulse{font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>화장품 기획 백과사전</h1>
+    <span class="tag">컨셉 · 제형 · 카테고리 기반 처방 시뮬레이터</span>
+    <span class="tag" id="db-count">로딩…</span>
+  </header>
+
+  <!-- 카테고리 / 제형 -->
+  <div class="controls">
+    <div class="field">
+      <label>제품 카테고리</label>
+      <select id="sel-cat"></select>
+      <div class="ctx-note" id="cat-note"></div>
+    </div>
+    <div class="field">
+      <label>제형 (텍스처 / 전달 시스템)</label>
+      <select id="sel-form"></select>
+      <div class="ctx-note" id="form-note"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 왼쪽: 컨셉 성분 -->
+    <div class="card">
+      <div class="hd">
+        <h2>컨셉별 특화 성분</h2>
+        <span class="muted">컨셉을 펼치고 성분을 클릭하면 레시피에 담깁니다</span>
+      </div>
+      <div class="bd">
+        <div class="searchbar">
+          <input type="text" id="search" placeholder="성분명·INCI 검색 (예: 나이아신아마이드, retinol, 세라마이드)">
+          <button class="btn ghost" style="width:auto;margin:0;padding:11px 14px" id="btn-collapse">접기</button>
+        </div>
+        <div class="filters" id="filters"></div>
+        <div class="concepts" id="concepts"></div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 레시피 -->
+    <div>
+      <div class="card recipe">
+        <div class="hd">
+          <h2>나의 레시피</h2>
+          <span class="muted"><span id="r-count">0</span>종</span>
+        </div>
+        <div class="bd">
+          <div class="list" id="recipe-list">
+            <div class="empty">아직 담은 성분이 없습니다.<br>왼쪽에서 성분을 클릭해 추가하세요.</div>
+          </div>
+          <div style="margin-top:10px">
+            <div class="sumrow"><span>예상 원료비(100ml)</span><b id="r-cost">–</b></div>
+            <div class="sumrow"><span>평균 자극도</span><b id="r-irr">–</b></div>
+          </div>
+          <div class="btn-row" style="margin-top:12px">
+            <button class="btn" id="btn-verify">검증하기</button>
+            <button class="btn ghost" style="width:42%" id="btn-clear">비우기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 결과 -->
+      <div class="card result hidden" id="result-card">
+        <div class="hd"><h2>검증 결과</h2><span class="muted" id="res-ctx"></span></div>
+        <div class="bd" id="result-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DB START (성분 v3 + 제형 호환성 규칙 재정비) =====
+const DB = {"ingredients":[{"ko":"글리세린","inci":"Glycerin","pct":"2~10%","irr":0,"cost":50,"func":"대표 휴멕턴트, 각질층 수분 끌어당김 및 보습","tags":["humectant","수분","장벽강화","각질케어"],"note":"고농도 시 끈적임, 다가알코올과 병용 권장","concepts":["수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"있음","feel":["흡수보통","촉촉","끈적임"]},"primary":"수분"},{"ko":"하이알루론산(고분자)","inci":"Sodium Hyaluronate","pct":"0.05~1%","irr":0,"cost":400,"func":"피부 표면 수분막 형성, 즉각적 보습","tags":["ha","humectant","수분","진정","재생","미백","주름개선","모공·피지","장벽강화","각질케어","트러블","탄력"],"note":"고분자는 표면 보습, 고농도 시 당김 가능","concepts":["수분"],"sensory":{"absorb":"느림","finish":"촉촉","tack":"있음","feel":["흡수느림","촉촉","끈적임"]},"primary":"수분"},{"ko":"가수분해 하이알루론산(저분자)","inci":"Hydrolyzed Hyaluronic Acid","pct":"0.05~0.5%","irr":0,"cost":900,"func":"저분자 HA, 각질층 침투형 수분공급","tags":["ha","humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"하이알루론산(원액)","inci":"Hyaluronic Acid","pct":"0.01~0.1%","irr":0,"cost":700,"func":"산형 HA, 강한 수분 보유력","tags":["ha","humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"아세틸하이알루론산(슈퍼히알)","inci":"Sodium Acetylated Hyaluronate","pct":"0.05~0.5%","irr":0,"cost":1500,"func":"아세틸화 HA, 흡착·지속 보습력 강화","tags":["ha","humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"느림","finish":"촉촉","tack":"있음","feel":["흡수느림","촉촉","끈적임"]},"primary":"수분"},{"ko":"가교 하이알루론산","inci":"Sodium Hyaluronate Crosspolymer","pct":"0.1~1%","irr":0,"cost":1800,"func":"가교형 HA, 수분 저장고 형성·장시간 보습","tags":["ha","humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"느림","finish":"촉촉","tack":"있음","feel":["흡수느림","촉촉","끈적임"]},"primary":"수분"},{"ko":"판테놀(프로비타민 B5)","inci":"Panthenol","pct":"0.5~5%","irr":0,"cost":300,"func":"수분공급 및 진정, 장벽 회복 보조","tags":["panthenol","humectant","수분","진정","재생","미백","주름개선","모공·피지","장벽강화","각질케어","항산화","트러블","탄력"],"note":"","concepts":["진정","장벽강화","재생"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"적음","feel":["흡수보통","촉촉","무끈적"]},"primary":"진정"},{"ko":"베타인","inci":"Betaine","pct":"0.5~4%","irr":0,"cost":200,"func":"천연 휴멕턴트, 끈적임 적은 보습 및 컨디셔닝","tags":["humectant","수분","장벽강화"],"note":"","concepts":["수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"부틸렌글라이콜","inci":"Butylene Glycol","pct":"1~10%","irr":0,"cost":150,"func":"휴멕턴트 겸 용제, 보습 및 활성 가용화","tags":["humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"프로판다이올","inci":"Propanediol","pct":"1~8%","irr":0,"cost":250,"func":"식물유래 휴멕턴트·용제, 글리세린 대체 보습","tags":["humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"소듐 PCA","inci":"Sodium PCA","pct":"0.2~2.5%","irr":0,"cost":350,"func":"천연보습인자(NMF) 성분, 각질층 수분유지","tags":["humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"있음","feel":["흡수보통","촉촉","끈적임"]},"primary":"수분"},{"ko":"트레할로스","inci":"Trehalose","pct":"0.5~5%","irr":0,"cost":400,"func":"당류 휴멕턴트, 수분 보호 및 세포 보호","tags":["humectant","수분","antioxidant","장벽강화"],"note":"","concepts":["수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"수분"},{"ko":"글리세릴글루코사이드","inci":"Glyceryl Glucoside","pct":"1~5%","irr":0,"cost":1200,"func":"아쿠아포린 활성화형 보습, 수분 순환 지원","tags":["humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"수분"},{"ko":"세라마이드 NP","inci":"Ceramide NP","pct":"0.05~0.5%","irr":0,"cost":2000,"func":"피부장벽 지질 보충, 경피수분손실(TEWL) 억제","tags":["ceramide","occlusive","수분","진정","재생","주름개선","모공·피지","장벽강화","각질케어","트러블","탄력"],"note":"가온 용해 필요, 유상 분산","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"하이드록시아세토페논","inci":"Hydroxyacetophenone","pct":"0.5~1%","irr":1,"cost":500,"func":"항산화 및 진정 보조, 보습 포뮬러 안정화","tags":["antioxidant","수분"],"note":"","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"알란토인","inci":"Allantoin","pct":"0.1~0.5%","irr":0,"cost":200,"func":"진정 및 보습, 각질 컨디셔닝","tags":["humectant","centella","수분","진정","재생","panthenol","장벽강화","각질케어","트러블"],"note":"용해도 낮음, 0.5% 이내","concepts":["진정","장벽강화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"마데카소사이드(병풀)","inci":"Madecassoside","pct":"0.05~0.2%","irr":0,"cost":2500,"func":"병풀 유래 진정·장벽강화로 수분보유 지원","tags":["centella","수분","antioxidant","진정","재생","미백","모공·피지","장벽강화","트러블","탄력"],"note":"","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"갈락토미세스 발효여과물","inci":"Galactomyces Ferment Filtrate","pct":"1~10%","irr":1,"cost":800,"func":"발효 보습·결 개선, 수분감 부여","tags":["ferment","humectant","수분","재생","antioxidant","미백","주름개선","niacinamide","탄력"],"note":"","concepts":["수분","미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"비피다 발효용해물","inci":"Bifida Ferment Lysate","pct":"1~10%","irr":1,"cost":1500,"func":"발효 라이세이트, 장벽·수분 지원 및 진정","tags":["ferment","humectant","수분","재생","antioxidant"],"note":"","concepts":["재생","진정","장벽강화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"재생"},{"ko":"스쿠알란","inci":"Squalane","pct":"1~10%","irr":0,"cost":700,"func":"피부친화 에몰리언트, 수분증발 억제·유연","tags":["emollient","occlusive","수분","장벽강화"],"note":"","concepts":["장벽강화","수분"],"sensory":{"absorb":"빠름","finish":"촉촉","tack":"적음","feel":["흡수빠름","촉촉","무끈적"]},"primary":"장벽강화"},{"ko":"폴리글루타믹애씨드","inci":"Sodium Polyglutamate","pct":"0.05~0.5%","irr":0,"cost":1600,"func":"낫토 유래 고보습 폴리머, HA 이상의 수분포집","tags":["humectant","ferment","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"있음","feel":["흡수보통","촉촉","끈적임"]},"primary":"수분"},{"ko":"펜틸렌글라이콜","inci":"Pentylene Glycol","pct":"1~5%","irr":1,"cost":600,"func":"휴멕턴트 겸 멀티기능 보습·부스팅 용제","tags":["humectant","수분"],"note":"","concepts":["수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"세테아릴알코올","inci":"Cetearyl Alcohol","pct":"1~5%","irr":0,"cost":200,"func":"지방알코올 에몰리언트, 유연·점증 및 장벽 보조","tags":["emollient","occlusive","수분"],"note":"유상, 가온 용해","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"병풀추출물","inci":"Centella Asiatica Extract","pct":"0.1~5%","irr":0,"cost":600,"func":"병풀 유래 진정·항염, 손상장벽 회복 보조의 대표 원료","tags":["centella","antioxidant","진정","재생","주름개선","모공·피지","장벽강화","각질케어","트러블"],"note":"추출물 형태로 4종 트리터펜(아시아티코사이드·마데카소사이드·아시아틱애씨드·마데카식애씨드) 일부 함유","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"아시아티코사이드","inci":"Asiaticoside","pct":"0.05~0.5%","irr":1,"cost":2800,"func":"병풀 사포닌, 상처 치유·진정 및 피부 재생 보조","tags":["centella","antioxidant","진정","트러블","peptide"],"note":"고농도 단일 정제품은 단가 높음. 통상 병풀 추출물·시카 콤플렉스로 배합","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"마데카식애씨드","inci":"Madecassic Acid","pct":"0.05~0.5%","irr":1,"cost":3000,"func":"병풀 트리터펜산, 항염·진정 및 장벽 강화 보조","tags":["centella","antioxidant","진정"],"note":"지용성 경향, 가용화 또는 유상 배합 필요","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"아시아틱애씨드","inci":"Asiatic Acid","pct":"0.05~0.5%","irr":1,"cost":3000,"func":"병풀 트리터펜산, 진정·재생 및 콜라겐 합성 보조","tags":["centella","antioxidant","진정"],"note":"지용성, 시카 4종 콤플렉스의 한 축","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"비사보롤","inci":"Bisabolol","pct":"0.1~1%","irr":1,"cost":1800,"func":"캐모마일 유래 항염·진정 및 가려움 완화","tags":["antioxidant","진정"],"note":"지용성. 알파-비사보롤이 활성 우수, 향료 아닌 활성으로 사용","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"마치현추출물","inci":"Portulaca Oleracea Extract","pct":"0.5~5%","irr":0,"cost":500,"func":"쇠비름 유래 항염·항산화, 민감·홍조 진정","tags":["antioxidant","ferment","진정","centella","장벽강화"],"note":"오메가-3·플라보노이드 함유. 발효 형태도 흔함","concepts":["진정","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"녹차추출물","inci":"Camellia Sinensis Leaf Extract","pct":"0.1~3%","irr":0,"cost":500,"func":"EGCG 등 폴리페놀 항산화·진정, 피지·홍조 완화 보조","tags":["antioxidant","진정","centella","모공·피지","항산화","트러블"],"note":"갈변 우려로 항산화제·킬레이트 병용 권장","concepts":["진정","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"감초추출물(감초산)","inci":"Glycyrrhiza Glabra Root Extract","pct":"0.1~2%","irr":0,"cost":700,"func":"감초 유래 항염·진정 및 미백 보조","tags":["antioxidant","arbutin","진정"],"note":"디포타슘글리시리제이트 형태가 수용성 우수·항염 강함","concepts":["진정","미백"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"디포타슘글리시리제이트","inci":"Dipotassium Glycyrrhizate","pct":"0.05~0.5%","irr":0,"cost":900,"func":"감초 유래 수용성 항염제, 강력한 진정·자극 완화","tags":["antioxidant","진정"],"phMin":5,"phMax":7,"note":"저농도로도 우수한 항염. 진정 처방의 핵심 활성","concepts":["진정","미백"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"진정"},{"ko":"나이아신아마이드","inci":"Niacinamide","pct":"2~5%","irr":1,"cost":400,"func":"장벽 강화·홍조 완화, 식약처 고시 미백 기능성 성분","tags":["niacinamide","진정","재생","antioxidant","미백","주름개선","모공·피지","장벽강화","각질케어","항산화","트러블","탄력"],"phMin":5,"phMax":7,"note":"고시 미백 농도 2~5%. 저pH·고농도에서 자극·니코틴산 전환 가능, 5% 권장상한","concepts":["미백","모공·피지","장벽강화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"아연 PCA","inci":"Zinc PCA","pct":"0.1~1%","irr":1,"cost":600,"func":"피지 조절·항염 및 진정, 민감성·트러블 피부 보조","tags":["zinc","humectant","진정","모공·피지","트러블"],"note":"PCA 보습 + 아연 항염 복합. 트러블·홍조 진정 처방에 사용","concepts":["모공·피지","트러블"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"적음","feel":["흡수보통","촉촉","무끈적"]},"primary":"모공·피지"},{"ko":"베타글루칸","inci":"Beta-Glucan","pct":"0.1~2%","irr":0,"cost":1500,"func":"귀리·효모 유래 보습·진정 및 장벽 보호, 자극 완화","tags":["humectant","ferment","진정","재생","antioxidant","모공·피지","트러블","탄력"],"note":"고분자 점성, 단독으로 진정·보습 우수","concepts":["진정","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"병풀발효추출물","inci":"Centella Asiatica Ferment Extract","pct":"0.5~5%","irr":0,"cost":1200,"func":"발효 병풀, 흡수 개선 및 진정·장벽 보조","tags":["centella","ferment","antioxidant","진정"],"note":"발효로 저분자화. 비건·저자극 콘셉트에 활용","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"알로에베라추출물","inci":"Aloe Barbadensis Leaf Extract","pct":"0.1~10%","irr":0,"cost":300,"func":"보습·쿨링 진정, 자외선·자극 후 피부 완화","tags":["humectant","진정"],"note":"방부 취약, 갈변·미생물 관리 필요. 분말 환산 농도 주의","concepts":["진정","수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"진정"},{"ko":"트라넥사믹애씨드","inci":"Tranexamic Acid","pct":"0.5~3%","irr":1,"cost":1000,"func":"홍조·색소·염증후 색소침착 완화 및 진정 보조","tags":["tranexamic","진정","미백"],"phMin":4,"phMax":7,"note":"수용성, 민감성 홍조 케어에 다용. 고시 성분 아님(미백 보조 활성)","concepts":["미백"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"아데노신","inci":"Adenosine","pct":"0.04%","irr":0,"cost":700,"func":"식약처 고시 주름개선 성분, 피부 컨디셔닝 보조","tags":["adenosine","진정","재생","미백","주름개선","각질케어","antioxidant","항산화","트러블","peptide","탄력"],"phMin":5,"phMax":7,"note":"고시 주름개선 사용농도 0.04% 고정. 진정 라인에 안티에이징 부가","concepts":["주름개선","탄력"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"주름개선"},{"ko":"알지닌","inci":"Arginine","pct":"0.1~1%","irr":1,"cost":300,"func":"pH 조절제 겸 보습, 산성 활성 중화로 자극 완화","tags":["humectant","진정"],"phMin":6,"phMax":11,"note":"주로 중화제로 사용. 과량 시 알칼리 자극 주의","concepts":["수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"수분"},{"ko":"어성초추출물","inci":"Houttuynia Cordata Extract","pct":"0.5~5%","irr":0,"cost":500,"func":"어성초 유래 항염·항균, 트러블·홍조 진정","tags":["antioxidant","진정"],"note":"특유취 있어 향료 보정 필요. 트러블 진정 라인 다용","concepts":["트러블","진정"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"트러블"},{"ko":"마데카소사이드·시카 콤플렉스","inci":"Centella Asiatica (Madecassoside/Asiaticoside) Complex","pct":"0.2~2%","irr":1,"cost":3500,"func":"병풀 4종 트리터펜 표준화 콤플렉스, 강력 진정·재생","tags":["centella","antioxidant","진정"],"note":"TECA(Titrated Extract of Centella Asiatica) 유형. 표준화 함량으로 효능 일관성 확보, 단가 높음","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"PDRN(폴리데옥시리보뉴클레오타이드)","inci":"Sodium DNA","pct":"0.05~2%","irr":1,"cost":15000,"func":"연어 정소 유래 DNA 단편, 세포 재생·조직 리페어 촉진","tags":["pdrn","growth_factor","재생","주름개선","ferment","탄력"],"phMin":5,"phMax":7,"note":"열·강산성 불안정, 저온 후투입 권장. 고가 핵심 활성","concepts":["재생","탄력"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"재생"},{"ko":"카퍼 트라이펩타이드-1(GHK-Cu)","inci":"Copper Tripeptide-1","pct":"0.05~2%","irr":1,"cost":12000,"func":"구리 결합 펩타이드, 콜라겐 합성·창상 치유·조직 리모델링","tags":["peptide","copper_peptide","재생","주름개선","탄력"],"phMin":5,"phMax":7.5,"note":"비타민C·강한 환원제와 배합 시 변색·불활성 주의","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"sh-올리고펩타이드-1(EGF)","inci":"sh-Oligopeptide-1","pct":"0.0001~0.001%","irr":1,"cost":18000,"func":"상피세포성장인자, 세포 증식·재생 신호 전달","tags":["peptide","growth_factor","egf","재생","탄력"],"phMin":5,"phMax":7,"note":"극미량 사용, 열·pH 민감. 냉장 보관 원료 다수","concepts":["재생","탄력"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"재생"},{"ko":"sh-폴리펩타이드-9(VEGF)","inci":"sh-Polypeptide-9","pct":"0.0001~0.001%","irr":1,"cost":18000,"func":"혈관내피성장인자, 혈관신생·피부 재생 지원","tags":["peptide","growth_factor","재생","탄력"],"phMin":5,"phMax":7,"note":"극미량, 안정성 위해 저온 후투입","concepts":["재생","탄력"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"재생"},{"ko":"팔미토일 트라이펩타이드-1","inci":"Palmitoyl Tripeptide-1","pct":"0.5~5%(용액 기준)","irr":1,"cost":8000,"func":"매트릭실 계열, 콜라겐·히알루론산 합성 자극으로 재생·주름 개선","tags":["peptide","재생","탄력"],"phMin":5,"phMax":7,"note":"보통 글리세린/물 용액 형태로 공급, 표시농도 확인 필요","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"팔미토일 펜타펩타이드-4(마트릭실)","inci":"Palmitoyl Pentapeptide-4","pct":"3~8%(용액 기준)","irr":1,"cost":9000,"func":"세포외기질 재생 신호, 콜라겐·라미닌 합성 촉진","tags":["peptide","재생","주름개선","탄력"],"phMin":5,"phMax":7,"note":"","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"레티놀","inci":"Retinol","pct":"0.1~1%","irr":4,"cost":4000,"func":"식약처 고시 주름개선 성분, 표피 턴오버·콜라겐 재생","tags":["retinoid","재생","antioxidant","미백","주름개선","모공·피지","트러블","adenosine","탄력"],"phMin":5.5,"phMax":7,"note":"광·산소 불안정, 자극·홍반 주의. 임부 회피, 캡슐화 권장","concepts":["주름개선","탄력","모공·피지"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"주름개선"},{"ko":"레티날(레티날데하이드)","inci":"Retinal","pct":"0.05~0.1%","irr":4,"cost":7000,"func":"레티놀 대비 빠른 전환의 레티노이드, 턴오버·재생 촉진","tags":["retinoid","재생","주름개선","모공·피지","트러블"],"phMin":5.5,"phMax":6.5,"note":"색·냄새 변화 주의, 저자극 캡슐형 다수","concepts":["주름개선","탄력","모공·피지"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"주름개선"},{"ko":"바쿠치올","inci":"Bakuchiol","pct":"0.5~2%","irr":2,"cost":5000,"func":"식물 유래 레티놀 유사 작용, 저자극 콜라겐 재생·항산화","tags":["antioxidant","재생","주름개선","retinoid","모공·피지","항산화"],"phMin":4,"phMax":8,"note":"레티노이드 대비 자극 낮고 광안정성 우수, 임부 사용 데이터 부족","concepts":["주름개선","탄력","재생"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"주름개선"},{"ko":"토코페롤(비타민 E)","inci":"Tocopherol","pct":"0.05~1%","irr":1,"cost":1000,"func":"지용성 항산화, 세포막 보호·재생 보조·산화 안정화","tags":["vit_e","antioxidant","재생","미백","emollient","주름개선","장벽강화","항산화"],"phMin":4,"phMax":8,"note":"","concepts":["항산화","장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"항산화"},{"ko":"아스코빌 글루코사이드","inci":"Ascorbyl Glucoside","pct":"1~2%","irr":2,"cost":3000,"func":"안정형 비타민C 유도체, 콜라겐 합성·미백·재생 지원","tags":["vitc_deriv","antioxidant","재생","미백","항산화"],"phMin":5,"phMax":7,"note":"효소 가수분해로 활성화, 순수 비타민C 대비 저자극","concepts":["미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"sh-올리고펩타이드-2(IGF)","inci":"sh-Oligopeptide-2","pct":"0.0001~0.001%","irr":1,"cost":18000,"func":"인슐린유사성장인자, 세포 증식·조직 재생 신호","tags":["peptide","growth_factor","재생","탄력"],"phMin":5,"phMax":7,"note":"극미량, 저온 안정성 관리 필요","concepts":["재생","탄력"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"재생"},{"ko":"마린 콜라겐(가수분해 콜라겐)","inci":"Hydrolyzed Collagen","pct":"0.1~2%","irr":0,"cost":1200,"func":"저분자 콜라겐 펩타이드, 보습·피부 유연·재생 보조","tags":["peptide","humectant","재생","모공·피지","탄력"],"phMin":4,"phMax":7,"note":"표면 보습 위주, 진피 침투는 제한적","concepts":["탄력","수분"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"아스코빅애씨드(순수 비타민C)","inci":"Ascorbic Acid","pct":"5~20%","irr":3,"cost":1500,"func":"티로시나아제 억제·항산화, 강력한 브라이트닝","tags":["vitc_pure","미백","antioxidant","low_ph_acid","주름개선","항산화","탄력"],"phMin":2.5,"phMax":3.5,"note":"산화 안정성 낮음, 페룰릭/비타민E 병용 시너지, pH 3.5 이하에서 활성","concepts":["미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"에틸아스코빌에터","inci":"3-O-Ethyl Ascorbic Acid","pct":"1~3%","irr":2,"cost":2000,"func":"안정·유용성 비타민C 유도체, 빠른 브라이트닝","tags":["vitc_deriv","미백","antioxidant","주름개선","항산화","탄력"],"phMin":4,"phMax":6,"note":"피부 침투·안정성 우수, 고농도 시 약한 따끔거림","concepts":["미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"마그네슘아스코빌포스페이트","inci":"Magnesium Ascorbyl Phosphate","pct":"1~3%","irr":1,"cost":1800,"func":"수용성 안정형 비타민C 유도체, 저자극 미백","tags":["vitc_deriv","미백","antioxidant","항산화"],"phMin":6,"phMax":7,"note":"중성 pH 안정, 매우 저자극","concepts":["미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"알부틴","inci":"Arbutin","pct":"1~3%","irr":2,"cost":1200,"func":"티로시나아제 억제로 멜라닌 생성 억제","tags":["arbutin","미백"],"phMin":4,"phMax":7,"note":"가수분해로 하이드로퀴논 방출 우려, 고온·저pH 분해 주의","concepts":["미백"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"알파-알부틴","inci":"Alpha-Arbutin","pct":"1~2%","irr":1,"cost":2500,"func":"베타형 대비 강력·안정한 미백, 티로시나아제 억제","tags":["arbutin","미백"],"phMin":3.5,"phMax":6.5,"note":"베타-알부틴보다 효력·안정성 우수","concepts":["미백"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"코직애씨드","inci":"Kojic Acid","pct":"0.5~2%","irr":2,"cost":1500,"func":"티로시나아제 구리 킬레이션으로 멜라닌 억제","tags":["kojic","미백","antioxidant"],"phMin":4,"phMax":6,"note":"산화·변색(갈변) 쉬움, 일부 접촉 민감 가능, 디팔미테이트 형태가 더 안정","concepts":["미백"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"미백"},{"ko":"글루타치온","inci":"Glutathione","pct":"0.1~2%","irr":1,"cost":3000,"func":"항산화·페오멜라닌 전환 유도로 톤 개선","tags":["glutathione","미백","antioxidant","peptide","항산화"],"phMin":4,"phMax":6.5,"note":"산화에 매우 취약, 환원형 유지 처방 필요","concepts":["미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"감초뿌리추출물","inci":"Glycyrrhiza Glabra (Licorice) Root Extract","pct":"0.5~2%","irr":1,"cost":1000,"func":"글라브리딘 함유, 티로시나아제 억제·진정","tags":["미백","antioxidant","centella"],"phMin":4,"phMax":7,"note":"진정·항염 병행, 추출물 색소로 제형 착색 가능","concepts":["진정","미백"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"닥나무추출물","inci":"Broussonetia Kazinoki Bark Extract","pct":"0.1~2%","irr":1,"cost":900,"func":"식물성 티로시나아제 억제 미백 원료","tags":["미백","antioxidant"],"phMin":4,"phMax":7,"note":"국내 미백 기능성 고시 추출 원료","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"페룰릭애씨드","inci":"Ferulic Acid","pct":"0.5~1%","irr":2,"cost":1500,"func":"항산화, 비타민C/E 안정화 및 광방어 시너지","tags":["ferulic","미백","antioxidant","low_ph_acid","주름개선","항산화"],"phMin":3,"phMax":5,"note":"비타민C+E와 병용 시 광보호 상승, 단독 미백력은 보조적","concepts":["항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"항산화"},{"ko":"아젤라익애씨드","inci":"Azelaic Acid","pct":"5~10%","irr":3,"cost":1200,"func":"티로시나아제 억제·항염, 색소·홍조 동시 개선","tags":["azelaic","미백","low_ph_acid","모공·피지","트러블","antioxidant"],"phMin":4,"phMax":5,"note":"고농도 시 따끔·홍조, PIH(염증후색소침착)에 유효, 용해도 낮아 제형화 난이도","concepts":["트러블","미백"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"트러블"},{"ko":"글라이콜릭애씨드","inci":"Glycolic Acid","pct":"3~10%","irr":4,"cost":400,"func":"각질 박리로 색소 표면 배출·톤 개선","tags":["aha","미백","low_ph_acid","주름개선","모공·피지","각질케어","트러블"],"phMin":3,"phMax":4,"note":"저pH 자극·광민감 증가, 자외선차단 필수","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"락틱애씨드","inci":"Lactic Acid","pct":"2~5%","irr":3,"cost":300,"func":"보습성 AHA, 부드러운 각질·톤 개선","tags":["aha","미백","low_ph_acid","humectant","각질케어"],"phMin":3,"phMax":4.5,"note":"글라이콜릭 대비 저자극, 보습 병행","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"나이아신아마이드용 펩타이드(올리고펩타이드)","inci":"Oligopeptide-68","pct":"0.001~0.01%","irr":1,"cost":4000,"func":"멜라닌 생성 신호 억제 미백 펩타이드","tags":["peptide","미백"],"phMin":5,"phMax":7,"note":"극미량 활성, 고가, B-White/Decapeptide 계열","concepts":["미백","모공·피지","장벽강화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"레티닐팔미테이트","inci":"Retinyl Palmitate","pct":"0.1~1%","irr":2,"cost":1500,"func":"에스터형 레티노이드, 저자극 입문용 안티에이징","tags":["retinoid","emollient","주름개선","탄력"],"phMin":5,"phMax":7,"note":"체내 전환 단계가 많아 효력 약함, 입문/저자극 제품용. 고시 주름 성분(레티닐팔미테이트 10,000IU)","concepts":["주름개선","탄력","모공·피지"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"주름개선"},{"ko":"하이드록시피나콜론 레티노에이트(HPR)","inci":"Hydroxypinacolone Retinoate","pct":"0.05~1%","irr":3,"cost":8000,"func":"레티노산 수용체 직접 결합형 에스터 레티노이드, 저자극 고효율","tags":["retinoid","주름개선"],"phMin":5,"phMax":7,"note":"그래니액티브(Granactive Retinoid) 상품으로 유통, 전환 불필요하여 자극 낮음. 안정성 양호","concepts":["주름개선","탄력","모공·피지"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"주름개선"},{"ko":"팔미토일트라이펩타이드-1 & 팔미토일테트라펩타이드-7 (마트릭실3000)","inci":"Palmitoyl Tripeptide-1, Palmitoyl Tetrapeptide-7","pct":"3~8%(원료 기준)","irr":1,"cost":11000,"func":"콜라겐 자극 + 염증성 사이토카인 억제 복합 펩타이드","tags":["peptide","주름개선"],"phMin":4,"phMax":7.5,"note":"Matrixyl 3000 조합, 마트릭실 단독 대비 광범위 매트릭스 효과","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"아세틸헥사펩타이드-8 (아르지렐린)","inci":"Acetyl Hexapeptide-8","pct":"3~10%(원료 기준)","irr":1,"cost":8000,"func":"표정주름 완화 뉴로펩타이드, SNARE 복합체 억제로 근수축 완화","tags":["peptide","주름개선","탄력"],"phMin":4,"phMax":7,"note":"Argireline, '바르는 보톡스' 마케팅 대상이나 실제는 표정주름 완화. 활성 농도 0.05~0.1% 수준","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"테트라헥실데실아스코베이트","inci":"Tetrahexyldecyl Ascorbate","pct":"1~10%","irr":1,"cost":6000,"func":"유용성 비타민C 유도체, 침투·항산화 우수 저자극","tags":["vitc_deriv","antioxidant","emollient","주름개선","항산화"],"phMin":5,"phMax":8,"note":"오일 베이스 처방용, 안정성 높고 무자극. 무수/앰플 제형에 적합","concepts":["미백","항산화","장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"미백"},{"ko":"락토바이오닉애씨드","inci":"Lactobionic Acid","pct":"3~10%","irr":2,"cost":2000,"func":"PHA 각질 제거제, 보습·항산화 겸비 저자극 안티에이징","tags":["pha","low_ph_acid","humectant","antioxidant","주름개선","각질케어","트러블"],"phMin":3,"phMax":4.5,"note":"분자량 커 침투 완만, AHA 대비 자극 낮아 민감성 안티에이징용","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"살리실릭애씨드(BHA)","inci":"Salicylic Acid","pct":"0.5~2%","irr":4,"cost":600,"func":"지용성 각질박리, 모공 속 피지·각전 용해로 블랙헤드 개선","tags":["bha","low_ph_acid","모공·피지","각질케어","트러블"],"phMin":3,"phMax":4,"note":"식약처 기준 2% 상한(씻어내지 않는 제품). 임부 주의, 광민감 가능성","concepts":["모공·피지","각질케어","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"모공·피지"},{"ko":"글루코노락톤(PHA)","inci":"Gluconolactone","pct":"2~10%","irr":2,"cost":600,"func":"순한 각질박리·항산화·보습 동반, 민감성 모공각질 케어","tags":["pha","low_ph_acid","antioxidant","모공·피지","humectant","각질케어"],"phMin":3,"phMax":4,"note":"AHA보다 분자가 커 자극 낮음","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"만델릭애씨드","inci":"Mandelic Acid","pct":"2~10%","irr":3,"cost":900,"func":"큰 분자 AHA로 피지·각질 정리, 여드름성·모공 피부에 순한 박리","tags":["aha","low_ph_acid","모공·피지","각질케어","트러블"],"phMin":3,"phMax":4,"note":"","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"위치하젤 추출물","inci":"Hamamelis Virginiana (Witch Hazel) Extract","pct":"1~10%","irr":2,"cost":400,"func":"수렴·모공 조임 및 피지 진정, 토너류에 다용","tags":["모공·피지","antioxidant"],"note":"증류물 알코올 함량 제품은 건조 주의","concepts":["모공·피지","진정"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"모공·피지"},{"ko":"카올린(백토)","inci":"Kaolin","pct":"3~30%","irr":1,"cost":300,"func":"과잉 피지·노폐물 흡착, 워시오프 클레이/팩 베이스","tags":["모공·피지"],"note":"세안·마스크용, 건성엔 과사용 시 당김","concepts":["모공·피지"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적","매트"]},"primary":"모공·피지"},{"ko":"벤토나이트","inci":"Bentonite","pct":"3~20%","irr":1,"cost":300,"func":"강한 피지·불순물 흡착력의 점토, 딥클렌징 클레이팩","tags":["모공·피지"],"note":"금속 용기 반응 주의, 과건조 가능","concepts":["모공·피지"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적","매트"]},"primary":"모공·피지"},{"ko":"티트리오일","inci":"Melaleuca Alternifolia (Tea Tree) Leaf Oil","pct":"0.1~1%","irr":3,"cost":800,"func":"항균·피지 트러블 스팟 케어용 정유","tags":["essential_oil","모공·피지","트러블","antioxidant"],"note":"고농도 자극·감작 위험, 산화 관리 및 저농도 사용","concepts":["트러블","진정"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"트러블"},{"ko":"폴리하이드록시 캡슐화 레티놀","inci":"Retinol (Encapsulated)","pct":"0.1~0.5%","irr":3,"cost":5000,"func":"캡슐화로 안정성·내약성 높인 레티놀, 서방형 모공·결 개선","tags":["retinoid","모공·피지"],"note":"캡슐 기술로 자극 저감, 그래도 야간·자외선차단 병용","concepts":["주름개선","탄력","모공·피지"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"주름개선"},{"ko":"살리실로일 피토스핑고신","inci":"Salicyloyl Phytosphingosine","pct":"0.05~0.5%","irr":2,"cost":3000,"func":"BHA-세라마이드 전구체 결합형, 순한 각질·피지 케어와 장벽 동시","tags":["bha","ceramide","모공·피지"],"note":"","concepts":["장벽강화","트러블"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"세라마이드 AP","inci":"Ceramide AP","pct":"0.01~0.5%","irr":0,"cost":5000,"func":"알파-하이드록시 세라마이드, 장벽 응집력 및 보습 보강","tags":["ceramide","장벽강화"],"note":"NP/EOP와 복합 사용 시 장벽 라멜라 구조 형성 효과 상승","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"세라마이드 EOP","inci":"Ceramide EOP","pct":"0.01~0.3%","irr":0,"cost":6000,"func":"장쇄 결합형 세라마이드, 라멜라 구조 안정화 및 장벽 결속","tags":["ceramide","장벽강화"],"note":"함량은 낮으나 라멜라 구조 형성에 필수적인 골격 역할","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"피토스핑고신","inci":"Phytosphingosine","pct":"0.05~0.5%","irr":1,"cost":2500,"func":"세라마이드 전구체 스핑고이드 염기, 장벽 보강 및 항균 보조","tags":["ceramide","장벽강화"],"note":"약한 항균성 보유, 고농도 시 자극 가능. 세라마이드 합성 촉진","concepts":["장벽강화","트러블"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"콜레스테롤","inci":"Cholesterol","pct":"0.1~2%","irr":0,"cost":800,"func":"각질층 지질 구성 핵심, 장벽 라멜라 형성 필수 지질","tags":["ceramide","emollient","장벽강화"],"note":"세라마이드:콜레스테롤:지방산 황금비 배합의 필수 축. 가온 용해","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"스테아르산(스테아릭애씨드)","inci":"Stearic Acid","pct":"0.1~3%","irr":0,"cost":200,"func":"포화 지방산, 장벽 지질 매트릭스 구성 및 점증 보조","tags":["emollient","occlusive","장벽강화"],"note":"세라마이드:콜레스테롤:지방산 비율에서 지방산 축으로 활용","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"팔미트산(팔미틱애씨드)","inci":"Palmitic Acid","pct":"0.1~2%","irr":0,"cost":250,"func":"각질층 자유지방산 보충, 장벽 지질 결속 보강","tags":["emollient","occlusive","장벽강화"],"note":"리놀레산/스테아르산과 혼합해 자유지방산 풀 구성","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"리놀레산(리놀레익애씨드)","inci":"Linoleic Acid","pct":"0.05~1%","irr":1,"cost":900,"func":"필수지방산, 세라마이드1(EOP) 구성 및 장벽 유동성 부여","tags":["emollient","antioxidant","장벽강화"],"note":"불포화로 산패 주의, 항산화제 병용. 여드름성 피부 장벽 보강에 유효","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"시어버터","inci":"Butyrospermum Parkii (Shea) Butter","pct":"1~10%","irr":0,"cost":600,"func":"고함량 지방산·불검화물 함유 에몰리언트, 장벽 보호막 형성","tags":["emollient","occlusive","antioxidant","장벽강화"],"note":"천연 토코페롤·식물스테롤 함유. 정제도에 따라 향·색 차이","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"콩스테롤(피토스테롤)","inci":"Phytosteryl/Octyldodecyl Lauroyl Glutamate","pct":"0.5~3%","irr":0,"cost":2200,"func":"라멜라 액정 형성 보조 유사세라마이드, 장벽 구조 모방","tags":["ceramide","emollient","장벽강화"],"note":"콜레스테롤계 유도체로 액정 구조 안정화, 세라마이드 배합 보강","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"수소添加레시틴","inci":"Hydrogenated Lecithin","pct":"0.5~3%","irr":0,"cost":1200,"func":"인지질 유화제, 라멜라/리포좀 구조로 장벽 친화 전달","tags":["emollient","ceramide","장벽강화"],"note":"세라마이드 가용화·라멜라 에멀전 형성에 유리, 산화 안정성 높음","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"마이크로바이옴 발효여과물(락토바실러스)","inci":"Lactobacillus Ferment Lysate","pct":"0.5~5%","irr":1,"cost":2000,"func":"발효 대사물로 피부 마이크로바이옴 균형·장벽 보조","tags":["ferment","antioxidant","장벽강화"],"note":"발효 유래, 진정·장벽 보조. 방부 적정성 확인 필요","concepts":["재생","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"재생"},{"ko":"베타인살리실레이트","inci":"Betaine Salicylate","pct":"1~4%","irr":3,"cost":700,"func":"베타인-살리실산 결합체로 살리실산 대비 완만하게 BHA 효과를 내는 저자극 대체 원료","tags":["bha","low_ph_acid","humectant","각질케어"],"phMin":3.5,"phMax":4.5,"note":"K-뷰티에서 살리실산 한도 회피·저자극 BHA로 다용. 4%가 살리실산 약 0.5% 상당","concepts":["모공·피지","각질케어","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"모공·피지"},{"ko":"말릭애씨드","inci":"Malic Acid","pct":"1~5%","irr":3,"cost":500,"func":"이염기 AHA로 단독·복합산에서 pH 조절 겸 각질 탈락을 보조","tags":["aha","low_ph_acid","humectant","각질케어"],"phMin":3.5,"phMax":4,"note":"주로 복합 AHA 블렌드의 보조산으로 사용","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"타타릭애씨드","inci":"Tartaric Acid","pct":"1~5%","irr":3,"cost":500,"func":"이염기 AHA로 각질 제거 보조 및 처방 pH 버퍼링에 활용","tags":["aha","low_ph_acid","각질케어"],"phMin":3.5,"phMax":4,"note":"단독보다 복합산·버퍼 용도. 항산화 보조","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"시트릭애씨드","inci":"Citric Acid","pct":"0.1~2%","irr":2,"cost":200,"func":"AHA이자 대표 pH 조절제로 저농도에서 각질 보조·킬레이트, 산성 처방의 버퍼링 담당","tags":["aha","low_ph_acid","각질케어"],"phMin":3,"phMax":5,"note":"고농도 자극·따끔거림. 대부분 pH 조정용 소량 투입","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"파파인","inci":"Papain","pct":"0.1~1%","irr":2,"cost":1500,"func":"파파야 유래 단백질 분해효소로 각질 단백질을 효소적으로 분해해 물리적 마찰 없이 각질 제거","tags":["enzyme","각질케어"],"phMin":5,"phMax":7,"note":"주로 워시오프 파우더/세안. 중성pH·무수 분말 안정, 가온·습기 시 실활. 단백질 알레르기 주의","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"브로멜라인","inci":"Bromelain","pct":"0.1~1%","irr":2,"cost":1800,"func":"파인애플 유래 단백질 분해효소로 각질을 부드럽게 용해하는 효소 필링 활성","tags":["enzyme","각질케어"],"phMin":4.5,"phMax":7,"note":"파우더 워시 제형 다용. 습기·열에 실활, 무수 처방 권장","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"프로테아제(서브틸리신)","inci":"Protease (Subtilisin)","pct":"0.05~0.5%","irr":2,"cost":2000,"func":"미생물 유래 단백질 분해효소로 각질세포 결합 단백질을 분해하는 효소 각질케어 활성","tags":["enzyme","ferment","각질케어"],"phMin":6,"phMax":8,"note":"효소 파우더 클렌저 핵심. 활성 매우 강해 저농도 사용, 무수·중성~약알칼리 안정","concepts":["각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"각질케어"},{"ko":"셀룰로오스 스크럽","inci":"Cellulose","pct":"1~10%","irr":2,"cost":800,"func":"식물 유래 생분해성 물리적 스크럽 입자로 표면 각질을 마찰로 제거(마이크로비드 대체)","tags":["physical_scrub","각질케어"],"note":"워시오프 스크럽 전용. 입자 크기·함량 과다 시 미세 상처 유발 주의","concepts":["각질케어"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"각질케어"},{"ko":"호호바씨드 스크럽","inci":"Hydrogenated Jojoba Oil (Jojoba Beads)","pct":"1~8%","irr":1,"cost":1500,"func":"구형 호호바 비즈로 모서리가 둥글어 피부 손상이 적은 저자극 물리적 스크럽","tags":["physical_scrub","emollient","각질케어"],"note":"구형이라 셀룰로오스·견과껍질 대비 저자극. 워시오프 전용","concepts":["각질케어"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"각질케어"},{"ko":"유레아","inci":"Urea","pct":"2~10%","irr":2,"cost":300,"func":"NMF 성분으로 저농도는 보습, 10% 내외에서는 각질 연화(keratolytic) 작용","tags":["humectant","각질케어"],"phMin":5,"phMax":7,"note":"고농도일수록 각질 연화 강해지나 자극 증가. 저pH·고온서 가수분해(암모니아 생성) 주의, 안정화 버퍼 필요","concepts":["각질케어","수분"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"각질케어"},{"ko":"소듐아스코빌포스페이트","inci":"Sodium Ascorbyl Phosphate","pct":"0.2~3%","irr":1,"cost":3000,"func":"수용성 비타민C 유도체, 항산화·미백·항여드름(피지산화 억제)","tags":["vitc_deriv","antioxidant","항산화"],"phMin":6,"phMax":7.5,"note":"안정성 우수, 피지 산화 억제로 트러블성 피부에도 활용","concepts":["미백","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"미백"},{"ko":"토코페릴아세테이트(비타민E 아세테이트)","inci":"Tocopheryl Acetate","pct":"0.1~1%","irr":0,"cost":600,"func":"안정형 비타민E 유도체, 항산화·피부 컨디셔닝, 산화 저항성","tags":["antioxidant","vit_e","emollient","항산화","탄력"],"note":"순수 토코페롤보다 안정적, 피부 효소로 활성형 전환","concepts":["항산화","장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"항산화"},{"ko":"레스베라트롤","inci":"Resveratrol","pct":"0.1~1%","irr":1,"cost":3000,"func":"포도/적포도주 유래 폴리페놀, 강력한 항산화·항노화·항염","tags":["antioxidant","항산화"],"note":"산화·변색 쉬워 무수 또는 저pH 처방 권장, 페룰릭과 병용 안정화","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"이데베논","inci":"Idebenone","pct":"0.5~1%","irr":2,"cost":5000,"func":"코엔자임Q10 유사 강력 항산화제, 자유라디칼 소거·항노화","tags":["antioxidant","항산화"],"note":"고가, 산화 시 변색(노랑→갈색) 주의, 안정화 처방 필요","concepts":["항산화","주름개선"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"유비퀴논(코엔자임Q10)","inci":"Ubiquinone","pct":"0.05~0.5%","irr":0,"cost":3500,"func":"세포 에너지대사 관여 지용성 항산화제, 항노화·피부 활력","tags":["antioxidant","항산화"],"note":"오렌지색 지용성, 빛/산소에 불안정, 캡슐화 또는 오일상 분산 권장","concepts":["항산화","주름개선"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"아스타잔틴","inci":"Astaxanthin","pct":"0.01~0.1%","irr":1,"cost":6000,"func":"헤마토코쿠스 유래 카로티노이드, 초강력 항산화·광방어","tags":["antioxidant","항산화"],"note":"진한 적색으로 제형 착색, 미량 사용. 빛/산소에 불안정","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"폴리페놀(소나무껍질추출물/피크노제놀)","inci":"Pinus Pinaster Bark Extract","pct":"0.05~0.5%","irr":1,"cost":4500,"func":"프로안토시아니딘 함유 폴리페놀, 강력 항산화·미세순환·항노화","tags":["antioxidant","항산화"],"note":"비타민C 재생 보조, 고가 활성","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"감마-오리자놀(쌀겨추출물)","inci":"Oryza Sativa Bran Extract","pct":"0.1~1%","irr":0,"cost":1500,"func":"페룰릭 에스터 함유 항산화제, 광방어·항노화·피부 진정","tags":["antioxidant","ferulic","항산화"],"note":"페룰릭산 천연 공급원, 유용성 항산화","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"퀘르세틴","inci":"Quercetin","pct":"0.01~0.5%","irr":1,"cost":3000,"func":"플라보노이드 폴리페놀, 항산화·항염·모세혈관 보호","tags":["antioxidant","항산화"],"note":"용해도 낮아 가용화 필요, 황색 착색 가능","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"아젤로일디글리시네이트칼륨","inci":"Potassium Azeloyl Diglycinate","pct":"1~5%","irr":1,"cost":900,"func":"수용성 아젤라산 유도체, 피지조절·미백·항염을 저자극으로 구현","tags":["azelaic","humectant","트러블"],"phMin":4,"phMax":6,"note":"순수 아젤라산보다 안정적이고 저자극, 수성 처방 적합","concepts":["트러블","미백"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"트러블"},{"ko":"과산화벤조일(BPO)","inci":"Benzoyl Peroxide","pct":"2.5~5%","irr":5,"cost":500,"func":"강력한 항균(여드름균 사멸)·각질제거, 염증성 여드름 1차 치료","tags":["bpo","트러블"],"phMin":3,"phMax":6.5,"note":"의약외품/의약품 영역. 강한 자극·건조·표백(섬유) 유발, 레티노이드와 동시 사용 금지, 광분해 주의","concepts":["트러블"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"트러블"},{"ko":"아다파렌","inci":"Adapalene","pct":"0.1%","irr":4,"cost":1500,"func":"3세대 레티노이드, 면포용해·항염, 여드름 표준 치료","tags":["retinoid","트러블"],"note":"의약품/의약외품 영역. 광안정성 높음, BPO와 병용 가능(제형 분리). 화장품 사용 불가 국가 다수","concepts":["주름개선","탄력","모공·피지"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"주름개선"},{"ko":"황(설퍼)","inci":"Sulfur","pct":"2~5%","irr":3,"cost":250,"func":"각질용해·항균·피지흡착, 염증성 여드름·지루성 완화","tags":["트러블","bha"],"note":"의약외품 영역, 특유의 냄새. 건조 유발하므로 보습 병행","concepts":["트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"트러블"},{"ko":"가수분해엘라스틴","inci":"Hydrolyzed Elastin","pct":"0.1~2%","irr":0,"cost":700,"func":"엘라스틴 단백질, 보습·탄력감·필름형성","tags":["peptide","humectant","탄력"],"phMin":4,"phMax":7,"note":"","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"아세틸테트라펩타이드-9","inci":"Acetyl Tetrapeptide-9","pct":"2~5% (용액)","irr":1,"cost":4500,"func":"진피·콜라겐 매트릭스 강화 펩타이드, 탄력","tags":["peptide","탄력"],"phMin":5,"phMax":7,"note":"","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"사카로마이세스 발효여과물","inci":"Saccharomyces Ferment Filtrate","pct":"1~10%","irr":1,"cost":480,"func":"효모 발효 보습·영양 에센스 원료","tags":["ferment","humectant","antioxidant"],"concepts":["수분","재생"],"note":"","sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"에르고티오네인","inci":"Ergothioneine","pct":"0.05~0.5%","irr":0,"cost":1200,"func":"항산화 스페셜티, 수분 컨셉의 프리미엄 보호 활성","tags":["antioxidant","ferment"],"note":"버섯 유래 강력 항산화, 고가 라인 차별화","concepts":["수분","항산화"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"수분"},{"ko":"알파-글루칸 올리고사카라이드(프리바이오틱)","inci":"Alpha-Glucan Oligosaccharide","pct":"1~3%","irr":0,"cost":600,"func":"피부 마이크로바이옴 균형으로 민감완화","tags":["humectant","ferment","centella"],"note":"마이크로바이옴 진정 트렌드","concepts":["진정"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"산화아연","inci":"Zinc Oxide","pct":"1~5%","irr":1,"cost":200,"func":"수렴·진정·항염, 자극·트러블 피부 보호","tags":["zinc","occlusive"],"note":"물리적 차단·진정 겸용","concepts":["진정","트러블"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"진정"},{"ko":"마데카소사이드 강화 TECA","inci":"Centella Asiatica Triterpenes","pct":"0.1~1%","irr":0,"cost":1500,"func":"아시아티코사이드+마데카소사이드+아시아틱/마데카식애씨드 정제 콤플렉스","tags":["centella","antioxidant","peptide"],"note":"센텔라 진정의 프리미엄 표준화 활성","concepts":["진정","재생","트러블"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"진정"},{"ko":"코직디팔미테이트","inci":"Kojic Dipalmitate","pct":"0.5~2%","irr":1,"cost":2500,"func":"안정형 코직, 산화변색 적은 티로시나제 억제","tags":["kojic","antioxidant"],"note":"유용성·저자극, 코직애씨드 변색 단점 보완","concepts":["미백"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"미백"},{"ko":"디메치콘","inci":"Dimethicone","pct":"1~5%","irr":0,"cost":120,"func":"통기성 폐색막 형성, 경표피수분손실 감소","tags":["occlusive","emollient"],"note":"논코메도제닉 장벽 보호막 스테디셀러","concepts":["장벽강화"],"sensory":{"absorb":"느림","finish":"리치","tack":"보통","feel":["흡수느림","리치","오일리"]},"primary":"장벽강화"},{"ko":"콜로이달오트밀","inci":"Avena Sativa (Oat) Kernel Flour","pct":"0.5~5%","irr":0,"cost":300,"func":"부드러운 물리 스크럽+진정 각질케어","tags":["physical_scrub"],"note":"민감성용 순한 물리적 각질제거+항염","concepts":["각질케어","진정","장벽강화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"각질케어"},{"ko":"폴리페놀 비타민나무열매추출물","inci":"Hippophae Rhamnoides Fruit Extract","pct":"0.5~3%","irr":0,"cost":900,"func":"비타민·플라보노이드 풍부 천연 항산화·장벽보호","tags":["antioxidant","humectant"],"note":"비타민C·E 천연 공급원","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"아세틸헥사펩타이드-8 미배제 폴리페놀 로즈마리추출물","inci":"Rosmarinus Officinalis Leaf Extract","pct":"0.1~1%","irr":0,"cost":650,"func":"카르노식산·로즈마린산 천연 항산화·제형 산패방지","tags":["antioxidant"],"note":"천연 보존 보조·항산화 이중 역할","concepts":["항산화"],"sensory":{"absorb":"보통","finish":"촉촉","tack":"보통","feel":["흡수보통","촉촉"]},"primary":"항산화"},{"ko":"슈퍼옥사이드디스뮤타아제","inci":"Superoxide Dismutase","pct":"0.01~0.5%","irr":0,"cost":3000,"func":"항산화 효소, 슈퍼옥사이드 라디칼 직접 분해","tags":["antioxidant","enzyme"],"note":"효소 활성 유지 위한 안정화 필요","concepts":["항산화","각질케어"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"항산화"},{"ko":"팔미토일 트라이펩타이드-5","inci":"Palmitoyl Tripeptide-5","pct":"1~4%(용액)","irr":1,"cost":1900,"func":"TGF-β 모방으로 콜라겐 생성 촉진하는 탄력 펩타이드","tags":["peptide"],"note":"Syn-Coll 대표","concepts":["탄력","주름개선","재생"],"sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]},"primary":"탄력"},{"ko":"변성알코올(에탄올)","inci":"Alcohol Denat.","pct":"1~30%","irr":3,"cost":80,"func":"청량감·휘발·가용화. 고함량 시 건조·자극·장벽 손상","tags":["alcohol_denat"],"concepts":["첨가·주의","모공·피지"],"primary":"첨가·주의","sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]}},{"ko":"향료(프래그런스)","inci":"Fragrance (Parfum)","pct":"0.01~1%","irr":3,"cost":120,"func":"향 부여. 알레르겐·감작 우려, 민감/유아용엔 무향 권장","tags":["fragrance"],"concepts":["첨가·주의"],"primary":"첨가·주의","sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]}},{"ko":"에센셜오일 블렌드","inci":"Essential Oil Blend","pct":"0.05~1%","irr":3,"cost":300,"func":"천연 향·아로마. 감작·광독성 주의(시트러스 등)","tags":["essential_oil","fragrance"],"concepts":["첨가·주의"],"primary":"첨가·주의","sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]}},{"ko":"멘톨","inci":"Menthol","pct":"0.05~0.5%","irr":3,"cost":150,"func":"청량·쿨링감. 민감 피부 자극 가능","tags":["essential_oil"],"concepts":["첨가·주의","모공·피지"],"primary":"첨가·주의","sensory":{"absorb":"빠름","finish":"산뜻","tack":"적음","feel":["흡수빠름","산뜻","무끈적"]}}],"conflicts":[{"a":"retinoid","b":"aha","severity":"medium","reason":"둘 다 각질 박리·세포 턴오버 촉진 활성으로 동시 적용 시 자극·홍반·건조·장벽 손상 위험이 증가한다.","advice":"같은 시간대 동시 적용을 피하고 시간대 분리(레티노이드는 저녁, AHA는 아침 또는 다른 날)하거나 격일 교대. 보습·진정 충분히, 아침 자외선 차단 필수."},{"a":"retinoid","b":"bha","severity":"medium","reason":"레티노이드의 턴오버 촉진과 BHA의 각질·피지 박리가 겹쳐 자극·건조·박리 과다로 장벽이 약해질 수 있다.","advice":"동시 레이어링보다 시간대/요일 분리 권장. 지성·여드름성은 BHA 아침, 레티노이드 저녁으로 분리하고 보습 강화."},{"a":"retinoid","b":"bpo","severity":"high","reason":"전통적 트레티노인은 BPO의 산화력에 의해 광분해·불활성화될 수 있고, 두 강자극제 병용은 건조·자극·홍반을 크게 가중시킨다(아다팔렌 등 일부 신형 레티노이드는 BPO와의 안정성이 개선됨).","advice":"같은 시점 혼용 금지. 아침 BPO / 저녁 레티노이드로 시간대 분리하거나 격일 사용. 안정화 복합제(아다팔렌+BPO 등)가 아니라면 직접 섞지 말 것."},{"a":"vitc_pure","b":"retinoid","severity":"low","reason":"순수 비타민C(아스코르브산)는 강산성(저pH)을 선호하고 레티노이드는 더 높은 pH에서 안정적이라 활성 안정 조건이 어긋날 수 있고, 두 활성의 누적 자극으로 홍반·건조가 늘 수 있다. 다만 직접적 화학 충돌은 아니며 시간대 분리로 충분히 관리된다.","advice":"아침 비타민C / 저녁 레티노이드로 시간대 분리가 정석. 함께 쓸 경우 보습으로 완충하고 자극을 모니터링."},{"a":"vitc_pure","b":"copper_peptide","severity":"medium","reason":"순수 비타민C는 강한 환원제이고 GHK-Cu 등 구리 펩타이드는 구리 이온 상태에 활성이 의존해, 함께 쓰면 구리가 환원되어 펩타이드 효능이 저하되고 비타민C도 산화가 촉진될 수 있다.","advice":"같은 루틴에 레이어링하지 말고 아침/저녁으로 분리하거나 요일을 나눠 사용."},{"a":"low_ph_acid","b":"peptide","severity":"medium","reason":"많은 시그널 펩타이드는 중성~약산성 pH에서 안정적인데 저pH 산성 환경에서는 가수분해·변성으로 활성이 떨어질 수 있다.","advice":"저pH 산(필링) 적용 후 pH가 회복된 뒤(또는 다른 시간대) 펩타이드를 사용. 동시 레이어링 지양."},{"a":"low_ph_acid","b":"copper_peptide","severity":"high","reason":"GHK-Cu 등 구리 펩타이드는 약알칼리~중성에서 안정적이고 강산성 저pH 환경에서는 구리-펩타이드 결합과 구조가 깨져 효능이 크게 저하된다.","advice":"산 제품과 같은 시점에 쓰지 말고 시간대를 명확히 분리(예: 산은 저녁, 구리 펩타이드는 아침)."},{"a":"low_ph_acid","b":"growth_factor","severity":"medium","reason":"성장인자(단백질)는 저pH 산성·산화 환경에서 변성·실활되기 쉬워 동시 적용 시 효능 손실 위험이 있다.","advice":"산 적용과 시간대를 분리하고, 성장인자는 피부 pH가 회복된 뒤 또는 별도 시간대에 사용."},{"a":"low_ph_acid","b":"egf","severity":"medium","reason":"EGF는 펩타이드/단백질이라 강산성 저pH에서 구조가 불안정해지고 활성이 떨어질 수 있다.","advice":"산 제품과 동시 레이어링 금지. 시간대를 나눠 EGF는 산성 환경이 중화된 뒤 적용."},{"a":"bpo","b":"vitc_pure","severity":"high","reason":"BPO는 강한 산화제, 순수 비타민C는 강한 환원제로 함께 두면 비타민C가 즉시 산화되어 갈변·실활되고 두 활성 모두 효능을 잃는다. 병용 자극도 크다.","advice":"절대 같은 시점에 섞지 말 것. 아침 비타민C / 저녁 BPO처럼 시간대를 완전히 분리."},{"a":"essential_oil","b":"aha","severity":"medium","reason":"AHA로 박리된 피부는 투과·반응성이 높아져 에센셜오일의 자극·감작·광독성 성분(특히 시트러스계)에 더 민감해진다.","advice":"산 사용 루틴에는 에센셜오일 고함량 제품을 피하고, 사용 시 자외선 차단을 철저히. 패치 테스트 권장."},{"a":"essential_oil","b":"bha","severity":"medium","reason":"BHA 박리로 장벽이 얇아진 상태에서 에센셜오일의 휘발성 자극·감작 성분이 접촉성 피부염·홍반을 유발할 수 있다.","advice":"BHA 루틴에는 무향 또는 저자극 제형 선호. 에센셜오일 제품은 시간대 분리 및 패치 테스트."},{"a":"essential_oil","b":"retinoid","severity":"medium","reason":"레티노이드로 민감·건조해진 피부에 에센셜오일의 자극·감작 성분이 더해지면 홍반·따가움·접촉성 피부염 위험이 커진다.","advice":"레티노이드 사용 시 무향·저자극 보습 위주로 구성하고 에센셜오일 고함량 제품은 피한다."},{"a":"alcohol_denat","b":"retinoid","severity":"medium","reason":"변성 알코올은 빠른 휘발과 탈지로 장벽·수분을 떨어뜨려, 가뜩이나 건조·자극을 유발하는 레티노이드의 부작용을 가중시킨다.","advice":"레티노이드 루틴에는 변성 알코올 고함량 제형을 피하고 보습·진정 성분으로 완충."},{"a":"alcohol_denat","b":"aha","severity":"medium","reason":"변성 알코올의 탈지·장벽 약화가 AHA의 박리 자극과 겹쳐 건조·홍반·따가움을 키운다.","advice":"산 제품에 변성 알코올이 고함량으로 함께 들어간 제형은 지양하고, 보습 강화 및 빈도 조절."},{"a":"aha","b":"bha","severity":"low","reason":"둘 다 화학적 각질제거제로 함께 또는 연속 사용 시 박리 작용이 중복되어 과각질제거·자극·장벽 손상 위험이 있다(병용 자체는 가능하나 강도가 합산됨).","advice":"AHA/BHA 복합 제품이라도 사용 빈도를 낮추고, 다른 강자극 활성과 겹치지 않게 조절. 보습·자외선 차단 병행."},{"a":"retinoid","b":"vitc_deriv","severity":"low","reason":"비타민C 유도체는 순수 아스코르브산보다 pH 의존성과 자극이 낮아 레티노이드와의 충돌 위험이 작지만, 두 활성의 누적 자극은 여전히 고려 대상.","advice":"유도체형은 비교적 함께 쓰기 수월하나 민감 피부는 보습으로 완충하고 자극 모니터링."},{"a":"physical_scrub","b":"retinoid","severity":"medium","reason":"물리적 스크럽의 마찰이 레티노이드로 얇아지고 민감해진 각질층에 미세 손상·홍반을 유발할 수 있다.","advice":"레티노이드 사용 기간에는 물리적 스크럽 빈도를 크게 줄이거나 중단하고 부드러운 클렌징으로 대체."},{"a":"physical_scrub","b":"aha","severity":"medium","reason":"화학적 박리(AHA)에 물리적 스크럽이 더해지면 과각질제거로 장벽이 손상되고 자극이 누적된다.","advice":"같은 날 산과 물리 스크럽 병용을 피하고, 둘 중 하나만 사용하거나 시간 간격을 충분히 둘 것."},{"a":"enzyme","b":"aha","severity":"low","reason":"효소 각질제거와 AHA 화학 박리가 겹치면 박리 강도가 합산되어 자극·건조가 늘 수 있다.","advice":"같은 루틴에 중복하지 말고 둘 중 하나만 사용하거나 요일을 분리."},{"a":"fragrance","b":"retinoid","severity":"low","reason":"착향제는 민감·자극받은 피부에서 접촉성 자극·감작을 유발할 수 있어, 레티노이드로 예민해진 피부에서는 위험이 다소 증가한다.","advice":"레티노이드 루틴에는 무향 제형을 우선 고려하고 자극 발생 시 향료 함유 제품 배제."},{"a":"physical_scrub","b":"bha","severity":"medium","reason":"BHA 화학 박리에 물리적 스크럽 마찰이 더해지면 과각질제거로 장벽 손상과 자극이 누적된다.","advice":"같은 날 BHA와 물리 스크럽 병용을 피하고 둘 중 하나만 사용. 보습으로 완충."},{"a":"low_ph_acid","b":"pdrn","severity":"medium","reason":"PDRN(폴리뉴클레오타이드)는 핵산 기반 생체 고분자로 강산성·산화 환경에서 분해·변성되어 재생 효능이 저하될 수 있다.","advice":"산 적용과 시간대를 분리하고 PDRN은 피부 pH가 회복된 뒤 또는 별도 시간대에 사용."},{"a":"essential_oil","b":"bpo","severity":"medium","reason":"BPO로 건조·자극받은 피부에 에센셜오일의 휘발성 자극·감작 성분이 더해지면 홍반·접촉성 피부염 위험이 커진다.","advice":"BPO 루틴에는 무향·저자극 보습 위주로 구성하고 에센셜오일 고함량 제품은 피한다."},{"a":"retinoid","b":"low_ph_acid","severity":"high","reason":"저pH 산성 제품은 레티노이드 자극을 증폭시키고 장벽을 약화시켜 박리·홍반·자극을 키운다.","advice":"저pH 제품 사용 후 피부 pH가 회복될 시간을 두거나 시간대를 완전히 분리한다."},{"a":"aha","b":"vitc_pure","severity":"medium","reason":"순수 비타민C와 AHA 모두 저pH라 함께 쓰면 산도가 누적되어 따가움·홍반 등 자극이 증가한다.","advice":"민감 피부는 시간대를 분리한다. 내성 피부라도 빈도를 조절하고 자극 신호를 관찰한다."},{"a":"aha","b":"copper_peptide","severity":"medium","reason":"구리펩타이드는 산성 환경에서 구리-펩타이드 결합이 불안정해지고, AHA의 저pH가 효능을 떨어뜨릴 수 있다.","advice":"구리펩타이드와 AHA는 다른 시간대(아침/저녁)로 분리해 각각의 최적 pH를 보장한다."},{"a":"bha","b":"vitc_pure","severity":"medium","reason":"BHA(저pH)와 순수 비타민C(저pH)를 동시에 쓰면 산도가 겹쳐 민감 피부에서 자극이 증가한다.","advice":"내성에 따라 시간대를 분리하고, 도입기엔 둘 중 하나만 쓰며 빈도를 조절한다."},{"a":"bpo","b":"copper_peptide","severity":"high","reason":"BPO의 산화 작용이 구리펩타이드를 산화·분해시켜 효능을 무력화한다.","advice":"두 성분은 같은 루틴에서 배제하거나 시간대를 완전히 분리한다."},{"a":"bpo","b":"peptide","severity":"medium","reason":"BPO의 산화력은 펩타이드 결합을 분해해 효능을 떨어뜨릴 수 있다.","advice":"펩타이드 세럼은 BPO와 다른 시간대에 사용한다."},{"a":"copper_peptide","b":"bha","severity":"medium","reason":"BHA의 저pH 환경에서 구리펩타이드 복합체가 불안정해져 효능이 저하될 수 있다.","advice":"BHA와 구리펩타이드는 시간대를 분리해 각각의 안정 pH를 유지한다."},{"a":"copper_peptide","b":"antioxidant","severity":"low","reason":"강한 항산화제(환원제)는 이론적으로 구리펩타이드의 구리 산화환원 상태를 흔들 수 있다는 논란이 있다.","advice":"우려되면 시간대를 분리하되, 일반적인 항산화 배합에서는 큰 문제로 보지 않는다."},{"a":"vitc_pure","b":"niacinamide","severity":"low","reason":"고온·강산 조건에서 니아신아마이드가 비타민C와 반응해 니코틴산을 생성하고 홍조를 유발한다는 속설이 있으나, 현대 안정화 제형에서는 실사용상 거의 문제되지 않는다.","advice":"대부분 함께 사용 가능하다. 매우 민감하면 시간대를 분리하거나 안정화 제형을 택한다."},{"a":"niacinamide","b":"low_ph_acid","severity":"low","reason":"니아신아마이드는 저pH에서 일부 니코틴산으로 가수분해되어 일시적 홍조를 낼 수 있으나 실제 빈도는 낮다.","advice":"민감 피부는 산 제품과 약간의 간격을 두고 니아신아마이드를 올린다."},{"a":"vitc_pure","b":"essential_oil","severity":"low","reason":"비타민C의 산화 촉진 환경에서 정유가 함께 있으면 산패·자극 가능성이 약간 높아질 수 있다.","advice":"고농도 비타민C 루틴에서는 정유 함량이 높은 제품 병용을 피하는 편이 안전하다."},{"a":"egf","b":"aha","severity":"medium","reason":"AHA의 저pH와 박리 작용이 EGF 단백질을 변성시키고 효능을 저하시킬 수 있다.","advice":"EGF와 AHA는 시간대를 분리한다(예: AHA 저녁, EGF 아침)."},{"a":"growth_factor","b":"vitc_pure","severity":"medium","reason":"순수 비타민C의 저pH 환경이 성장인자 단백질의 안정성을 떨어뜨릴 수 있다.","advice":"성장인자와 고농도 비타민C는 시간대를 분리해 사용한다."},{"a":"enzyme","b":"low_ph_acid","severity":"medium","reason":"효소(파파인·브로멜라인 등) 각질제와 저pH 산을 함께 쓰면 각질 분해가 중첩되어 자극이 커진다.","advice":"효소 필링과 산 제품은 같은 회차에 겹치지 말고 분리한다."},{"a":"fragrance","b":"aha","severity":"low","reason":"산으로 박리된 피부에 향료가 닿으면 자극·따가움이 증가할 수 있다.","advice":"각질제 사용 시기엔 무향 제품을 곁들이는 것이 안전하다."},{"a":"vitc_pure","b":"vitc_deriv","severity":"low","reason":"순수 비타민C와 유도체를 굳이 함께 쓸 실익이 적고, 제형 pH 충돌로 안정성이 떨어질 수 있다.","advice":"둘 중 목적에 맞는 하나를 선택해 사용하는 것이 효율적이다."},{"a":"adenosine","b":"low_ph_acid","severity":"low","reason":"아데노신은 강한 저pH에서 안정성이 다소 떨어질 수 있어 산 제품과 직접 혼합 시 효능이 줄 수 있다.","advice":"아데노신 주름개선 제품은 산 제품과 약간의 간격을 두고 사용한다."},{"a":"azelaic","b":"physical_scrub","severity":"low","reason":"아젤라산 사용 중 물리적 스크럽은 이미 진정·각질조절 중인 피부에 마찰 자극을 더한다.","advice":"아젤라산 루틴에서는 스크럽을 줄이고 부드럽게 관리한다."}],"synergies":[{"a":"vitc_pure","b":"vit_e","benefit":"비타민C(수용성)와 비타민E(지용성)가 항산화 네트워크를 이뤄 서로를 재생시키며, 자유라디칼 소거와 광노화 방어 효과가 상승한다."},{"a":"vitc_pure","b":"ferulic","benefit":"페룰산이 L-아스코르브산(+E) 제형의 산화 안정성을 높이고 항산화 시너지로 자외선 방어를 강화한다(클래식 CEF 조합)."},{"a":"niacinamide","b":"zinc","benefit":"나이아신아마이드의 피지·진정 효과에 아연의 피지 조절·항염이 더해져 여드름성·지성 피부의 모공·트러블 관리에 시너지를 낸다."},{"a":"ceramide","b":"occlusive","benefit":"세라마이드가 장벽 지질을 보충하고 폐색제가 수분 증발(TEWL)을 막아, 장벽 회복과 보습 지속력이 함께 향상된다."},{"a":"centella","b":"panthenol","benefit":"센텔라(진정·재생)와 판테놀(보습·장벽 회복)이 함께 작용해 자극받은 피부의 진정과 장벽 회복을 촉진한다."},{"a":"peptide","b":"retinoid","benefit":"펩타이드가 보습·장벽 지지와 콜라겐 자극을 보조해 레티노이드의 항노화 효과를 살리면서 자극을 완충하는 데 도움을 준다."},{"a":"ha","b":"humectant","benefit":"히알루론산과 기타 휴멕턴트가 다층으로 수분을 끌어당겨 즉각적·지속적 보습과 피부 결 개선에 시너지를 낸다."},{"a":"tranexamic","b":"niacinamide","benefit":"트라넥삼산과 나이아신아마이드가 멜라닌 생성·전달의 서로 다른 단계를 억제해 색소침착·홍조 개선에 상호 보완적이다."},{"a":"vitc_pure","b":"niacinamide","benefit":"두 항산화·미백 보조 성분이 멜라닌 경로를 다각도로 억제하고 톤 개선에 함께 기여한다(근래 처방·완성 제형에선 병용 문제없음)."},{"a":"arbutin","b":"vitc_pure","benefit":"알부틴의 티로시나아제 억제와 비타민C의 멜라닌 환원·항산화가 결합해 색소침착 개선과 브라이트닝 효과를 보강한다."},{"a":"arbutin","b":"niacinamide","benefit":"알부틴의 멜라닌 생성 억제와 나이아신아마이드의 멜라닌 전달 차단이 결합해 미백·톤업 효과에 상호 보완적이다."},{"a":"kojic","b":"arbutin","benefit":"코직산과 알부틴이 모두 티로시나아제를 억제하되 작용 방식이 보완적이라 색소침착 개선 효과가 강화된다."},{"a":"azelaic","b":"niacinamide","benefit":"아젤라산(항염·각질·색소)과 나이아신아마이드(진정·피지·미백)가 여드름성·홍조·색소 복합 고민에 상호 보완 작용한다."},{"a":"ceramide","b":"ha","benefit":"히알루론산이 끌어온 수분을 세라마이드 장벽이 가둬, 보습 효과를 지속시키고 수분 증발을 막는다."},{"a":"ceramide","b":"emollient","benefit":"세라마이드가 지질 장벽을 보충하고 에몰리언트가 각질 사이를 메워 피부결과 유연성, 장벽 기능을 함께 개선한다."},{"a":"panthenol","b":"ha","benefit":"판테놀의 장벽 회복·진정과 히알루론산의 수분 공급이 결합해 보습과 피부 컨디셔닝을 강화한다."},{"a":"centella","b":"ceramide","benefit":"센텔라의 진정·재생과 세라마이드의 장벽 강화가 결합해 손상·민감 피부의 회복을 돕는다."},{"a":"antioxidant","b":"vit_e","benefit":"비타민E가 다른 항산화제와 항산화 네트워크를 형성해 자유라디칼 방어와 제형 안정성을 함께 높인다."},{"a":"vitc_deriv","b":"niacinamide","benefit":"비타민C 유도체와 나이아신아마이드가 자극이 적은 조합으로 항산화·미백 효과를 함께 제공한다."},{"a":"adenosine","b":"peptide","benefit":"아데노신의 주름 개선과 펩타이드의 콜라겐 신호 자극이 결합해 항노화·탄력 개선에 시너지를 낸다."},{"a":"pdrn","b":"centella","benefit":"PDRN의 재생 촉진과 센텔라의 진정·회복이 결합해 손상·시술 후 피부의 회복을 돕는다."},{"a":"growth_factor","b":"peptide","benefit":"성장인자와 펩타이드가 세포 신호·콜라겐 합성을 다각도로 자극해 재생·항노화 효과를 보강한다."},{"a":"tranexamic","b":"vitc_pure","benefit":"트라넥삼산의 멜라닌·홍조 억제와 비타민C의 항산화·환원 미백이 결합해 색소·톤 개선에 상호 보완적이다."},{"a":"ferment","b":"humectant","benefit":"발효 성분의 영양·컨디셔닝과 휴멕턴트의 수분 공급이 결합해 피부 보습과 결 개선을 보조한다."},{"a":"niacinamide","b":"retinoid","benefit":"나이아신아마이드가 장벽·진정을 보조해 레티노이드의 건조·자극을 완충하면서 미백·항노화 효과를 함께 보강한다."},{"a":"ha","b":"panthenol","benefit":"히알루론산의 수분 공급과 판테놀의 보습·진정·장벽 회복이 결합해 보습 지속력과 피부 컨디셔닝을 높인다."},{"a":"azelaic","b":"retinoid","benefit":"아젤라산의 항염·항균·색소 개선과 레티노이드의 턴오버 촉진이 보완 작용해 여드름·색소·결 개선에 도움을 준다(자극 누적은 모니터링)."}],"categories":[{"name":"토너/스킨","desc":"각질·pH 정돈과 1차 수분 공급을 담당하는 저점도 수상 베이스 제품","phMin":4.5,"phMax":6,"activeLoad":"저","note":"저점도 수상이라 가용화 한계가 명확 - 오일·고분자 활성은 침전·백탁 유발하니 함량 보수적으로","forms":[{"name":"워터형","base":"수상 단독","irrMod":0,"costBase":1200,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"유화제 없는 맑은 수상이라 유성 활성·오클루시브는 백탁·층분리 유발, 수용성 위주로만 처방"},{"name":"에센스토너","base":"겔 네트워크","irrMod":0,"costBase":2600,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"점증제로 점도·체류감 부여, 다가 양이온·강산성 활성은 점증 무너뜨리니 pH·전해질 관리 필수"},{"name":"히알루론산토너","base":"수상 단독","irrMod":0,"costBase":2200,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"고분자 HA는 저pH·고전해질에서 점도 급락하고 알코올과 만나면 석출되니 보습 컨셉 유지"},{"name":"패드형","base":"수상 단독","irrMod":0.8,"costBase":3000,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"물리적 와이핑+산 조합으로 자극 누적, 부직포 흡착·잔류 고려해 산 농도와 완충 보수적으로 설계"},{"name":"각질케어토너","base":"수상 단독","irrMod":0.5,"costBase":2400,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"산 활성 메인이라 free acid 확보 위해 pH 3.5~4대로 낮추되 완충·진정 성분으로 자극 상쇄"}]},{"name":"미스트","desc":"분사형으로 수분·진정·보습을 즉시 공급하는 리브온 스프레이 제형","phMin":4.8,"phMax":6,"activeLoad":"저","note":"분사 입자에 맞춰 점도·계면활성제 최소화, 고함량 활성은 안정성·자극 때문에 지양","forms":[{"name":"워터미스트","base":"수상 단독","irrMod":0,"costBase":1800,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"유분 거의 없는 가용화 수상, 노즐 막힘 방지 위해 점도·오일 최소화"},{"name":"오일미스트","base":"무수/앤하이드러스","irrMod":0,"costBase":3500,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"무수라 무방부 가능, 수용성 보습제·순수비타민C 불용이므로 유용성 원료만"},{"name":"2층미스트","base":"2액 혼합","irrMod":0,"costBase":3000,"supports":["ha","humectant","emollient","vit_e","antioxidant","vitc_deriv","niacinamide","panthenol"],"avoid":["fragrance","essential_oil","alcohol_denat"],"note":"흔들어 일시 분산하는 워터+오일 2상, 유화 안정성 낮아 저자극 활성만, 분리 상태 pH는 수상 기준"},{"name":"에센스미스트","base":"겔 네트워크","irrMod":0,"costBase":2600,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"점증된 수상 미스트, 분사 가능한 저점도 유지하며 활성은 안정성 높은 유도체 위주"}]},{"name":"에센스","desc":"스킨과 세럼 사이 농도의 고기능 보습·활성 전달 단계로, 가볍게 흡수되며 후속 제품 침투를 돕는 카테고리","phMin":5,"phMax":6,"activeLoad":"중","note":"리브온 흡수감이 핵심이라 점도·잔여감 과다와 알코올 의존을 피하고 활성 안정 pH를 베이스와 맞춰 설계할 것","forms":[{"name":"워터에센스","base":"수상 단독","irrMod":0,"costBase":1800,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"유상이 거의 없어 오일성·지용성 활성 가용화가 어렵고, 흡수감 위해 occlusive·emollient 과다 금지"},{"name":"젤에센스","base":"겔 네트워크","irrMod":0,"costBase":2600,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"카보머·검류 점증제는 저pH·고전해질(산·아스코르빅) 환경에서 점도 붕괴되므로 산성 활성과 병용 시 점증계 변경 필요"},{"name":"발효에센스","base":"수상 단독","irrMod":0,"costBase":3200,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"발효여과물은 영양원이 많아 미생물 오염 취약, 방부 강화 필수이고 강산·BPO·고함량 알코올은 발효 성분 변성 유발"},{"name":"유액형에센스","base":"O/W 에멀전","irrMod":0,"costBase":3800,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"유화계는 저pH·고산도에서 유화 깨짐 위험이라 산성 필링 활성 부적합, 유분 잔여감 관리해 에센스 흡수감 유지"},{"name":"오일드롭에센스","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":4200,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"무수 오일상이라 수용성 활성(HA·나이아신아마이드)은 분산 불가, 대신 순수 비타민C·레티노이드는 산화 안정성 우수"}]},{"name":"세럼","desc":"고농축 활성성분을 피부에 빠르게 전달하는 경량 집중 케어 제형","phMin":4.5,"phMax":6,"activeLoad":"고","note":"활성 함량이 높아 pH·안정성·자극 밸런스를 동시에 잡아야 하며 클레임 성분과 베이스 상용성 우선 검토","forms":[{"name":"워터세럼","base":"수상 단독","irrMod":0,"costBase":3500,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"유상 거의 없는 수상 베이스라 유용성 활성은 가용화 한계, occlusive·emollient 과다 시 끈적임·상분리"},{"name":"오일세럼","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":6000,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"무수라 무방부 설계 가능하고 vitc_pure(L-AA) 안정, 수용성 ha·humectant·전해질형 활성은 분산 불가"},{"name":"젤세럼","base":"겔 네트워크","irrMod":0,"costBase":4000,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"고분자 점증제 기반이라 저pH 강산·전해질·고염 활성 투입 시 점도 붕괴, 유용성 활성 분산 어려움"},{"name":"에멀전세럼","base":"O/W 에멀전","irrMod":0,"costBase":5000,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"유화 베이스라 유·수용성 활성 모두 수용 가능하나 저pH 강산·고함량 L-AA는 유화 안정성 저해, 방부 필수"}]},{"name":"앰플","desc":"고농축 활성성분을 집중 전달하는 부스터형 리브온 제형","phMin":4.5,"phMax":6,"activeLoad":"고","note":"고농축 콘셉트일수록 안정성·자극·방부 부담이 커지므로 활성 1~2종에 집중하고 pH 윈도우를 좁게 잡을 것","forms":[{"name":"고농축워터","base":"수상 단독","irrMod":0.5,"costBase":9000,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"유분 거의 없는 수상이라 수용성 활성에 최적이나 고함량 수용성염은 pH·점도·석출 관리 필수"},{"name":"오일앰플","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":13000,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"무수 베이스라 순수 비타민C·레티놀 산화 안정에 유리하고 무방부 가능하나 수용성 활성은 용해 불가"},{"name":"캡슐앰플","base":"무기 분산","irrMod":0,"costBase":16000,"supports":["humectant","ha","niacinamide","panthenol","centella"],"avoid":["aha","bha","low_ph_acid","vitc_pure","retinoid","peptide","growth_factor","egf","pdrn","copper_peptide","vitc_deriv","ferment"],"note":"캡슐화로 불안정 활성을 격리해 안정성↑ 사용시 파열 전달, 저pH 산은 캡슐쉘 손상 위험으로 분리 권장"},{"name":"2액혼합형","base":"2액 혼합","irrMod":0.3,"costBase":18000,"supports":["ha","humectant","emollient","vit_e","antioxidant","vitc_deriv","niacinamide","panthenol"],"avoid":["fragrance","essential_oil","alcohol_denat"],"note":"사용 직전 혼합으로 반응성·불안정 활성을 분리 보관, 혼합 후 사용기한 짧고 두 상 pH·점도 호환성 검증 필수"},{"name":"겔네트워크앰플","base":"겔 네트워크","irrMod":0,"costBase":12000,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"겔 네트워크로 가벼운 사용감과 활성 안정 동시 확보, 저pH·고전해질 활성은 겔 붕괴로 점도 저하 주의"}]},{"name":"로션","desc":"묽은~중점도 유화·수상 베이스로 빠르게 흡수되며 가벼운 보습막을 주는 데일리 리브온 제형","phMin":5,"phMax":6,"activeLoad":"중","note":"묽은 유화는 점도·유화 안정성이 좁아 활성 과투입 시 분리·층분리 쉬움, 활성 함량과 전해질 영향 먼저 검증","forms":[{"name":"O/W에멀전","base":"O/W 에멀전","irrMod":0,"costBase":2500,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"표준 묽은 유화, 저pH 활성·고전해질은 유화 깨짐 유발하니 유화제계·중화 단계에서 안정성 우선 확인"},{"name":"젤로션","base":"겔 네트워크","irrMod":0,"costBase":2200,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"오일프리·논코메도 가벼운 텍스처, 카보머계 점증은 전해질·저pH에 약해 점도 붕괴 주의, 유분활성 다량은 부적합"},{"name":"밀크로션","base":"O/W 에멀전","irrMod":0,"costBase":2800,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"유분비 높은 보습 유화, 베리어·건성용에 적합하나 저pH 산·퓨어비타민C 동반 시 분리·변색 위험"},{"name":"하이드로로션","base":"수상 단독","irrMod":0,"costBase":1800,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"무유분 수상 보습, occlusive·emollient 과다 투입 불가하며 향·오일은 가용화 필요, 저장 중 미생물 관리 강화"},{"name":"비타민로션","base":"O/W 에멀전","irrMod":0,"costBase":3200,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"유도체형 비타민C 중심 미백·항산화 유화, 퓨어 아스코르브산은 저pH·산화로 변색되어 묽은 유화엔 부적합, 차광·킬레이트 필수"}]},{"name":"크림","desc":"유상·수상을 유화한 리치 보습 제형으로 폐색·연화·수분공급을 동시에 수행하는 대표 마무리 단계 제품","phMin":5,"phMax":6,"activeLoad":"중","note":"유화 안정성·점도가 활성 안정성과 직결되므로 저pH/고전해질 활성은 에멀전 붕괴 여부를 먼저 검증할 것","forms":[{"name":"O/W크림","base":"O/W 에멀전","irrMod":0,"costBase":4500,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"수상 외상이라 수용성 보습·미백활성 배합 용이하나 저pH·고농도 산은 유화 깨짐·자극↑, 발라짐 가벼운 데일리 베이스"},{"name":"W/O크림","base":"W/O 에멀전","irrMod":0,"costBase":6500,"supports":["occlusive","emollient","ceramide","retinoid","vit_e","peptide","niacinamide","panthenol","bakuchiol"],"avoid":["vitc_pure","aha","bha","low_ph_acid","vitc_deriv"],"note":"오일 외상으로 폐색·내수성 강해 건성·동절기·레티노이드 캐리어로 적합하나 수용성 산성활성은 내상 분배·pH제어 어려움"},{"name":"밤크림","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":7000,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"물 없는 앤하이드러스라 무방부 설계 가능·고폐색 진정밤에 적합, 수용성 보습·산성활성은 용해·전달 불가하여 유용성 또는 오일분산 원료만"},{"name":"수분크림","base":"겔 네트워크","irrMod":0,"costBase":4000,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"겔네트워크·저유분 경량 에멀전으로 수분활성·진정성분 고함량 적합, 과도한 폐색·고오일은 사용감 무겁고 모공 부담↑"},{"name":"고영양크림","base":"O/W 에멀전","irrMod":0,"costBase":8500,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"고유분 리치 에멀전에 펩타이드·성장인자 등 고가활성 탑재, pH·산화 민감 활성과는 저pH산·강산화제 동시배합 피하고 안정화 시스템 필수"}]},{"name":"수분젤","desc":"수상 위주의 가볍고 산뜻한 보습 젤로 즉각적 수분감과 진정에 강점","phMin":5,"phMax":6,"activeLoad":"저","note":"고분자 점증제(카보머)는 전해질·저pH·고농도 활성에 점도 붕괴되니 호환 점증 선택 필수","forms":[{"name":"아쿠아젤","base":"수상 단독","irrMod":0,"costBase":1800,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"유분 거의 없는 수상 베이스라 유용성 활성은 가용화 한계, 카보머는 전해질·저pH에 점도 붕괴 주의"},{"name":"젤크림","base":"O/W 에멀전","irrMod":0,"costBase":3200,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"젤+소량 유분 하이브리드라 유화 안정성 확보 필요, 저pH 활성 동반 시 유화제 내산성 확인"},{"name":"워터젤","base":"수상 단독","irrMod":0,"costBase":2000,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"흐르는 워터 텍스처라 점증·필름형성제로 매끈함 확보, 유분 과다 시 텍스처 무너짐"},{"name":"수딩젤","base":"수상 단독","irrMod":-0.3,"costBase":1600,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol","fragrance","essential_oil","alcohol_denat","physical_scrub"],"note":"진정 컨셉이므로 자극 활성·향·에탄올 배제, 알로에/병풀 추출물 다량 시 방부 설계 강화"},{"name":"수분에센스젤","base":"겔 네트워크","irrMod":0,"costBase":2600,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"겔 네트워크 점증제로 농밀 발림과 활성 캐리어 역할, 다가 양이온 활성은 점증 붕괴 가능"}]},{"name":"아이크림","desc":"눈가 얇은 피부의 잔주름·다크서클·푸석함을 케어하는 고보습·저자극 국소 케어 제형","phMin":5,"phMax":6.5,"activeLoad":"중","note":"눈가 점막 인접부라 향료·에센셜오일·고농도 산은 자극·스팅 위험이 커 보수적으로 설계할 것","forms":[{"name":"크림형","base":"O/W 에멀전","irrMod":0,"costBase":4200,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"가장 범용적인 눈가 리브온 베이스, 무거운 occlusive 과다 시 밀림·밀리아 유발 주의"},{"name":"젤형","base":"수상 단독","irrMod":0,"costBase":3000,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"쿨링·산뜻 컨셉의 수상 겔, 유성 보습 부족하므로 건성·고보습 소구엔 부적합하고 카보머 점증 시 전해질 활성 호환 확인"},{"name":"밤형","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":5000,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"무수라 무방부 설계 가능·산화 민감 활성 안정, 수용성 보습제는 분산 불가하니 유용성·유분산 원료로만 구성"},{"name":"롤온형","base":"O/W 에멀전","irrMod":0,"costBase":3600,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"메탈볼 마사지·쿨링 다크서클 컨셉, 점도 낮고 토출 후 묽어야 하며 금속볼 부식·산화 활성 호환과 광구 미생물 오염 방부 강화 필요"},{"name":"세럼형","base":"O/W 에멀전","irrMod":0,"costBase":4000,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"고기능 활성 집중형 경량 에멀전, 펩타이드·성장인자 안정 위해 저온 후첨·pH 6 내외·동봉 방부 적합성 확인"}]},{"name":"클렌징","desc":"피지·메이크업·노폐물 제거가 1차 목적인 워시오프 카테고리, 활성보다 세정 메커니즘이 처방을 지배","phMin":4.5,"phMax":6.5,"activeLoad":"저","note":"접촉시간이 짧아 활성 효능 기대는 보조 수준, 세정 후 장벽 손상 최소화(약산성·계면활성제 순화)가 핵심","forms":[{"name":"젤클렌저","base":"수상 단독","irrMod":-1,"costBase":1800,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"약산성 아미노산/설포석시네이트계로 잡고 점증제는 음이온계면활성제와 호환되는 폴리머 사용, 산성 활성은 pH 조정 필수"},{"name":"폼클렌저","base":"겔 네트워크","irrMod":-1,"costBase":2400,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"지방산+알칼리 비누화형은 pH 9~10이라 산성·저pH 활성과 충돌, 약산성 폼은 계면활성제형으로 별도 설계"},{"name":"오일클렌저","base":"무수/앤하이드러스","irrMod":-1,"costBase":3200,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"무수 기제라 수용성 활성·휴멕턴트 용해 불가, 유화제(폴리소르베이트/올리브유화제) 비율로 워터오프 거동 조절"},{"name":"밤클렌저","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":3600,"supports":["retinoid","vitc_pure","vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide"],"note":"왁스+버터+유화제 무수계라 무방부 가능(수분활성도 낮음), 발림성/녹는점 위해 왁스-오일 비율과 자기유화제 균형이 관건"},{"name":"클렌징워터","base":"수상 단독","irrMod":-1,"costBase":1500,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"마이셀러형, 워시오프 안 하므로 잔류 자극 낮은 순한 양쪽성/비이온 계면활성제만, 오일·옥클루시브 과다 시 뿌옇고 끈적임 발생"},{"name":"효소파우더","base":"무기 분산","irrMod":0.5,"costBase":4000,"supports":["humectant","ha","niacinamide","panthenol","centella","enzyme"],"avoid":["aha","bha","low_ph_acid","vitc_pure","retinoid","peptide","growth_factor","egf","pdrn","copper_peptide","vitc_deriv","ferment"],"note":"프로테아제/파파인 분말은 수분 닿으면 실활하므로 완전 무수 파우더로 유지, 효소 최적 pH·온도 고려하고 산성 활성 동시 배합 시 변성 주의"}]},{"name":"마스크팩","desc":"피부에 일정 시간 밀착·도포해 보습/진정/각질 등 집중 케어를 주는 와입오프·리브온 마스크 카테고리","phMin":4.5,"phMax":6,"activeLoad":"중","note":"밀폐·점착 시간이 길어 활성 침투·자극이 증폭되므로 리브온/워시오프별로 활성 농도와 pH를 분리 설계할 것","forms":[{"name":"시트마스크","base":"수상 단독","irrMod":0,"costBase":1800,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"에센스 점도가 낮은 수상이라 유성 occlusive/emollient는 시트 흡수·밀착을 해치고, 자극 활성은 밀폐로 증폭되니 농도 보수적으로"},{"name":"워시오프팩","base":"O/W 에멀전","irrMod":-1,"costBase":2600,"supports":["retinoid","peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid"],"note":"단시간 후 세척돼 잔류 접촉이 짧으므로 고가 침투형 활성(성장인자·펩타이드)은 낭비, 산·효소는 짧은 접촉 전제로 농도 설계"},{"name":"슬리핑팩","base":"O/W 에멀전(겔크림)","irrMod":0,"costBase":3000,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv","retinoid","ceramide","bakuchiol"],"avoid":["physical_scrub","bpo"],"note":"야간 리브온 — 레티놀·펩타이드 등 고기능 활성 적합, 물리각질·BPO만 회피"},{"name":"하이드로겔팩","base":"2액 혼합","irrMod":0,"costBase":3500,"supports":["ha","humectant","emollient","vit_e","antioxidant","vitc_deriv","niacinamide","panthenol"],"avoid":["fragrance","essential_oil","alcohol_denat"],"note":"겔란/한천 등 겔화제 망 안정 pH 대역이 좁아 강산·고농도 알코올은 겔 붕괴를 일으키니 중성 근처 활성으로 구성"},{"name":"모델링팩","base":"무기 분산","irrMod":0,"costBase":2200,"supports":["humectant","ha","niacinamide","panthenol","centella"],"avoid":["aha","bha","low_ph_acid","vitc_pure","retinoid","peptide","growth_factor","egf","pdrn","copper_peptide","vitc_deriv","ferment"],"note":"알지네이트/석고가 물과 굳는 알칼리·발열 환경이라 산·레티놀·효소·단백계 활성은 실활되므로 굳힘 후 잔류 케어용 안정 성분만"},{"name":"필링패드","base":"수상 단독","irrMod":1,"costBase":2400,"supports":["ha","humectant","niacinamide","tranexamic","arbutin","panthenol","centella","pdrn","peptide","adenosine","ferment","pha","low_ph_acid","aha","bha","vitc_pure","vitc_deriv","azelaic","zinc"],"avoid":["occlusive","emollient","ceramide","retinoid","vit_e","bakuchiol"],"note":"물리 마찰+저pH 산 더블 각질제거라 자극 보정 높음, 레티노이드/BPO/순수 비타민C 병용 금지 및 occlusive로 산 침투 방해 회피"}]},{"name":"선크림","desc":"UV 필터로 자외선 차단을 목적으로 하는 리브온 제형, 무기/유기/혼합 필터계로 분기","phMin":5.5,"phMax":7,"activeLoad":"고","note":"SPF/PA 표시는 인체적용시험 필수, 필터 함량 변경 시 차단지수 재시험 필요","forms":[{"name":"무기자차","base":"O/W 에멀전","irrMod":0.5,"costBase":4500,"supports":["peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid","aha","bha","retinoid"],"note":"ZnO/TiO2 고분산 필수, 백탁·뻑뻑함 관리와 낮은 pH 동반 시 필터 응집 주의"},{"name":"유기자차","base":"O/W 에멀전","irrMod":0,"costBase":5500,"supports":["peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid","aha","bha","retinoid"],"note":"유기필터 광안정성 위해 광안정제 조합 필수, 활성성분과 필터 상용성·광분해 검증"},{"name":"혼합자차","base":"O/W 에멀전","irrMod":0.5,"costBase":6000,"supports":["peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid","aha","bha","retinoid"],"note":"무기+유기 병용으로 백탁 저감·고지수 가능하나 처방 복잡도·점도 안정성 관리 필요"},{"name":"톤업선크림","base":"O/W 에멀전","irrMod":0.5,"costBase":5000,"supports":["peptide","copper_peptide","ceramide","niacinamide","panthenol","emollient","occlusive","vitc_deriv","adenosine","ha","humectant","centella","antioxidant","bakuchiol","vit_e"],"avoid":["vitc_pure","low_ph_acid","aha","bha","retinoid"],"note":"고함량 TiO2/펄로 톤업 구현, 무기 분산 자극 동반·미백고시성분 표방 시 인증 필요"},{"name":"선스틱","base":"무수/앤하이드러스","irrMod":-0.3,"costBase":6500,"supports":["vit_e","ceramide","ferulic","occlusive","emollient","bakuchiol","essential_oil","antioxidant"],"avoid":["ha","humectant","niacinamide","tranexamic","arbutin","aha","bha","pha","vitc_deriv","pdrn","egf","growth_factor","ferment","azelaic","enzyme","copper_peptide","peptide","low_ph_acid","vitc_pure","retinoid"],"note":"왁스/오일 무수기제라 수용성 휴멕턴트 분산 불가, 발림성·내수성·필터 용해도 관리"},{"name":"선세럼","base":"겔 네트워크","irrMod":0,"costBase":5000,"supports":["ha","humectant","niacinamide","panthenol","centella","peptide","adenosine","pdrn","ferment","arbutin","tranexamic","antioxidant","vitc_deriv"],"avoid":["low_ph_acid","aha","bha","vitc_pure","occlusive","emollient","retinoid","physical_scrub"],"note":"수상 겔 베이스로 가볍지만 필터 용해·고지수 구현 한계, 오클루시브 과다 시 무너짐"}]}],"qa":"1차 규칙은 전반적으로 방향이 맞으나 일부 과장이 있어 교정했다. 특히 '순수 비타민C+레티노이드'는 직접적 화학 충돌이라기보다 안정 pH 차이와 누적 자극 수준이라 medium에서 low로 낮췄고, '비타민C+나이아신아마이드 홍조설'은 고온 가열 조건의 옛 실험 근거라 충돌이 아닌 시너지로 유지했다. 산성 환경에서 변성되는 단백질·핵산 계열(growth factor, EGF, PDRN, copper peptide)과 박리·자극 누적(레티노이드/산/스크럽/에센셜오일) 충돌은 근거가 견고하다. 본 데이터는 일반적 제형·루틴 가이드이며 실제 자극은 농도·제형·개인 피부 상태에 크게 좌우되므로, 새 강활성 도입 시 저빈도·패치 테스트·아침 자외선 차단을 병행하고 민감 반응을 모니터링할 것을 권한다."};
+// ===== DB END =====
+
+/* ---------- 엔진 ---------- */
+const CONCEPT_ORDER = ["수분","진정","재생","미백","주름개선","모공·피지","장벽강화","각질케어","항산화","트러블","탄력","첨가·주의"];
+const TAGLABEL = {
+  retinoid:"레티노이드", aha:"AHA", bha:"BHA", pha:"PHA",
+  vitc_pure:"순수 비타민C", vitc_deriv:"비타민C 유도체", niacinamide:"나이아신아마이드",
+  peptide:"펩타이드", copper_peptide:"구리펩타이드", bpo:"벤조일퍼옥사이드",
+  azelaic:"아젤라익애씨드", growth_factor:"성장인자", egf:"EGF", pdrn:"PDRN",
+  ceramide:"세라마이드", ha:"히알루론산", panthenol:"판테놀", centella:"병풀/시카",
+  arbutin:"알부틴", tranexamic:"트라넥사믹애씨드", kojic:"코직애씨드",
+  antioxidant:"항산화제", vit_e:"비타민E", ferulic:"페룰릭애씨드",
+  humectant:"휴멕턴트", occlusive:"밀폐제", emollient:"에몰리언트", ferment:"발효성분",
+  low_ph_acid:"저pH 산", essential_oil:"정유/에센셜오일", fragrance:"향료",
+  alcohol_denat:"변성알코올", enzyme:"효소", physical_scrub:"물리적 스크럽",
+  adenosine:"아데노신", zinc:"아연"
+};
+function tlabel(t){ return TAGLABEL[t] || t; }
+const recipe = new Set();      // inci(소문자) 집합
+const byInci = new Map();      // inci -> ingredient
+let curCat = null, curForm = null;
+
+function init(){
+  DB.ingredients.forEach(function(it){ byInci.set(it.inci.toLowerCase(), it); });
+  document.getElementById('db-count').textContent =
+    '성분 ' + DB.ingredients.length + '종 · 규칙 ' + (DB.conflicts.length+DB.synergies.length);
+
+  buildCategorySelect();
+  buildFormSelect();
+  buildConcepts();
+  buildFilters();
+
+  document.getElementById('search').addEventListener('input', applyFilters);
+  document.getElementById('btn-collapse').addEventListener('click', collapseAll);
+  document.getElementById('btn-verify').addEventListener('click', verify);
+  document.getElementById('btn-clear').addEventListener('click', clearRecipe);
+  renderRecipe();
+}
+
+function buildCategorySelect(){
+  const s=document.getElementById('sel-cat');
+  s.innerHTML='<option value="">— 카테고리 선택 —</option>'+DB.categories.map(function(c,i){
+    return '<option value="'+i+'">'+esc(c.name)+'</option>';}).join('');
+  s.addEventListener('change',function(){
+    curCat = this.value===''?null:DB.categories[+this.value];
+    curForm = null;
+    document.getElementById('cat-note').textContent = curCat
+      ? (curCat.desc+' · 권장 pH '+curCat.phMin+'~'+curCat.phMax+' · 활성함량 '+curCat.activeLoad+' · '+curCat.note) : '';
+    populateForms();
+    markCompat(); applyFilters();
+  });
+}
+function populateForms(){
+  const s=document.getElementById('sel-form');
+  const note=document.getElementById('form-note');
+  note.textContent='';
+  if(!curCat){
+    s.disabled=true;
+    s.innerHTML='<option value="">— 카테고리 먼저 선택 —</option>';
+    return;
+  }
+  s.disabled=false;
+  s.innerHTML='<option value="">— 제형 선택 ('+(curCat.forms||[]).length+'종) —</option>'
+    +(curCat.forms||[]).map(function(f,i){ return '<option value="'+i+'">'+esc(f.name)+'</option>'; }).join('');
+}
+function buildFormSelect(){
+  const s=document.getElementById('sel-form');
+  s.disabled=true;
+  s.innerHTML='<option value="">— 카테고리 먼저 선택 —</option>';
+  s.addEventListener('change',function(){
+    curForm = (this.value===''||!curCat)?null:curCat.forms[+this.value];
+    document.getElementById('form-note').textContent = curForm
+      ? (curForm.base+(curForm.note?(' · '+curForm.note):'')) : '';
+    markCompat(); applyFilters();
+  });
+}
+
+function ingsForConcept(key){
+  return DB.ingredients.filter(function(it){ return (it.concepts||[]).indexOf(key)!==-1; });
+}
+function buildConcepts(){
+  const host=document.getElementById('concepts');
+  const present = CONCEPT_ORDER.filter(function(k){ return ingsForConcept(k).length>0; });
+  // 순서에 없는 컨셉도 뒤에 추가
+  const extra = {};
+  DB.ingredients.forEach(function(it){(it.concepts||[]).forEach(function(c){
+    if(CONCEPT_ORDER.indexOf(c)===-1) extra[c]=1;});});
+  const keys = present.concat(Object.keys(extra));
+  host.innerHTML = keys.map(function(k){
+    const list = ingsForConcept(k);
+    return ''
+    + '<div class="acc" data-k="'+esc(k)+'">'
+    +   '<button class="acc-h" onclick="toggleAcc(this)">'
+    +     '<span class="left"><span class="dot"></span><span class="nm">'+esc(k)+'</span>'
+    +       '<span class="cnt">'+list.length+'</span></span>'
+    +     '<span class="chev">▶</span>'
+    +   '</button>'
+    +   '<div class="acc-body"><div class="ing-grid">'
+    +     list.map(ingCard).join('')
+    +   '</div></div>'
+    + '</div>';
+  }).join('');
+  syncCards();
+}
+function ingCard(it){
+  const id=it.inci.toLowerCase();
+  return ''
+  +'<div class="ing" data-id="'+esc(id)+'" onclick="toggleIng(\''+escJs(id)+'\')">'
+  +'<div class="nm">'+esc(it.ko)+'</div>'
+  +'<div class="inci">'+esc(it.inci)+'</div>'
+  +'<div class="cbadge"></div>'
+  +'<div class="sens">'+sensPills(it.sensory)+'</div>'
+  +'<div class="fn">'+esc(it.func||'')+'</div>'
+  +'<div class="meta">'
+  +'<span class="pill irr'+ (it.irr||0) +'">자극 '+(it.irr||0)+'/5</span>'
+  +'<span class="pill cost">~'+won(it.cost||0)+'/100ml</span>'
+  +(it.pct?'<span class="pill">'+esc(it.pct)+'</span>':'')
+  +'</div></div>';
+}
+function sensPills(s){
+  if(!s||!s.absorb) return '';
+  const finCls={'산뜻':'s-fresh','촉촉':'s-moist','리치':'s-rich'}[s.finish]||'s-moist';
+  let h='<span class="s s-abs">흡수 '+esc(s.absorb)+'</span>';
+  h+='<span class="s '+finCls+'">'+esc(s.finish)+'</span>';
+  if(s.tack==='적음') h+='<span class="s s-clean">무끈적</span>';
+  else if(s.tack==='있음') h+='<span class="s s-tack">끈적임</span>';
+  if(s.feel && s.feel.indexOf('매트')>=0) h+='<span class="s s-mat">매트</span>';
+  return h;
+}
+function productColor(items){
+  const tints=[];
+  items.forEach(function(it){
+    const nm=it.ko+' '+it.inci, tg=it.tags||[];
+    if(/kaolin|bentonite|\bclay\b|카올린|벤토나이트|클레이|백토|차콜|charcoal/i.test(nm)) tints.push({c:'clay',hex:'#cdc4ad',l:'회베이지(클레이/차콜)'});
+    else if(tg.indexOf('vitc_pure')>=0) tints.push({c:'vitc',hex:'#f1da90',l:'연노랑(순수 비타민C·산화 시 진해짐)'});
+    else if(tg.indexOf('retinoid')>=0) tints.push({c:'retinoid',hex:'#f0e0a6',l:'연노랑(레티노이드)'});
+    else if(/폴리페놀|피크노제놀|레스베라트롤|오리자놀|닥나무|탄닌|tannin/i.test(nm)) tints.push({c:'poly',hex:'#d6c096',l:'연갈색(폴리페놀·식물추출)'});
+    else if(tg.indexOf('ferment')>=0) tints.push({c:'ferment',hex:'#e6d7bd',l:'옅은 베이지(발효 여과물)'});
+    else if(tg.indexOf('centella')>=0||/녹차|감초|어성초|마치현|병풀|쑥|추출물/i.test(nm)) tints.push({c:'botan',hex:'#dbdfc1',l:'옅은 황록(식물 추출)'});
+    else if(tg.indexOf('emollient')>=0||tg.indexOf('occlusive')>=0||/버터|\boil\b|오일|토코페|시어/i.test(nm)) tints.push({c:'oil',hex:'#efe5c2',l:'미색(유분/오일)'});
+  });
+  return tints;
+}
+function resolveColor(items, form){
+  const tints=productColor(items);
+  const PRIO=['clay','vitc','poly','retinoid','ferment','botan','oil'];
+  if(tints.length){
+    let best=null;
+    PRIO.forEach(function(c){ if(!best){ const m=tints.filter(function(t){return t.c===c;}); if(m.length) best=m[0]; } });
+    const cats={}; tints.forEach(function(t){cats[t.c]=1;});
+    return {label:best.l, hex:best.hex, multi:Object.keys(cats).length>=3};
+  }
+  const base=(form&&form.base)||'';
+  if(/에멀전|emulsion|크림|로션|밀크/i.test(base)) return {label:'유백색 / 화이트', hex:'#f7f5ef', multi:false};
+  if(/무수|앤하이드러스|오일/i.test(base)) return {label:'미색 투명 오일', hex:'#f1ead2', multi:false};
+  if(/무기|자차|분산/i.test(base)) return {label:'화이트(무기 필터)', hex:'#f4f4f2', multi:false};
+  return {label:'무색 투명', hex:'#eaf2fb', multi:false};
+}
+
+function toggleAcc(btn){ btn.parentElement.classList.toggle('open'); }
+function collapseAll(){ document.querySelectorAll('.acc.open').forEach(function(a){a.classList.remove('open');}); }
+
+function toggleIng(id){
+  if(recipe.has(id)) recipe.delete(id); else recipe.add(id);
+  syncCards(); renderRecipe();
+}
+function syncCards(){
+  document.querySelectorAll('.ing').forEach(function(el){
+    el.classList.toggle('added', recipe.has(el.getAttribute('data-id')));
+  });
+}
+
+function renderRecipe(){
+  const list=document.getElementById('recipe-list');
+  document.getElementById('r-count').textContent = recipe.size;
+  if(recipe.size===0){
+    list.innerHTML='<div class="empty">아직 담은 성분이 없습니다.<br>왼쪽에서 성분을 클릭해 추가하세요.</div>';
+    document.getElementById('r-cost').textContent='–';
+    document.getElementById('r-irr').textContent='–';
+    document.getElementById('btn-verify').disabled=true;
+    return;
+  }
+  document.getElementById('btn-verify').disabled=false;
+  const items=selected();
+  list.innerHTML=items.map(function(it){
+    const id=it.inci.toLowerCase();
+    return '<div class="ritem">'
+      +'<div class="ri-nm">'+esc(it.ko)+'<small>'+esc(it.inci)+'</small></div>'
+      +'<span class="ri-irr pill irr'+(it.irr||0)+'">'+(it.irr||0)+'</span>'
+      +'<button class="rm" title="삭제" onclick="toggleIng(\''+escJs(id)+'\')">×</button>'
+      +'</div>';
+  }).join('');
+  const cost=items.reduce(function(s,it){return s+(it.cost||0);},0);
+  const irr=items.reduce(function(s,it){return s+(it.irr||0);},0)/items.length;
+  document.getElementById('r-cost').textContent='~'+won(cost)+'원';
+  document.getElementById('r-irr').textContent=irr.toFixed(1)+'/5';
+}
+function clearRecipe(){ recipe.clear(); syncCards(); renderRecipe();
+  document.getElementById('result-card').classList.add('hidden'); }
+
+function selected(){
+  const r=[];
+  recipe.forEach(function(id){ const it=byInci.get(id); if(it) r.push(it); });
+  return r;
+}
+
+/* ---------- 사용감 필터 ---------- */
+const FEELS=[
+  {k:'흡수빠름', t:'흡수 빠름', f:function(it){return it.sensory&&it.sensory.absorb==='빠름';}},
+  {k:'흡수느림', t:'흡수 느림', f:function(it){return it.sensory&&it.sensory.absorb==='느림';}},
+  {k:'산뜻', t:'산뜻', f:function(it){return it.sensory&&it.sensory.finish==='산뜻';}},
+  {k:'촉촉', t:'촉촉', f:function(it){return it.sensory&&it.sensory.finish==='촉촉';}},
+  {k:'리치', t:'리치', f:function(it){return it.sensory&&it.sensory.finish==='리치';}},
+  {k:'무끈적', t:'무끈적', f:function(it){return it.sensory&&it.sensory.tack==='적음';}},
+  {k:'저자극', t:'저자극 ≤1', f:function(it){return (it.irr||0)<=1;}}
+];
+const activeFeel=new Set();
+function buildFilters(){
+  const host=document.getElementById('filters');
+  host.innerHTML='<span class="flabel">사용감 필터</span>'
+    +FEELS.map(function(x){return '<button class="fchip" data-k="'+esc(x.k)+'" onclick="toggleFeel(this)">'+esc(x.t)+'</button>';}).join('')
+    +'<button class="fchip clear" onclick="clearFeel()">초기화</button>'
+    +'<span class="flabel" style="margin-left:6px">제형</span>'
+    +'<button class="fchip" id="compatChip" style="display:none" onclick="toggleCompat(this)">이 제형 호환만</button>';
+}
+function toggleFeel(btn){
+  const k=btn.getAttribute('data-k');
+  if(activeFeel.has(k)){ activeFeel.delete(k); btn.classList.remove('on'); }
+  else { activeFeel.add(k); btn.classList.add('on'); }
+  applyFilters();
+}
+function clearFeel(){ activeFeel.clear(); document.querySelectorAll('.fchip.on').forEach(function(b){b.classList.remove('on');}); compatOnly=false; applyFilters(); }
+
+/* ---------- 제형 호환성 ---------- */
+let compatOnly=false;
+function compat(it, form){
+  if(!form||!it) return {lv:'ok'};
+  const tg=it.tags||[], avoid=form.avoid||[], base=form.base||'';
+  const bad=tg.filter(function(t){return avoid.indexOf(t)>=0;});
+  if(bad.length) return {lv:'no', why:'✕ '+form.name+' 부적합 · '+bad.map(tlabel).join('·')};
+  if(/무수|앤하이드러스|왁스/.test(base)){
+    const ws=['ha','humectant','niacinamide','tranexamic','arbutin','aha','bha','pha','pdrn','egf','growth_factor','ferment','vitc_deriv'];
+    if(tg.some(function(t){return ws.indexOf(t)>=0;})) return {lv:'no', why:'✕ 무수 제형엔 부적합 · 수용성'};
+  }
+  return {lv:'ok'};
+}
+function markCompat(){
+  document.querySelectorAll('.ing').forEach(function(el){
+    const it=byInci.get(el.getAttribute('data-id'));
+    const cb=el.querySelector('.cbadge');
+    const c=compat(it,curForm);
+    el.classList.toggle('incompat', c.lv==='no');
+    if(cb) cb.textContent = c.lv==='no' ? c.why : '';
+  });
+  const chip=document.getElementById('compatChip');
+  if(chip){ chip.style.display = curForm ? '' : 'none'; if(!curForm){ compatOnly=false; chip.classList.remove('on'); } }
+}
+function toggleCompat(btn){ if(!curForm) return; compatOnly=!compatOnly; btn.classList.toggle('on',compatOnly); applyFilters(); }
+
+function applyFilters(){
+  const q=(document.getElementById('search').value||'').trim().toLowerCase();
+  const feels=FEELS.filter(function(x){return activeFeel.has(x.k);});
+  const narrowing = q!=='' || feels.length>0;
+  const compatActive = compatOnly && !!curForm;
+  const anyFilter = narrowing || compatActive;
+  document.querySelectorAll('.acc').forEach(function(acc){
+    let any=false;
+    acc.querySelectorAll('.ing').forEach(function(el){
+      const it=byInci.get(el.getAttribute('data-id'));
+      let ok=true;
+      if(q) ok=(it.ko+' '+it.inci+' '+(it.func||'')).toLowerCase().indexOf(q)>=0;
+      if(ok && feels.length) ok=feels.every(function(x){return x.f(it);});
+      if(ok && compatActive) ok=compat(it,curForm).lv!=='no';
+      el.classList.toggle('hidden', !ok); if(ok) any=true;
+    });
+    acc.classList.toggle('hidden', anyFilter && !any);
+    if(narrowing) acc.classList.toggle('open', any); else if(!anyFilter) acc.classList.remove('open');
+    const cnt=acc.querySelector('.cnt');
+    if(cnt){ const total=acc.querySelectorAll('.ing').length, vis=acc.querySelectorAll('.ing:not(.hidden)').length;
+      cnt.textContent = anyFilter ? (vis+'/'+total) : total; }
+  });
+}
+
+/* ---------- 검증 엔진 ---------- */
+function tagSet(items){
+  const s=new Set();
+  items.forEach(function(it){ (it.tags||[]).forEach(function(t){ s.add(t); }); });
+  return s;
+}
+function carriersOf(items,tag){
+  return items.filter(function(it){ return (it.tags||[]).indexOf(tag)!==-1; }).map(function(it){return it.ko;});
+}
+
+function verify(){
+  const items=selected();
+  if(items.length===0) return;
+  const tags=tagSet(items);
+
+  // 1) 충돌
+  const hits=[];
+  DB.conflicts.forEach(function(c){
+    if(c.a!==c.b && tags.has(c.a) && tags.has(c.b)){
+      hits.push({c:c, who:carriersOf(items,c.a).concat(carriersOf(items,c.b))});
+    }
+  });
+  // 2) 시너지
+  const syn=[];
+  DB.synergies.forEach(function(s){ if(s.a!==s.b && tags.has(s.a) && tags.has(s.b)) syn.push(s); });
+
+  // 3) 자극도 점수
+  const irrAvg=items.reduce(function(s,it){return s+(it.irr||0);},0)/items.length;
+  const highCount=items.filter(function(it){return (it.irr||0)>=4;}).length;
+  const acidCarriers=items.filter(function(it){ const t=it.tags||[];
+    return t.indexOf('low_ph_acid')!==-1||t.indexOf('aha')!==-1||t.indexOf('bha')!==-1; }).length;
+  let score=irrAvg + highCount*0.5 + (acidCarriers>=2?(acidCarriers-1)*0.6:0);
+  // 자극원 플래그
+  const flags=[];
+  if(tags.has('essential_oil')||tags.has('fragrance')){ score+=0.8; flags.push('향료/정유 함유'); }
+  if(tags.has('alcohol_denat')){ score+=0.6; flags.push('변성알코올 함유'); }
+  if(tags.has('bpo')){ score+=1.0; flags.push('벤조일퍼옥사이드(고자극)'); }
+  if(tags.has('retinoid')){ flags.push('레티노이드 함유(초기 자극 가능)'); }
+  // 충돌 가중
+  hits.forEach(function(h){ score += h.c.severity==='high'?2:(h.c.severity==='medium'?1:0.2); });
+  // 제형/카테고리 보정
+  const ctxNotes=[];
+  if(curForm){ score+=(curForm.irrMod||0);
+    if(curForm.irrMod>0.5) ctxNotes.push('제형("'+curForm.name+'")이 물리적 자극을 더합니다.');
+    if(curForm.irrMod<0) ctxNotes.push('제형("'+curForm.name+'")이 자극을 다소 완화합니다.'); }
+  if(curCat){ if(curCat.activeLoad==='고') score+=0.5;
+    else if(curCat.activeLoad==='저') score-=0.3; }
+
+  let level,cls,emo;
+  if(score<2.0){ level='순함 / 저자극'; cls='v-ok'; emo='🟢'; }
+  else if(score<3.6){ level='보통 / 관리형'; cls='v-mid'; emo='🟡'; }
+  else if(score<5.2){ level='다소 높음 / 주의'; cls='v-warn'; emo='🟠'; }
+  else { level='높음 / 민감주의'; cls='v-warn'; emo='🔴'; }
+
+  // 4) 제형 적합성 (제형 avoid = 부적합 클래스태그)
+  const formIssues=[]; let formFit=0;
+  if(curForm){
+    const avoid=curForm.avoid||[], supports=curForm.supports||[];
+    items.forEach(function(it){
+      const tg=it.tags||[];
+      const bad=tg.filter(function(t){ return avoid.indexOf(t)>=0; });
+      if(bad.length) formIssues.push(it.ko+'('+bad.map(tlabel).join('·')+') → '+curForm.name+' 제형에 부적합');
+      if(tg.some(function(t){ return supports.indexOf(t)>=0; })) formFit++;
+    });
+    if(curForm.base && curForm.base.indexOf('무수')!==-1){
+      const water=items.filter(function(it){const t=it.tags||[];
+        return t.indexOf('ha')!==-1||t.indexOf('humectant')!==-1;});
+      if(water.length) formIssues.push('무수('+curForm.name+') 제형에 수용성 보습 성분('+water.map(function(x){return x.ko;}).join(', ')+')은 용해·효능 저하');
+    }
+    if(formFit>0 && formIssues.length===0) ctxNotes.push('제형("'+curForm.name+'")에 적합한 성분 '+formFit+'종 포함 — 상성 양호.');
+  }
+  // 5) pH 적합성
+  const phIssues=[];
+  if(curCat){
+    items.forEach(function(it){
+      if(it.phMax!=null && it.phMax < curCat.phMin)
+        phIssues.push(it.ko+'(효력 pH ≤'+it.phMax+')은 카테고리 권장 pH('+curCat.phMin+'~'+curCat.phMax+')보다 낮은 pH가 필요');
+      if(it.phMin!=null && it.phMin > curCat.phMax)
+        phIssues.push(it.ko+'(효력 pH ≥'+it.phMin+')은 카테고리 권장 pH 범위를 초과');
+    });
+  }
+  if(tags.has('vitc_pure')) phIssues.push('순수 비타민C는 pH 3 미만의 산성·산화 안정화 설계가 필요(완제품 안정성 핵심)');
+
+  // 6) 단가
+  const matCost=items.reduce(function(s,it){return s+(it.cost||0);},0);
+  const baseCost=curForm?(curForm.costBase||0):1000;
+  const total=matCost+baseCost;
+  const lo=Math.round(total*0.8/100)*100, hi=Math.round(total*1.25/100)*100;
+
+  // 7) 예상 사용감
+  function modeOf(arr){var c={},best=arr[0]||'',bn=0;arr.forEach(function(x){c[x]=(c[x]||0)+1;});for(var k in c){if(c[k]>bn){bn=c[k];best=k;}}return best;}
+  const fin=modeOf(items.map(function(it){return (it.sensory||{}).finish||'촉촉';}));
+  const abs=modeOf(items.map(function(it){return (it.sensory||{}).absorb||'보통';}));
+  let texture='마무리 '+fin+' · 흡수 '+abs;
+  if(curForm && /무수/.test(curForm.base||'')) texture+=' · 제형상 오일리/리치 경향';
+  else if(curForm && /수상 단독|워터/.test(curForm.base||'')) texture+=' · 제형상 산뜻 경향';
+  const color=resolveColor(items, curForm);
+
+  renderResult({level:level,cls:cls,emo:emo,score:score,irrAvg:irrAvg,
+    hits:hits,syn:syn,flags:flags,ctxNotes:ctxNotes,formIssues:formIssues,phIssues:phIssues,
+    matCost:matCost,baseCost:baseCost,lo:lo,hi:hi,count:items.length,texture:texture,color:color});
+}
+
+function renderResult(r){
+  const card=document.getElementById('result-card');
+  document.getElementById('res-ctx').textContent=
+    (curCat?curCat.name:'카테고리 미선택')+' · '+(curForm?curForm.name:'제형 미선택');
+  let h='';
+  h+='<div class="verdict '+r.cls+'"><span class="lv">'+r.emo+'</span><div>'
+    +'<div>자극도 판정: '+r.level+'</div>'
+    +'<div class="muted" style="font-weight:400">종합 자극지수 '+r.score.toFixed(1)+' · 성분 평균 '+r.irrAvg.toFixed(1)+'/5 · '+r.count+'종</div>'
+    +'</div></div>';
+  h+='<div class="summary-box">';
+  if(r.texture) h+='<div class="sb-row"><span class="sb-k">예상 사용감</span><span class="sb-v">'+esc(r.texture)+'</span></div>';
+  if(r.color) h+='<div class="sb-row"><span class="sb-k">예상 제형 색</span><span class="sb-v"><span class="swatch" style="background:'+esc(r.color.hex)+'"></span>'+esc(r.color.label)+(r.color.multi?' · 다색 혼합 → 탁해질 수 있음':'')+'</span></div>';
+  h+='</div>';
+
+  // 충돌
+  h+='<div class="res-sec"><h3>성분 충돌 <span class="b">'+r.hits.length+'</span></h3>';
+  if(r.hits.length===0){ h+='<div class="alert good"><div class="a-h"><span class="sev good">안전</span>충돌 없음</div>'
+    +'<div class="a-sub">선택 성분 간 알려진 배합 충돌이 감지되지 않았습니다.</div></div>'; }
+  else { r.hits.sort(function(a,b){return sev(b.c.severity)-sev(a.c.severity);});
+    r.hits.forEach(function(h2){ const c=h2.c;
+      h+='<div class="alert '+c.severity+'"><div class="a-h"><span class="sev '+c.severity+'">'
+        +(c.severity==='high'?'높음':c.severity==='medium'?'주의':'참고')+'</span>'
+        +esc(tlabel(c.a))+' ✕ '+esc(tlabel(c.b))+'</div>'
+        +'<div>'+esc(c.reason)+'</div>'
+        +'<div class="a-sub">▸ '+esc(c.advice)+'</div>'
+        +'<div class="a-sub">관련: '+esc(uniq(h2.who).join(', '))+'</div></div>';
+    });
+  }
+  h+='</div>';
+
+  // 시너지
+  if(r.syn.length){
+    h+='<div class="res-sec"><h3>긍정 시너지 <span class="b">'+r.syn.length+'</span></h3>';
+    r.syn.forEach(function(s){ h+='<div class="alert good"><div class="a-h"><span class="sev good">시너지</span>'
+      +esc(tlabel(s.a))+' + '+esc(tlabel(s.b))+'</div><div>'+esc(s.benefit)+'</div></div>'; });
+    h+='</div>';
+  }
+
+  // 자극·제형·pH 메모
+  const memo=[];
+  r.flags.forEach(function(f){memo.push(['자극원',f]);});
+  r.formIssues.forEach(function(f){memo.push(['제형',f]);});
+  r.phIssues.forEach(function(f){memo.push(['pH',f]);});
+  r.ctxNotes.forEach(function(f){memo.push(['보정',f]);});
+  if(memo.length){
+    h+='<div class="res-sec"><h3>처방 체크포인트 <span class="b">'+memo.length+'</span></h3>';
+    memo.forEach(function(m){ h+='<div class="alert medium"><div class="a-h"><span class="sev medium">'+m[0]+'</span></div>'
+      +'<div>'+esc(m[1])+'</div></div>'; });
+    h+='</div>';
+  }
+
+  // 단가
+  h+='<div class="res-sec"><h3>예상 원료비 (100ml 기준)</h3>'
+    +'<div class="alert"><div class="costbox"><span class="big">'+won(r.lo)+' ~ '+won(r.hi)+'원</span></div>'
+    +'<div class="footnote">활성 원료비 ~'+won(r.matCost)+'원 + 제형 베이스 ~'+won(r.baseCost)+'원 기준 추정치. '
+    +'부자재(용기·라벨)·임가공·향·색소·마진 제외. <b>참고용 대략치</b>입니다.</div></div></div>';
+
+  if(DB.qa){ h+='<div class="qa">데이터 노트: '+esc(DB.qa)+'</div>'; }
+
+  document.getElementById('result-body').innerHTML=h;
+  card.classList.remove('hidden');
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ---------- 유틸 ---------- */
+function sev(s){ return s==='high'?3:s==='medium'?2:1; }
+function uniq(a){ return a.filter(function(v,i){return a.indexOf(v)===i;}); }
+function won(n){ return (Math.round(n)||0).toLocaleString('ko-KR'); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function escJs(s){ return String(s).replace(/'/g,"\\'"); }
+
+init();
+</script>
+</body>
+</html>
