@@ -596,6 +596,11 @@
   .app-tool-btn.vendor { background: linear-gradient(135deg, #16a085, #1abc9c); }
   .app-tool-btn.cost { background: linear-gradient(135deg, #d35400, #e67e22); }
   .app-tool-btn.stock { background: linear-gradient(135deg, #2980b9, #3498db); }
+  .app-tool-btn.pricetable { background: linear-gradient(135deg, #00897b, #26a69a); }
+  .app-tool-btn.cosmetic { background: linear-gradient(135deg, #c2185b, #e91e63); }
+  .app-tool-btn.pi { background: linear-gradient(135deg, #00838f, #0097a7); }
+  .app-tool-btn.po-contract { background: linear-gradient(135deg, #5e35b1, #7e57c2); }
+  .app-tool-btn.jichul { background: linear-gradient(135deg, #455a64, #607d8b); }
   .po-due-banner {
     flex: 1; min-width: 250px;
     padding: 10px 14px; background: #fff3e0; border: 1px solid #f0c040;
@@ -636,6 +641,41 @@
   .calc-frame-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
   /* 모달 백드롭 패딩 제거 (계산기 모달 한정) */
   #calcFrameModal.show { padding: 0; }
+
+  /* 단가표 모달 */
+  .pricetable-content { max-width: 720px; max-height: 88vh; }
+  .pt-toolbar { display: flex; gap: 8px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+  .pt-toolbar input[type="text"] {
+    flex: 1; min-width: 200px; padding: 9px 12px; font-size: 14px;
+    border: 1px solid #dfe4ea; border-radius: 6px;
+  }
+  .pt-filter { display: flex; gap: 4px; }
+  .ptf-btn {
+    padding: 8px 14px; font-size: 13px;
+    background: #f8f9fa; color: #7f8c8d;
+    border: 1px solid #dfe4ea; border-radius: 5px; cursor: pointer;
+  }
+  .ptf-btn.active { background: #00897b; color: white; border-color: #00897b; }
+  .pt-list { max-height: 62vh; overflow-y: auto; }
+  .pt-vendor-group { margin-bottom: 12px; }
+  .pt-vendor-name {
+    font-size: 13px; font-weight: bold; color: #00695c;
+    padding: 6px 4px; border-bottom: 2px solid #b2dfdb; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pt-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; margin: 3px 0; border-radius: 6px;
+    background: #fafbfc; border: 1px solid #eef1f5; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .pt-row:hover { background: #e0f2f1; border-color: #80cbc4; }
+  .pt-row.copied { background: #b2dfba !important; border-color: #66bb6a !important; }
+  .pt-row .pt-pname { flex: 1; font-size: 14px; color: #2c3e50; font-weight: 600; word-break: break-word; }
+  .pt-row .pt-price { font-size: 15px; font-weight: bold; color: #00695c; white-space: nowrap; }
+  .pt-row .pt-price.none { color: #bdc3c7; font-weight: normal; font-size: 13px; }
+  .pt-list:empty::before,
+  .pt-empty { display: block; text-align: center; color: #bdc3c7; padding: 36px 20px; font-size: 14px; }
 
   /* 거래처 관리 풀스크린 모달 */
   .vendor-mgr-content { max-width: 1100px; max-height: 90vh; }
@@ -1601,9 +1641,14 @@
     <!-- 앱 도구 모음 — 클릭 시 전체 화면 모달로 열림 -->
     <div class="app-tools-bar">
       <button class="app-tool-btn po" onclick="openPOModal()">📦 발주일지</button>
+      <button class="app-tool-btn pricetable" onclick="openPriceTable()">💲 단가표</button>
       <button class="app-tool-btn vendor" onclick="openVendorMgr()">📇 거래처 관리</button>
       <button class="app-tool-btn cost" onclick="openCalcFrame('cost')">💰 원가계산기</button>
       <button class="app-tool-btn stock" onclick="openCalcFrame('stock')">📊 재고소진계산기</button>
+      <button class="app-tool-btn cosmetic" onclick="openCalcFrame('cosmetic')">🧪 화장품 기획</button>
+      <button class="app-tool-btn pi" onclick="openCalcFrame('pi')">📄 PI·계약서</button>
+      <button class="app-tool-btn po-contract" onclick="openCalcFrame('pocontract')">📑 발주계약서</button>
+      <button class="app-tool-btn jichul" onclick="openCalcFrame('jichul')">💸 지출결의서</button>
       <div id="poDueBanner" class="po-due-banner" style="display:none;margin-left:auto;"></div>
     </div>
 
@@ -1953,6 +1998,29 @@
     <div class="calc-frame-wrap">
       <iframe id="calcFrameIframe" src="about:blank" frameborder="0" allow="clipboard-read; clipboard-write"></iframe>
     </div>
+  </div>
+</div>
+
+<!-- 단가표 모달 -->
+<div class="modal" id="priceTableModal">
+  <div class="modal-content pricetable-content">
+    <button class="modal-close" onclick="closePriceTable()">닫기</button>
+    <h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      💲 단가표
+      <span id="priceTableCount" style="font-size:13px;color:#7f8c8d;font-weight:normal;"></span>
+    </h2>
+    <div class="pt-toolbar">
+      <input type="text" id="priceTableSearch" placeholder="🔍 제품명 · 거래처 검색" oninput="renderPriceTable()" />
+      <div class="pt-filter">
+        <button class="ptf-btn active" data-type="all" onclick="setPriceTableFilter('all')">전체</button>
+        <button class="ptf-btn" data-type="domestic" onclick="setPriceTableFilter('domestic')">🇰🇷 국내</button>
+        <button class="ptf-btn" data-type="overseas" onclick="setPriceTableFilter('overseas')">🌏 해외</button>
+      </div>
+    </div>
+    <div id="priceTableList" class="pt-list"></div>
+    <p style="font-size:12px;color:#95a5a6;margin-top:10px;line-height:1.5;">
+      💡 단가는 <b>📇 거래처 관리</b>의 품목 단가에서 자동으로 불러옵니다. 제품을 클릭하면 단가가 복사됩니다.
+    </p>
   </div>
 </div>
 
@@ -2404,8 +2472,13 @@ const Drive = {
         scope: DRIVE_SCOPE,
         callback: (resp) => this._onToken(resp),
         error_callback: (err) => {
-          console.error('OAuth 오류:', err);
-          updateSyncUI('로그인 오류: ' + (err.message || err.type || '알 수 없음'), 'error');
+          console.warn('OAuth 오류:', err);
+          // 이전에 로그인한 적 있으면(자동로그인) — 게이트/에러로 막지 말고 조용히 재시도
+          if (localStorage.getItem('drive_auto_login') === 'true') {
+            this._scheduleRetry();
+          } else {
+            updateSyncUI('로그인 오류: ' + (err.message || err.type || '알 수 없음'), 'error');
+          }
         }
       });
       // 저장된 토큰 복원 (localStorage — 탭/브라우저 재시작해도 유지)
@@ -2415,38 +2488,40 @@ const Drive = {
         const legacy = sessionStorage.getItem('drive_token');
         if (legacy) { localStorage.setItem('drive_token', legacy); sessionStorage.removeItem('drive_token'); saved = legacy; }
       }
-      if (saved) {
-        try {
-          const t = JSON.parse(saved);
-          if (t.expiresAt > Date.now() + 30000) {
-            this.accessToken = t.accessToken;
-            this.tokenExpiresAt = t.expiresAt;
-            this.userEmail = t.email || '';
-            this._scheduleSilentRefresh();
-            hideLoginGate();
-            updateSyncUI('복원된 세션', 'synced');
-            this.pullFromDrive(true);
-            return;
-          }
-        } catch (e) {}
-      }
-      // 자동 로그인 시도 (이전에 권한 부여한 경우 조용히 통과)
-      if (localStorage.getItem('drive_auto_login') === 'true') {
-        updateSyncUI('자동 로그인 중...', 'syncing');
-        this.tokenClient.requestAccessToken({ prompt: '' });
-        // 3초 안에 성공 안 하면 로그인 게이트 표시
-        setTimeout(() => {
-          if (!this.accessToken) showLoginGate('login');
-        }, 3000);
+      let savedTok = null;
+      if (saved) { try { savedTok = JSON.parse(saved); } catch (e) {} }
+      const autoLogin = localStorage.getItem('drive_auto_login') === 'true';
+
+      // ① 아직 유효한 토큰이 남아있으면 그대로 복원
+      if (savedTok && savedTok.expiresAt > Date.now() + 30000) {
+        this.accessToken = savedTok.accessToken;
+        this.tokenExpiresAt = savedTok.expiresAt;
+        this.userEmail = savedTok.email || '';
+        this._scheduleSilentRefresh();
+        hideLoginGate();
+        updateSyncUI('복원된 세션', 'synced');
+        this.pullFromDrive(true);
         return;
       }
-      // 게스트 모드 복원
+
+      // ② 이전에 로그인한 적 있으면 — 블로킹 게이트 띄우지 말고 낙관적으로 앱 사용
+      //    (로컬 데이터 그대로 보여주고, 백그라운드에서 조용히 토큰 재발급. 실패해도 계속 사용 가능)
+      if (autoLogin) {
+        if (savedTok && savedTok.email) this.userEmail = savedTok.email;
+        hideLoginGate();
+        updateSyncUI('세션 갱신 중…', 'syncing');
+        this._silentReauth();
+        return;
+      }
+
+      // ③ 게스트 모드 복원
       if (localStorage.getItem('guest_mode') === 'true') {
         hideLoginGate();
         showGuestBanner();
         updateSyncUI('게스트 모드 · 로컬 저장', 'offline');
         return;
       }
+      // ④ 한 번도 로그인 안 함 → 최초 1회만 로그인 화면
       showLoginGate('login');
       updateSyncUI('로그인 필요', 'idle');
     } catch (e) {
@@ -2468,12 +2543,18 @@ const Drive = {
 
   async _onToken(resp) {
     if (resp.error) {
+      // 자동로그인 사용자는 조용히 재시도 (게이트/에러 표시 안 함)
+      if (localStorage.getItem('drive_auto_login') === 'true') { this._scheduleRetry(); return; }
       updateSyncUI('로그인 실패: ' + resp.error, 'error');
       return;
     }
     const isRefresh = !!this.accessToken; // 기존 토큰 있었으면 갱신
     this.accessToken = resp.access_token;
     this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
+    // 재연결 성공 → 재시도 카운터·가드 리셋
+    this._retryCount = 0;
+    if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
+    if (this._reauthGuard) { clearTimeout(this._reauthGuard); this._reauthGuard = null; }
     this._scheduleSilentRefresh();
 
     if (!isRefresh) {
@@ -2521,9 +2602,38 @@ const Drive = {
     // 만료 5분 전에 갱신 (최소 1분 후)
     const delay = Math.max(60000, this.tokenExpiresAt - Date.now() - 5 * 60 * 1000);
     this._refreshTimer = setTimeout(() => {
-      if (!this.accessToken || !this.tokenClient) return;
+      if (!this.tokenClient) return;
       try { this.tokenClient.requestAccessToken({ prompt: '' }); }
-      catch (e) { console.warn('silent refresh 실패:', e); }
+      catch (e) { console.warn('silent refresh 실패:', e); this._scheduleRetry(); }
+    }, delay);
+  },
+
+  // 조용한 재로그인 시도 (앱 로드 시 / 토큰 만료 시) — 게이트 안 띄우고 백그라운드 처리
+  _silentReauth() {
+    if (!this.tokenClient) return;
+    // 8초 안에 토큰 못 받으면 '재연결 대기' 상태로 두고 자동 재시도 (블로킹 X)
+    if (this._reauthGuard) clearTimeout(this._reauthGuard);
+    this._reauthGuard = setTimeout(() => {
+      if (!this.accessToken) updateSyncUI('재연결 대기 중… (로컬 저장 정상 · 자동 재시도 중)', 'offline');
+    }, 8000);
+    try { this.tokenClient.requestAccessToken({ prompt: '' }); }
+    catch (e) { this._scheduleRetry(); }
+  },
+
+  // 자동 재시도 (점증 백오프: 30초 → 2분 → 5분, 이후 5분 고정). 게이트 안 띄움.
+  _scheduleRetry() {
+    if (this._retryTimer) clearTimeout(this._retryTimer);
+    const delays = [30000, 120000, 300000];
+    const n = this._retryCount || 0;
+    const delay = delays[Math.min(n, delays.length - 1)];
+    this._retryCount = n + 1;
+    if (n >= 1) updateSyncUI('재연결 대기 중… (로컬 저장 정상 · 자동 재시도 중)', 'offline');
+    this._retryTimer = setTimeout(() => {
+      // 이미 복구됐으면 중단
+      if (this.accessToken && this.tokenExpiresAt > Date.now() + 60000) return;
+      if (!this.tokenClient) return;
+      try { this.tokenClient.requestAccessToken({ prompt: '' }); }
+      catch (e) { this._scheduleRetry(); }
     }, delay);
   },
 
@@ -4899,18 +5009,22 @@ let _currentCalcFrameKind = null;
 
 function openCalcFrame(kind) {
   const cfg = {
-    cost:  { src: 'cost.html',  title: '💰 원가계산기' },
-    stock: { src: 'stock.html', title: '📊 재고소진계산기' }
+    cost:       { src: 'cost.html',  title: '💰 원가계산기' },
+    stock:      { src: 'stock.html', title: '📊 재고소진계산기' },
+    cosmetic:   { src: '화장품_기획_백과사전.html', title: '🧪 화장품 기획 백과사전' },
+    pi:         { src: 'PI계약서_생성기.html', title: '📄 PI·계약서 생성기' },
+    pocontract: { src: '발주계약서.html', title: '📑 발주계약서' },
+    jichul:     { src: '지출결의서.html', title: '💸 지출결의서' }
   }[kind];
   if (!cfg) return;
   _currentCalcFrameKind = kind;
   document.getElementById('calcFrameTitle').textContent = cfg.title;
   const iframe = document.getElementById('calcFrameIframe');
-  // 같은 src 재할당 시 새로고침 강제
-  iframe.src = cfg.src + '?_=' + Date.now();
+  // 같은 src 재할당 시 새로고침 강제 (한글 파일명은 인코딩)
+  iframe.src = encodeURI(cfg.src) + '?_=' + Date.now();
   // 새 탭 버튼 링크 설정
   const newTabBtn = document.getElementById('calcFrameNewTab');
-  if (newTabBtn) newTabBtn.onclick = () => window.open(cfg.src, '_blank', 'noopener');
+  if (newTabBtn) newTabBtn.onclick = () => window.open(encodeURI(cfg.src), '_blank', 'noopener');
   document.getElementById('calcFrameModal').classList.add('show');
 }
 
@@ -5032,6 +5146,10 @@ function refreshAfterVendorChange() {
   if (document.getElementById('vendorMgrModal')?.classList.contains('show')) {
     try { renderVendorMgr(); } catch (e) {}
   }
+  // 2-1) 단가표 열려있으면 갱신
+  if (document.getElementById('priceTableModal')?.classList.contains('show')) {
+    try { renderPriceTable(); } catch (e) {}
+  }
   // 3) 발주일지 모달 열려있으면 목록 다시 그리기 (거래처명 즉시 반영)
   if (document.getElementById('poModal')?.classList.contains('show')) {
     try { renderPOList(); } catch (e) {}
@@ -5059,6 +5177,71 @@ function refreshAfterVendorChange() {
       } catch (e) {}
     }
   }
+}
+
+// ===== 단가표 모달 =====
+let _priceTableFilter = 'all';   // 'all' | 'domestic' | 'overseas'
+
+function openPriceTable() {
+  document.getElementById('priceTableModal').classList.add('show');
+  renderPriceTable();
+  setTimeout(() => document.getElementById('priceTableSearch')?.focus(), 100);
+}
+function closePriceTable() {
+  document.getElementById('priceTableModal').classList.remove('show');
+}
+function setPriceTableFilter(type) {
+  _priceTableFilter = type;
+  document.querySelectorAll('.ptf-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  renderPriceTable();
+}
+
+function renderPriceTable() {
+  const list = document.getElementById('priceTableList');
+  const count = document.getElementById('priceTableCount');
+  if (!list) return;
+  const q = (document.getElementById('priceTableSearch')?.value || '').trim().toLowerCase();
+
+  let vendors = (state.contacts || []).slice();
+  if (_priceTableFilter !== 'all') vendors = vendors.filter(v => (v.type || 'domestic') === _priceTableFilter);
+  vendors.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+
+  let totalItems = 0;
+  const groups = vendors.map(v => {
+    const flag = v.type === 'overseas' ? '🌏' : '🇰🇷';
+    let items = (v.items || []).map(i => (typeof i === 'string') ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+    if (q) {
+      const vMatch = (v.name || '').toLowerCase().includes(q);
+      items = items.filter(it => vMatch || (it.name || '').toLowerCase().includes(q));
+    }
+    if (items.length === 0) return '';
+    totalItems += items.length;
+    const rows = items.map(it => {
+      const priceStr = (it.unitPrice && it.unitPrice > 0)
+        ? `<span class="pt-price">${fmtMoney(it.unitPrice, it.currency || 'KRW')}</span>`
+        : `<span class="pt-price none">단가 미등록</span>`;
+      const payload = (it.unitPrice && it.unitPrice > 0) ? String(Math.round(it.unitPrice)) : '';
+      return `<div class="pt-row" onclick="copyPriceRow(this, '${escapeHtml(payload)}')">
+        <span class="pt-pname">${escapeHtml(it.name || '(이름 없음)')}</span>
+        ${priceStr}
+      </div>`;
+    }).join('');
+    return `<div class="pt-vendor-group">
+      <div class="pt-vendor-name">${flag} ${escapeHtml(v.name)} <span style="color:#95a5a6;font-weight:normal;font-size:12px;">(${items.length})</span></div>
+      ${rows}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  count.textContent = totalItems > 0 ? `${totalItems}개 품목` : '';
+  list.innerHTML = groups || `<div class="pt-empty">${q ? '검색 결과가 없습니다.' : '등록된 단가가 없습니다.<br/>📇 거래처 관리에서 품목·단가를 등록하세요.'}</div>`;
+}
+
+function copyPriceRow(el, payload) {
+  if (!payload) return;
+  const done = () => { el.classList.add('copied'); setTimeout(() => el.classList.remove('copied'), 700); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(payload).then(done).catch(() => { fallbackCopy(payload); done(); });
+  } else { fallbackCopy(payload); done(); }
 }
 
 // ===== 거래처 관리 풀스크린 모달 =====
@@ -6697,7 +6880,11 @@ window.addEventListener('load', () => {
 });
 // 창 포커스 복귀 시 원격 변경 확인
 window.addEventListener('focus', () => {
-  if (Drive.accessToken && Date.now() - Drive.lastSyncedAt > 60000) {
+  if (localStorage.getItem('drive_auto_login') !== 'true' || !Drive.tokenClient) return;
+  // 토큰 만료/임박 시 조용히 재발급, 아니면 오래된 경우만 동기화
+  if (!Drive.accessToken || Drive.tokenExpiresAt < Date.now() + 60000) {
+    Drive._silentReauth();
+  } else if (Date.now() - Drive.lastSyncedAt > 60000) {
     Drive.pullFromDrive(false);
   }
 });

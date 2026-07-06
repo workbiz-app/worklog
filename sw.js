@@ -1,7 +1,7 @@
 // 업무일지 Service Worker (v1)
 // 오프라인 지원 + 앱 쉘 캐싱
 
-const CACHE = 'worklog-v24';
+const CACHE = 'worklog-v31';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,10 @@ const ASSETS = [
   './stock.html',
   './remit.html',
   './diag.html',
+  './화장품_기획_백과사전.html',
+  './PI계약서_생성기.html',
+  './발주계약서.html',
+  './지출결의서.html',
   './manifest.webmanifest',
   './icon.svg',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
@@ -17,7 +21,10 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS.filter(a => !a.startsWith('http')))).catch(() => {})
+    // 개별 캐시 (한 파일 실패해도 나머지는 캐시 — addAll의 all-or-nothing 회피)
+    caches.open(CACHE).then(c => Promise.allSettled(
+      ASSETS.filter(a => !a.startsWith('http')).map(a => c.add(a))
+    ))
   );
   // 새 SW 즉시 활성화 (옛 SW·옛 HTML에 갇힌 사용자 자가 복구 경로 보장)
   self.skipWaiting();
