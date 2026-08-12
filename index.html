@@ -759,7 +759,7 @@
   .vmd-recent-po-item .vmd-po-amount { margin-left: auto; font-weight: bold; }
 
   /* 발주일지 메인 모달 */
-  .po-modal-content { max-width: 960px; max-height: 90vh; }
+  .po-modal-content { max-width: min(1320px, 96vw); max-height: 92vh; }
   .po-toolbar {
     display: flex; gap: 8px; align-items: center; margin: 12px 0;
     flex-wrap: wrap;
@@ -801,7 +801,7 @@
     background: #fafbfc; border: 1px solid #eef1f5;
     cursor: pointer; transition: background 0.1s;
     display: grid;
-    grid-template-columns: 100px 1fr auto;
+    grid-template-columns: 145px 1fr auto;
     gap: 10px; align-items: center;
   }
   .po-item-row:hover { background: #ecf5fc; border-color: #b8d6e8; }
@@ -837,7 +837,7 @@
   .po-payment-tag.overdue { background: #f8d7da; color: #721c24; font-weight: bold; }
 
   /* 발주 추가/수정 폼 */
-  .po-form-content { max-width: 680px; }
+  .po-form-content { max-width: min(980px, 96vw); max-height: 92vh; }
   .po-form-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
@@ -871,11 +871,145 @@
     border: 1px solid #eef1f5; border-radius: 6px; padding: 10px; background: #fafbfc;
   }
   .po-payment-detail {
-    display: flex; gap: 6px; margin-top: 6px;
+    display: flex; gap: 6px; margin-top: 6px; align-items: flex-end;
   }
-  .po-payment-detail input {
+  .po-payment-detail input, .po-payment-field {
     flex: 1; padding: 6px 8px; font-size: 12px;
     border: 1px solid #dfe4ea; border-radius: 4px;
+  }
+  .po-payment-field { padding: 0; border: 0; min-width: 0; }
+  .po-payment-field small { display: block; margin: 0 0 3px 2px; color: #89949d; font-size: 10px; }
+  .po-payment-field input { width: 100%; box-sizing: border-box; }
+
+  /* 발주 일정 대시보드 · 월간 제작 타임라인 */
+  .po-view-toggle {
+    display: inline-flex; gap: 2px; padding: 3px; background: #eef2f6;
+    border-radius: 7px;
+  }
+  .po-view-toggle button {
+    padding: 6px 12px; border: 0; border-radius: 5px; background: transparent;
+    color: #7f8c8d; cursor: pointer; font-size: 12px; font-weight: bold;
+  }
+  .po-view-toggle button.active { background: white; color: #2c3e50; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .po-summary-grid {
+    display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 8px; margin: 10px 0;
+  }
+  .po-summary-card {
+    padding: 10px 12px; border-radius: 8px; border: 1px solid #e7ebef;
+    background: #fafbfc; color: #7f8c8d; font-size: 11px;
+  }
+  .po-summary-card strong { display: block; margin-top: 3px; color: #2c3e50; font-size: 18px; }
+  .po-summary-card.warn { background: #fff8e8; border-color: #f5d78e; }
+  .po-summary-card.danger { background: #fff0ee; border-color: #f2b6af; }
+  .po-summary-card.good { background: #edf9f3; border-color: #b8e4ce; }
+  .po-calendar-tools {
+    display: flex; align-items: center; gap: 7px; margin: 10px 0 8px;
+    flex-wrap: wrap;
+  }
+  .po-calendar-tools button {
+    padding: 6px 10px; border: 1px solid #dfe4ea; border-radius: 5px;
+    background: white; color: #2c3e50; cursor: pointer; font-size: 12px;
+  }
+  .po-calendar-tools button:hover { background: #f3f6f8; }
+  .po-calendar-month { min-width: 110px; text-align: center; font-size: 15px; font-weight: bold; color: #2c3e50; }
+  .po-calendar-legend { margin-left: auto; display: flex; gap: 10px; color: #7f8c8d; font-size: 11px; }
+  .po-calendar-legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .po-calendar-legend i { width: 11px; height: 7px; border-radius: 3px; display: inline-block; }
+  .po-timeline-wrap {
+    border: 1px solid #dfe4ea; border-radius: 8px; overflow: auto;
+    max-height: 56vh; background: white;
+  }
+  .po-timeline-empty { padding: 52px 20px; text-align: center; color: #95a5a6; line-height: 1.7; }
+  .po-timeline-grid { min-width: calc(280px + var(--po-days) * 34px); }
+  .po-timeline-head, .po-timeline-row {
+    display: grid; grid-template-columns: 280px repeat(var(--po-days), 34px);
+    position: relative;
+  }
+  .po-timeline-head { position: sticky; top: 0; z-index: 8; background: #f5f7f9; border-bottom: 1px solid #dfe4ea; }
+  .po-timeline-label-head {
+    position: sticky; left: 0; z-index: 10; padding: 9px 12px;
+    background: #f5f7f9; color: #7f8c8d; font-size: 11px; font-weight: bold;
+    border-right: 1px solid #dfe4ea;
+  }
+  .po-timeline-day-head {
+    text-align: center; padding: 5px 0; font-size: 10px; color: #7f8c8d;
+    border-right: 1px solid #e9edf1; box-sizing: border-box;
+  }
+  .po-timeline-day-head b { display: block; color: #2c3e50; font-size: 11px; }
+  .po-timeline-day-head.weekend { background: #eef3f7; }
+  .po-timeline-day-head.today { background: #fff1b8; color: #8a6200; }
+  .po-timeline-row { min-height: 48px; border-bottom: 1px solid #eef1f5; align-items: stretch; }
+  .po-timeline-row.accessory { min-height: 37px; background: #fbfcfd; }
+  .po-timeline-row:hover { background: #f8fbfd; }
+  .po-timeline-label {
+    position: sticky; left: 0; z-index: 5; padding: 7px 10px; background: inherit;
+    border-right: 1px solid #dfe4ea; overflow: hidden; cursor: pointer;
+  }
+  .po-timeline-row:not(.accessory) .po-timeline-label { background: white; }
+  .po-timeline-row.accessory .po-timeline-label { padding-left: 28px; background: #fbfcfd; }
+  .po-timeline-label .ptl-title { color: #2c3e50; font-size: 12px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .po-timeline-label .ptl-meta { color: #7f8c8d; font-size: 10px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .po-timeline-row.accessory .ptl-title { font-size: 11px; font-weight: 600; }
+  .po-day-cell { border-right: 1px solid #f0f2f4; min-height: 100%; box-sizing: border-box; }
+  .po-day-cell.weekend { background: #f7f9fb; }
+  .po-day-cell.today { background: #fff8dd; }
+  .po-range-bar {
+    align-self: center; height: 25px; margin: 0 2px; border-radius: 5px;
+    color: white; padding: 5px 8px; font-size: 10px; font-weight: bold;
+    box-sizing: border-box; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    cursor: pointer; z-index: 3; box-shadow: 0 1px 2px rgba(0,0,0,.16);
+    grid-row: 1;
+  }
+  .po-range-bar.completed { opacity: .62; }
+  .po-range-bar.cancelled { opacity: .35; text-decoration: line-through; }
+  .po-range-bar.undated { border: 2px dashed rgba(255,255,255,.9); }
+  .po-range-bar.accessory { height: 19px; padding: 3px 7px; background: #687786; box-shadow: none; }
+  .po-range-bar.accessory.done { background: #2e8b57; opacity: .65; }
+  .po-range-bar.clipped-left::before { content: '‹ '; }
+  .po-range-bar.clipped-right::after { content: ' ›'; }
+  .po-list-accessories { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+  .po-list-accessory {
+    font-size: 10px; color: #64717d; padding-left: 11px; border-left: 2px solid #c8d1d9;
+  }
+  .po-ship-tag { display:inline-flex;align-items:center;padding:1px 6px;border-radius:8px;font-size:11px; }
+  .po-ship-tag.booked { background:#dceeff;color:#1769aa; }
+  .po-ship-tag.pending { background:#fdecec;color:#b93b31;font-weight:bold; }
+  .po-accessory-section {
+    margin-top: 14px; border: 1px solid #dfe4ea; border-radius: 8px; overflow: hidden;
+  }
+  .po-accessory-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 9px 11px; background: #f6f8fa; color: #2c3e50; font-size: 12px; font-weight: bold;
+  }
+  .po-accessory-row {
+    display: grid; grid-template-columns: 1.1fr 1.2fr 130px 130px 70px 1.2fr 34px;
+    gap: 6px; padding: 7px; border-top: 1px solid #eef1f5; align-items: center;
+  }
+  .po-accessory-columns {
+    display: grid; grid-template-columns: 1.1fr 1.2fr 130px 130px 70px 1.2fr 34px;
+    gap: 6px; padding: 6px 7px; background: #fbfcfd; color: #89949d; font-size: 10px;
+  }
+  .po-accessory-row select, .po-accessory-row input {
+    width: 100%; min-width: 0; padding: 6px 7px; border: 1px solid #dfe4ea;
+    border-radius: 4px; font-size: 11px; box-sizing: border-box;
+  }
+  .po-accessory-row .po-acc-done { width: auto; justify-self: center; }
+  .po-accessory-empty { padding: 15px; text-align: center; color: #9aa5ad; font-size: 11px; }
+  .po-shipping-box {
+    grid-column: span 2; border: 1px solid #d8e8f5; background: #f5faff;
+    border-radius: 7px; padding: 10px;
+  }
+  .po-shipping-fields { display: grid; grid-template-columns: 150px 1fr 150px; gap: 7px; margin-top: 7px; }
+  .po-shipping-fields input { width: 100%; box-sizing: border-box; }
+  @media (max-width: 820px) {
+    .po-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .po-timeline-head, .po-timeline-row { grid-template-columns: 210px repeat(var(--po-days), 32px); }
+    .po-timeline-grid { min-width: calc(210px + var(--po-days) * 32px); }
+    .po-accessory-row { grid-template-columns: 1fr 1fr; }
+    .po-accessory-columns { display: none; }
+    .po-accessory-row > *:last-child { grid-column: span 2; justify-self: end; }
+    .po-shipping-fields { grid-template-columns: 1fr; }
   }
 
   /* 미팅 — 달력 뷰 */
@@ -2058,20 +2192,43 @@
     <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       📦 발주일지
       <span style="font-size:12px;color:#7f8c8d;font-weight:normal;" id="fxRateInfo">환율 로딩...</span>
-      <button class="ghost small" style="margin-left:auto;font-size:12px;" onclick="loadFxRates()">🔄 환율</button>
+      <button class="ghost small" style="margin-left:auto;margin-right:58px;font-size:12px;" onclick="loadFxRates()">🔄 환율</button>
     </h2>
     <div class="po-toolbar">
       <button class="primary small" onclick="addPO()">+ 새 발주</button>
-      <input type="text" id="poSearch" placeholder="🔍 거래처/품목/메모 검색" oninput="renderPOList()" />
+      <input type="text" id="poSearch" placeholder="🔍 거래처/제품/부속품/메모 검색" oninput="renderPOViews()" />
       <select id="poFilterSel" onchange="setPOFilter(this.value)">
         <option value="all">전체</option>
         <option value="unpaid">잔금 미결제</option>
         <option value="overdue">잔금 기한 초과</option>
+        <option value="booking">배 부킹 안 됨</option>
+        <option value="delivery">7일 내 납기</option>
         <option value="ongoing">진행 중</option>
         <option value="completed">완료</option>
       </select>
+      <div class="po-view-toggle">
+        <button id="poViewCalendar" onclick="setPOView('calendar')">📅 제작 캘린더</button>
+        <button id="poViewList" onclick="setPOView('list')">☰ 거래처별 목록</button>
+      </div>
     </div>
-    <div id="poList" class="po-list"></div>
+    <div id="poSummary" class="po-summary-grid"></div>
+    <div id="poCalendarArea">
+      <div class="po-calendar-tools">
+        <button onclick="movePOCalendarMonth(-1)" title="이전 달">◀</button>
+        <div id="poCalendarMonthLabel" class="po-calendar-month"></div>
+        <button onclick="movePOCalendarMonth(1)" title="다음 달">▶</button>
+        <button onclick="goPOToday()">오늘</button>
+        <div class="po-calendar-legend">
+          <span><i style="background:#3b82f6;"></i>제품 제작</span>
+          <span><i style="background:#687786;"></i>부속품</span>
+          <span><i style="background:#2e8b57;"></i>부속품 완료</span>
+        </div>
+      </div>
+      <div id="poTimeline" class="po-timeline-wrap"></div>
+    </div>
+    <div id="poListArea" style="display:none;">
+      <div id="poList" class="po-list"></div>
+    </div>
   </div>
 </div>
 
@@ -2087,9 +2244,21 @@
         <input type="date" id="poDate" onchange="onPOCurrencyOrDateChange()" />
       </div>
       <div class="form-row">
+        <label>납기일 *</label>
+        <input type="date" id="poDeliveryDate" />
+      </div>
+      <div class="form-row">
         <label>거래처 *</label>
         <select id="poVendor" onchange="onPOVendorChange()"></select>
-        <small style="color:#95a5a6;font-size:11px;">📇 거래처 탭에서 미리 추가하세요</small>
+        <small style="color:#95a5a6;font-size:11px;">📇 거래처 기록의 품목·단가를 아래에서 불러옵니다</small>
+      </div>
+      <div class="form-row">
+        <label>상태</label>
+        <select id="poStatus">
+          <option value="ongoing">진행 중</option>
+          <option value="completed">완료</option>
+          <option value="cancelled">취소</option>
+        </select>
       </div>
       <div class="form-row">
         <label>통화</label>
@@ -2101,12 +2270,8 @@
         </select>
       </div>
       <div class="form-row">
-        <label>상태</label>
-        <select id="poStatus">
-          <option value="ongoing">진행 중</option>
-          <option value="completed">완료</option>
-          <option value="cancelled">취소</option>
-        </select>
+        <label>캘린더 색상</label>
+        <input type="color" id="poColor" value="#3b82f6" style="height:36px;padding:3px;" />
       </div>
       <div class="form-row" id="poFxRow" style="grid-column:span 2;display:none;">
         <label>발주일 기준 환율</label>
@@ -2130,6 +2295,7 @@
       </table>
       <div style="display:flex;gap:6px;margin-top:6px;">
         <button class="ghost small" onclick="addPOItemRow()">+ 품목 추가</button>
+        <button class="ghost small" onclick="addPOItemsFromVendor()">📇 거래처 품목 불러오기</button>
         <span style="margin-left:auto;font-weight:bold;font-size:15px;color:#2c3e50;">
           총액: <span id="poTotalDisplay">0</span>
           <span style="font-size:12px;color:#7f8c8d;" id="poTotalKrwDisplay"></span>
@@ -2141,24 +2307,45 @@
       <div class="form-row po-payment-box">
         <label style="display:flex;align-items:center;gap:6px;">
           <input type="checkbox" id="poDepositPaid" onchange="onPODepositPaidToggle()" />
-          계약금 지급 완료
+          선금 입금 완료
         </label>
         <div class="po-payment-detail">
-          <input type="number" id="poDepositAmount" placeholder="계약금 금액" step="0.01" />
-          <input type="date" id="poDepositDate" title="지급일" />
+          <span class="po-payment-field"><small>선금 금액</small><input type="number" id="poDepositAmount" placeholder="0" step="0.01" /></span>
+          <span class="po-payment-field"><small>입금일</small><input type="date" id="poDepositDate" title="선금 입금일" /></span>
         </div>
       </div>
       <div class="form-row po-payment-box">
         <label style="display:flex;align-items:center;gap:6px;">
           <input type="checkbox" id="poBalancePaid" onchange="onPOBalancePaidToggle()" />
-          잔금 지급 완료
+          잔금 입금 완료
         </label>
         <div class="po-payment-detail">
-          <input type="number" id="poBalanceAmount" placeholder="잔금 금액 (비우면 자동)" step="0.01" />
-          <input type="date" id="poBalanceDueDate" title="잔금 납기일" />
-          <small style="font-size:11px;color:#95a5a6;">납기일 3일 전부터 알림</small>
+          <span class="po-payment-field"><small>잔금 금액</small><input type="number" id="poBalanceAmount" placeholder="비우면 자동" step="0.01" /></span>
+          <span class="po-payment-field"><small>입금 예정일</small><input type="date" id="poBalanceDueDate" title="잔금 입금 예정일" /></span>
+          <span class="po-payment-field"><small>실제 입금일</small><input type="date" id="poBalancePaidDate" title="잔금 입금일" /></span>
+        </div>
+        <small style="font-size:11px;color:#95a5a6;">잔금 예정일 3일 전부터 알림</small>
+      </div>
+      <div class="form-row po-shipping-box">
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="poShipBooked" onchange="onPOShipBookedToggle()" />
+          🚢 배 부킹 완료
+        </label>
+        <div class="po-shipping-fields">
+          <span class="po-payment-field"><small>부킹일</small><input type="date" id="poShipBookingDate" title="부킹일" /></span>
+          <span class="po-payment-field"><small>선사 · 선명 · 부킹번호</small><input type="text" id="poShipBookingRef" placeholder="예: ONE · ABC123" /></span>
+          <span class="po-payment-field"><small>출항 예정일</small><input type="date" id="poShipDate" title="출항 예정일" /></span>
         </div>
       </div>
+    </div>
+
+    <div class="po-accessory-section">
+      <div class="po-accessory-head">
+        <span>🧩 제품별 부속품 일정 <span style="color:#7f8c8d;font-weight:normal;">(설명서·패키지·라벨 등)</span></span>
+        <button class="ghost small" onclick="addPOAccessoryRow()">+ 부속품 추가</button>
+      </div>
+      <div class="po-accessory-columns"><span>연결 제품</span><span>부속품명</span><span>발주일</span><span>완료 예정일</span><span>완료</span><span>메모</span><span></span></div>
+      <div id="poAccessoriesBody"></div>
     </div>
 
     <div class="form-row" style="margin-top:14px;">
@@ -2409,9 +2596,11 @@ function loadData() {
     meetingView: 'calendar',    // 'calendar' | 'list'
     meetingCalMonth: '',        // 'YYYY-MM' — 달력에 보여줄 월 (빈 값 = 현재 월)
     meetingSelectedDay: '',     // 'YYYY-MM-DD' — 달력에서 선택된 날 (빈 값 = 전체)
-    purchaseOrders: [],         // 발주일지: [{id, date, vendorId, items, currency, total, deposit, balance, status, note}]
+    purchaseOrders: [],         // 발주일지: 제품 제작기간·결제·선박부킹·부속품 일정 포함
     poVendorCollapsed: {},      // 발주일지 거래처별 접힘 여부 { vendorId: bool }
-    poFilter: 'all',            // 'all' | 'unpaid' | 'ongoing'
+    poFilter: 'all',            // 'all' | 'unpaid' | 'overdue' | 'booking' | 'delivery' | 'ongoing' | 'completed'
+    poView: 'calendar',         // 'calendar' | 'list'
+    poCalendarMonth: '',        // 'YYYY-MM' — 제작 캘린더에 표시할 월
     fxRates: { KRW: 1, USD: null, CNY: null, JPY: null, updatedAt: 0 }, // 환율 캐시
     calculatorData: { cost: {}, stock: {} }, // 원가/재고소진계산기 localStorage 미러 (Drive 동기화용)
     rightPanelTab: 'links',
@@ -2576,8 +2765,10 @@ const Drive = {
     localStorage.setItem('drive_auto_login', 'true');
 
     if (isRefresh) {
-      // 조용한 갱신 — UI 건드리지 않고 싱크 상태만 유지
-      updateSyncUI('세션 갱신됨', 'synced');
+      // 토큰만 갱신하고 끝내면 다른 기기의 변경을 놓친다.
+      // 갱신 직후 원격 수정시간을 다시 확인하고 필요한 경우 pull 한다.
+      updateSyncUI('세션 갱신됨 · 변경 확인 중…', 'syncing');
+      this.pullFromDrive(false);
       return;
     }
 
@@ -2717,10 +2908,20 @@ const Drive = {
   },
 
   async findFile() {
-    if (this.fileId) return this.fileId;
+    // fileId를 이미 알아도 modifiedTime은 매번 새로 읽어야 한다.
+    // 그렇지 않으면 다른 기기에서 갱신된 파일을 오래된 것으로 오판해
+    // 현재 기기의 로컬 데이터로 다시 덮어쓸 수 있다.
+    if (this.fileId) {
+      const metaRes = await this._apiFetch(
+        `https://www.googleapis.com/drive/v3/files/${this.fileId}?fields=id,modifiedTime`
+      );
+      const meta = await metaRes.json();
+      this.lastRemoteModified = new Date(meta.modifiedTime).getTime();
+      return this.fileId;
+    }
     const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
     const res = await this._apiFetch(
-      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,modifiedTime)&spaces=drive`
+      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,modifiedTime)&spaces=drive&orderBy=modifiedTime%20desc&pageSize=10`
     );
     const data = await res.json();
     if (data.files && data.files.length > 0) {
@@ -2919,8 +3120,14 @@ const Drive = {
           return;
         }
       }
-      // 로컬 유지 → 강제 업로드
-      await this.pushToDrive(true);
+      // 원격과 로컬이 사실상 같은 시점이면 불필요하게 다시 업로드하지 않는다.
+      // 로컬이 확실히 더 최신일 때만 원격으로 보낸다.
+      if (localMod - this.lastRemoteModified > 10000) {
+        await this.pushToDrive(true);
+      } else {
+        this.lastSyncedAt = Date.now();
+        updateSyncUI('최신 상태', 'synced');
+      }
     } catch (e) {
       console.error(e);
       updateSyncUI('동기화 오류: ' + e.message, 'error');
@@ -3004,6 +3211,8 @@ function applyRemoteState(remote) {
   state.purchaseOrders = r.purchaseOrders || [];
   state.poVendorCollapsed = r.poVendorCollapsed || {};
   state.poFilter = r.poFilter || 'all';
+  state.poView = r.poView || 'calendar';
+  state.poCalendarMonth = r.poCalendarMonth || '';
   state.fxRates = r.fxRates || { KRW: 1, USD: null, CNY: null, JPY: null, updatedAt: 0 };
   state.calculatorData = r.calculatorData || { cost: {}, stock: {} };
   if (!state.calculatorData.cost) state.calculatorData.cost = {};
@@ -5152,7 +5361,7 @@ function refreshAfterVendorChange() {
   }
   // 3) 발주일지 모달 열려있으면 목록 다시 그리기 (거래처명 즉시 반영)
   if (document.getElementById('poModal')?.classList.contains('show')) {
-    try { renderPOList(); } catch (e) {}
+    try { renderPOViews(); } catch (e) {}
   }
   // 4) 발주 추가/수정 폼 열려있으면 거래처 드롭다운 + 품목 자동완성 갱신
   if (document.getElementById('poFormModal')?.classList.contains('show')) {
@@ -5491,7 +5700,7 @@ async function loadFxRates() {
       info.textContent = `1 USD ≈ ${Math.round(state.fxRates.USD)}원 · 1 CNY ≈ ${Math.round(state.fxRates.CNY)}원 · 1 JPY ≈ ${state.fxRates.JPY.toFixed(2)}원 (${d.toLocaleDateString('ko-KR')})`;
     }
     recalcPOTotal();
-    if (document.getElementById('poModal')?.classList.contains('show')) renderPOList();
+    if (document.getElementById('poModal')?.classList.contains('show')) renderPOViews();
   } catch (e) {
     console.warn('환율 로딩 실패:', e);
     if (info) info.textContent = '⚠ 환율 자동조회 실패 — 직접 입력 필요';
@@ -5569,11 +5778,12 @@ function checkPODueBanner() {
 
 function openPOModal() {
   ensureFxRates();
+  if (!state.poCalendarMonth) state.poCalendarMonth = todayStr().slice(0, 7);
   document.getElementById('poModal').classList.add('show');
   // 필터 셀렉트 동기화
   const sel = document.getElementById('poFilterSel');
   if (sel) sel.value = state.poFilter || 'all';
-  renderPOList();
+  renderPOViews();
 }
 function closePOModal() {
   document.getElementById('poModal').classList.remove('show');
@@ -5582,7 +5792,209 @@ function closePOModal() {
 function setPOFilter(v) {
   state.poFilter = v;
   saveData();
-  renderPOList();
+  renderPOViews();
+}
+
+function setPOView(view) {
+  state.poView = view === 'list' ? 'list' : 'calendar';
+  saveData();
+  renderPOViews();
+}
+
+function movePOCalendarMonth(delta) {
+  const cur = state.poCalendarMonth || todayStr().slice(0, 7);
+  const [y, m] = cur.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  state.poCalendarMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  saveData();
+  renderPOViews();
+}
+
+function goPOToday() {
+  state.poCalendarMonth = todayStr().slice(0, 7);
+  saveData();
+  renderPOViews();
+}
+
+function poDayNumber(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || '')) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+}
+
+function getFilteredPurchaseOrders() {
+  const q = (document.getElementById('poSearch')?.value || '').trim().toLowerCase();
+  const filter = state.poFilter || 'all';
+  const today = todayStr();
+  const todayDay = poDayNumber(today);
+  let pos = (state.purchaseOrders || []).slice();
+
+  if (filter === 'unpaid') {
+    pos = pos.filter(po => po.status !== 'cancelled' && (!po.balance || !po.balance.paid));
+  } else if (filter === 'overdue') {
+    pos = pos.filter(po => po.status !== 'cancelled' && po.balance && !po.balance.paid && po.balance.dueDate && poDayNumber(po.balance.dueDate) < todayDay);
+  } else if (filter === 'booking') {
+    pos = pos.filter(po => po.status === 'ongoing' && !(po.shipBooking && po.shipBooking.booked));
+  } else if (filter === 'delivery') {
+    pos = pos.filter(po => {
+      if (po.status === 'cancelled' || !po.deliveryDate) return false;
+      const diff = poDayNumber(po.deliveryDate) - todayDay;
+      return diff >= 0 && diff <= 7;
+    });
+  } else if (filter === 'ongoing') {
+    pos = pos.filter(po => po.status === 'ongoing');
+  } else if (filter === 'completed') {
+    pos = pos.filter(po => po.status === 'completed');
+  }
+
+  if (q) {
+    pos = pos.filter(po => {
+      const vendor = getVendorName(po.vendorId).toLowerCase();
+      const items = (po.items || []).map(i => i.name || '').join(' ').toLowerCase();
+      const accessories = (po.accessories || []).map(a => `${a.name || ''} ${a.note || ''}`).join(' ').toLowerCase();
+      const shipping = `${po.shipBooking?.reference || ''}`.toLowerCase();
+      return `${vendor} ${items} ${accessories} ${shipping} ${(po.note || '').toLowerCase()}`.includes(q);
+    });
+  }
+  return pos;
+}
+
+function renderPOViews() {
+  const view = state.poView === 'list' ? 'list' : 'calendar';
+  const calendarArea = document.getElementById('poCalendarArea');
+  const listArea = document.getElementById('poListArea');
+  if (!calendarArea || !listArea) return;
+  calendarArea.style.display = view === 'calendar' ? '' : 'none';
+  listArea.style.display = view === 'list' ? '' : 'none';
+  document.getElementById('poViewCalendar')?.classList.toggle('active', view === 'calendar');
+  document.getElementById('poViewList')?.classList.toggle('active', view === 'list');
+  renderPOSummary();
+  if (view === 'calendar') renderPOTimeline();
+  else renderPOList();
+}
+
+function renderPOSummary() {
+  const el = document.getElementById('poSummary');
+  if (!el) return;
+  const pos = getFilteredPurchaseOrders();
+  const todayDay = poDayNumber(todayStr());
+  const ongoing = pos.filter(po => po.status === 'ongoing').length;
+  const deliverySoon = pos.filter(po => {
+    if (po.status === 'cancelled' || !po.deliveryDate) return false;
+    const diff = poDayNumber(po.deliveryDate) - todayDay;
+    return diff >= 0 && diff <= 7;
+  }).length;
+  const bookingMissing = pos.filter(po => po.status === 'ongoing' && !(po.shipBooking && po.shipBooking.booked)).length;
+  const unpaid = pos.filter(po => po.status !== 'cancelled' && (!po.balance || !po.balance.paid)).length;
+  el.innerHTML = `
+    <div class="po-summary-card good">현재 제작 중<strong>${ongoing}건</strong></div>
+    <div class="po-summary-card ${deliverySoon ? 'warn' : ''}">7일 내 납기<strong>${deliverySoon}건</strong></div>
+    <div class="po-summary-card ${bookingMissing ? 'danger' : ''}">배 부킹 필요<strong>${bookingMissing}건</strong></div>
+    <div class="po-summary-card ${unpaid ? 'warn' : ''}">잔금 미입금<strong>${unpaid}건</strong></div>`;
+}
+
+function poTimelineDayCells(days, year, month, today) {
+  let html = '';
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(year, month - 1, d);
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    html += `<div class="po-day-cell${weekend ? ' weekend' : ''}${dateStr === today ? ' today' : ''}" style="grid-column:${d + 1};grid-row:1;"></div>`;
+  }
+  return html;
+}
+
+function poTimelineBar(startDate, endDate, monthStartDay, monthEndDay, color, text, className, onclick) {
+  const startDay = poDayNumber(startDate);
+  const endDay = poDayNumber(endDate || startDate);
+  if (startDay == null || endDay == null || endDay < monthStartDay || startDay > monthEndDay) return '';
+  const clippedStart = Math.max(startDay, monthStartDay);
+  const clippedEnd = Math.min(Math.max(endDay, startDay), monthEndDay);
+  const startCol = clippedStart - monthStartDay + 2;
+  const endCol = clippedEnd - monthStartDay + 3;
+  const clippedClass = `${startDay < monthStartDay ? ' clipped-left' : ''}${endDay > monthEndDay ? ' clipped-right' : ''}`;
+  return `<div class="po-range-bar ${className || ''}${clippedClass}" style="grid-column:${startCol}/${endCol};grid-row:1;background:${color};" onclick="${onclick}" title="${escapeHtml(startDate)} → ${escapeHtml(endDate || '납기일 미정')}">${escapeHtml(text)}</div>`;
+}
+
+function renderPOTimeline() {
+  const root = document.getElementById('poTimeline');
+  if (!root) return;
+  const monthKey = state.poCalendarMonth || todayStr().slice(0, 7);
+  const [year, month] = monthKey.split('-').map(Number);
+  const days = new Date(year, month, 0).getDate();
+  const monthStart = `${monthKey}-01`;
+  const monthEnd = `${monthKey}-${String(days).padStart(2, '0')}`;
+  const monthStartDay = poDayNumber(monthStart);
+  const monthEndDay = poDayNumber(monthEnd);
+  const today = todayStr();
+  const label = document.getElementById('poCalendarMonthLabel');
+  if (label) label.textContent = `${year}년 ${month}월`;
+
+  const pos = getFilteredPurchaseOrders().filter(po => {
+    const start = poDayNumber(po.date);
+    const end = poDayNumber(po.deliveryDate || po.date);
+    return start != null && end != null && end >= monthStartDay && start <= monthEndDay;
+  }).sort((a, b) => (a.date || '').localeCompare(b.date || '') || getVendorName(a.vendorId).localeCompare(getVendorName(b.vendorId), 'ko'));
+
+  if (pos.length === 0) {
+    root.innerHTML = `<div class="po-timeline-empty">${month}월에 걸쳐 있는 발주 일정이 없습니다.<br>위 <b>+ 새 발주</b>에서 발주일과 납기일을 등록하세요.</div>`;
+    return;
+  }
+
+  const dayNames = ['일','월','화','수','목','금','토'];
+  const headerDays = Array.from({ length: days }, (_, i) => {
+    const d = i + 1;
+    const date = new Date(year, month - 1, d);
+    const dateStr = `${monthKey}-${String(d).padStart(2, '0')}`;
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    return `<div class="po-timeline-day-head${weekend ? ' weekend' : ''}${dateStr === today ? ' today' : ''}" style="grid-column:${d + 1};grid-row:1;"><b>${d}</b>${dayNames[date.getDay()]}</div>`;
+  }).join('');
+
+  let rows = '';
+  pos.forEach(po => {
+    const items = (po.items && po.items.length) ? po.items : [{ id: `${po.id}_item`, name: '(품목 없음)', qty: 0 }];
+    const color = /^#[0-9a-f]{6}$/i.test(po.color || '') ? po.color : '#3b82f6';
+    const statusClass = po.status === 'completed' ? 'completed' : po.status === 'cancelled' ? 'cancelled' : '';
+    items.forEach((item, itemIndex) => {
+      const itemId = item.id || `${po.id}_item_${itemIndex}`;
+      const startShort = po.date ? po.date.slice(5).replace('-', '/') : '?';
+      const endShort = po.deliveryDate ? po.deliveryDate.slice(5).replace('-', '/') : '납기 미정';
+      const payment = `선${po.deposit?.paid ? '✓' : '○'} 잔${po.balance?.paid ? '✓' : '○'} 🚢${po.shipBooking?.booked ? '✓' : '미정'}`;
+      const dateMeta = `${startShort}→${endShort} · ${getVendorName(po.vendorId)} · ${payment}`;
+      rows += `<div class="po-timeline-row" style="--po-days:${days};">
+        <div class="po-timeline-label" style="grid-column:1;grid-row:1;" onclick="editPO('${escapeHtml(po.id)}')">
+          <div class="ptl-title">📦 ${escapeHtml(item.name || '(품목 없음)')} ${item.qty ? `× ${escapeHtml(item.qty)}` : ''}</div>
+          <div class="ptl-meta">${escapeHtml(dateMeta)}</div>
+        </div>
+        ${poTimelineDayCells(days, year, month, today)}
+        ${poTimelineBar(po.date, po.deliveryDate || po.date, monthStartDay, monthEndDay, color, po.deliveryDate ? `${item.name || ''} 제작 중` : `${item.name || ''} · 납기일 미정`, `${statusClass}${po.deliveryDate ? '' : ' undated'}`, `editPO('${escapeHtml(po.id)}')`)}
+      </div>`;
+
+      const accessories = (po.accessories || []).filter(acc => {
+        if (acc.productItemId) return acc.productItemId === itemId;
+        return itemIndex === 0;
+      });
+      accessories.forEach(acc => {
+        const accStart = acc.orderDate || po.date;
+        const accEnd = acc.dueDate || accStart;
+        const accMeta = `${accStart || '?'} → ${acc.dueDate || '완료일 미정'}${acc.note ? ` · ${acc.note}` : ''}`;
+        rows += `<div class="po-timeline-row accessory" style="--po-days:${days};">
+          <div class="po-timeline-label" style="grid-column:1;grid-row:1;" onclick="editPO('${escapeHtml(po.id)}')">
+            <div class="ptl-title">↳ ${acc.completed ? '✓ ' : ''}${escapeHtml(acc.name || '부속품')}</div>
+            <div class="ptl-meta">${escapeHtml(accMeta)}</div>
+          </div>
+          ${poTimelineDayCells(days, year, month, today)}
+          ${poTimelineBar(accStart, accEnd, monthStartDay, monthEndDay, acc.completed ? '#2e8b57' : '#687786', acc.name || '부속품', `accessory${acc.completed ? ' done' : ''}${acc.dueDate ? '' : ' undated'}`, `editPO('${escapeHtml(po.id)}')`)}
+        </div>`;
+      });
+    });
+  });
+
+  root.innerHTML = `<div class="po-timeline-grid" style="--po-days:${days};">
+    <div class="po-timeline-head" style="--po-days:${days};">
+      <div class="po-timeline-label-head" style="grid-column:1;grid-row:1;">제품 · 거래처 · 결제 · 부킹</div>${headerDays}
+    </div>${rows}
+  </div>`;
 }
 
 function getVendorName(vid) {
@@ -5599,30 +6011,8 @@ function poItemsSummary(po) {
 function renderPOList() {
   const list = document.getElementById('poList');
   if (!list) return;
-  const q = (document.getElementById('poSearch')?.value || '').trim().toLowerCase();
-  const filter = state.poFilter || 'all';
   const today = todayStr();
-  const todayMs = new Date(today).getTime();
-
-  let pos = (state.purchaseOrders || []).slice();
-  // 필터 적용
-  if (filter === 'unpaid') pos = pos.filter(po => po.status !== 'cancelled' && (!po.balance || !po.balance.paid));
-  else if (filter === 'overdue') pos = pos.filter(po => {
-    if (po.status === 'cancelled' || !po.balance || po.balance.paid || !po.balance.dueDate) return false;
-    return new Date(po.balance.dueDate).getTime() < todayMs;
-  });
-  else if (filter === 'ongoing') pos = pos.filter(po => po.status === 'ongoing');
-  else if (filter === 'completed') pos = pos.filter(po => po.status === 'completed');
-
-  // 검색
-  if (q) {
-    pos = pos.filter(po => {
-      const vname = getVendorName(po.vendorId).toLowerCase();
-      const items = (po.items || []).map(i => (i.name || '').toLowerCase()).join(' ');
-      const note = (po.note || '').toLowerCase();
-      return vname.includes(q) || items.includes(q) || note.includes(q);
-    });
-  }
+  let pos = getFilteredPurchaseOrders();
 
   if (pos.length === 0) {
     list.innerHTML = '';
@@ -5665,7 +6055,7 @@ function renderPOList() {
 }
 
 function poItemRowHtml(po, today) {
-  const todayMs = new Date(today).getTime();
+  const todayMs = poDayNumber(today);
   const items = poItemsSummary(po);
   const cur = po.currency || 'KRW';
   const totalCur = fmtMoney(po.total || 0, cur);
@@ -5677,25 +6067,33 @@ function poItemRowHtml(po, today) {
   if (po.balance) {
     if (balancePaid) balanceTag = `<span class="po-payment-tag paid">잔금 ✓</span>`;
     else if (po.balance.dueDate) {
-      const dueMs = new Date(po.balance.dueDate).getTime();
-      const diff = Math.round((dueMs - todayMs) / (24 * 3600 * 1000));
+      const dueMs = poDayNumber(po.balance.dueDate);
+      const diff = dueMs - todayMs;
       if (diff < 0) balanceTag = `<span class="po-payment-tag overdue">잔금 ❗ ${Math.abs(diff)}일 초과</span>`;
       else if (diff <= 3) balanceTag = `<span class="po-payment-tag overdue">잔금 ⏰ ${diff === 0 ? '오늘' : `D-${diff}`}</span>`;
       else balanceTag = `<span class="po-payment-tag unpaid">잔금 ⏳ ${po.balance.dueDate}</span>`;
     } else balanceTag = `<span class="po-payment-tag unpaid">잔금 ⏳ 미정</span>`;
   }
-  const depositTag = po.deposit
-    ? (depositPaid ? `<span class="po-payment-tag paid">계약금 ✓</span>` : `<span class="po-payment-tag unpaid">계약금 ⏳</span>`)
-    : '';
+  const depositTag = depositPaid
+    ? `<span class="po-payment-tag paid">선금 ✓</span>`
+    : `<span class="po-payment-tag unpaid">선금 ⏳</span>`;
+  const shipTag = po.shipBooking?.booked
+    ? `<span class="po-ship-tag booked">🚢 부킹 ✓${po.shipBooking.shipDate ? ` · ${escapeHtml(po.shipBooking.shipDate)}` : ''}</span>`
+    : `<span class="po-ship-tag pending">🚢 미부킹</span>`;
+  const accessoryHtml = (po.accessories || []).map(acc => {
+    const parent = (po.items || []).find(i => i.id === acc.productItemId);
+    return `<div class="po-list-accessory">↳ ${parent ? `${escapeHtml(parent.name)} · ` : ''}${acc.completed ? '✓ ' : ''}${escapeHtml(acc.name || '부속품')} · ${escapeHtml(acc.orderDate || po.date || '?')} → ${escapeHtml(acc.dueDate || '완료일 미정')}</div>`;
+  }).join('');
   const statusBadge = po.status === 'completed' ? `<span class="po-status-badge completed">완료</span>`
                     : po.status === 'cancelled' ? `<span class="po-status-badge cancelled">취소</span>`
                     : `<span class="po-status-badge ongoing">진행 중</span>`;
   return `
     <div class="po-item-row" onclick="editPO('${po.id}')">
-      <div class="pir-date">${escapeHtml(po.date || '')}</div>
+      <div class="pir-date">${escapeHtml(po.date || '')}<br><span style="color:#95a5a6;font-weight:normal;">→ ${escapeHtml(po.deliveryDate || '납기 미정')}</span></div>
       <div class="pir-main">
         <div class="pir-items">${escapeHtml(items)} ${statusBadge}</div>
-        <div class="pir-payment">${depositTag} ${balanceTag}${po.note ? `<span style="color:#95a5a6;">· ${escapeHtml(po.note.slice(0, 40))}${po.note.length > 40 ? '…' : ''}</span>` : ''}</div>
+        <div class="pir-payment">${depositTag} ${balanceTag} ${shipTag}${po.note ? `<span style="color:#95a5a6;">· ${escapeHtml(po.note.slice(0, 40))}${po.note.length > 40 ? '…' : ''}</span>` : ''}</div>
+        ${accessoryHtml ? `<div class="po-list-accessories">${accessoryHtml}</div>` : ''}
       </div>
       <div class="pir-amount">${totalCur}${totalKrw}</div>
     </div>
@@ -5706,32 +6104,46 @@ function togglePOVendor(vid) {
   if (!state.poVendorCollapsed) state.poVendorCollapsed = {};
   state.poVendorCollapsed[vid] = !state.poVendorCollapsed[vid];
   saveData();
-  renderPOList();
+  renderPOViews();
 }
 
 // ===== 발주 추가/수정 폼 =====
 let _poItemsDraft = []; // 폼에서 편집 중인 품목 리스트
+let _poAccessoriesDraft = []; // 제품별 부속품 제작 일정
+
+function newPOId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 function addPO() {
   document.getElementById('poFormTitle').textContent = '새 발주';
   document.getElementById('poEditId').value = '';
   document.getElementById('poDate').value = todayStr();
+  document.getElementById('poDeliveryDate').value = '';
   document.getElementById('poCurrency').value = 'KRW';
   document.getElementById('poStatus').value = 'ongoing';
+  document.getElementById('poColor').value = '#3b82f6';
   document.getElementById('poDepositPaid').checked = false;
   document.getElementById('poDepositAmount').value = '';
   document.getElementById('poDepositDate').value = '';
   document.getElementById('poBalancePaid').checked = false;
   document.getElementById('poBalanceAmount').value = '';
   document.getElementById('poBalanceDueDate').value = '';
+  document.getElementById('poBalancePaidDate').value = '';
+  document.getElementById('poShipBooked').checked = false;
+  document.getElementById('poShipBookingDate').value = '';
+  document.getElementById('poShipBookingRef').value = '';
+  document.getElementById('poShipDate').value = '';
   document.getElementById('poNote').value = '';
   document.getElementById('poFxRate').value = '';
   document.getElementById('poFxStatus').textContent = '';
   document.getElementById('poFxRow').style.display = 'none';
   document.getElementById('poDeleteBtn').style.display = 'none';
-  _poItemsDraft = [{ name: '', qty: 1, unitPrice: 0 }];
+  _poItemsDraft = [{ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 }];
+  _poAccessoriesDraft = [];
   populateVendorSelect();
   renderPOItemsForm();
+  renderPOAccessoriesForm();
   document.getElementById('poFormModal').classList.add('show');
   setTimeout(() => document.getElementById('poVendor')?.focus(), 100);
 }
@@ -5742,14 +6154,21 @@ function editPO(id) {
   document.getElementById('poFormTitle').textContent = '발주 수정';
   document.getElementById('poEditId').value = po.id;
   document.getElementById('poDate').value = po.date || '';
+  document.getElementById('poDeliveryDate').value = po.deliveryDate || '';
   document.getElementById('poCurrency').value = po.currency || 'KRW';
   document.getElementById('poStatus').value = po.status || 'ongoing';
+  document.getElementById('poColor').value = /^#[0-9a-f]{6}$/i.test(po.color || '') ? po.color : '#3b82f6';
   document.getElementById('poDepositPaid').checked = !!(po.deposit && po.deposit.paid);
   document.getElementById('poDepositAmount').value = po.deposit?.amount || '';
   document.getElementById('poDepositDate').value = po.deposit?.date || '';
   document.getElementById('poBalancePaid').checked = !!(po.balance && po.balance.paid);
   document.getElementById('poBalanceAmount').value = po.balance?.amount || '';
   document.getElementById('poBalanceDueDate').value = po.balance?.dueDate || '';
+  document.getElementById('poBalancePaidDate').value = po.balance?.paidDate || '';
+  document.getElementById('poShipBooked').checked = !!po.shipBooking?.booked;
+  document.getElementById('poShipBookingDate').value = po.shipBooking?.bookingDate || '';
+  document.getElementById('poShipBookingRef').value = po.shipBooking?.reference || '';
+  document.getElementById('poShipDate').value = po.shipBooking?.shipDate || '';
   document.getElementById('poNote').value = po.note || '';
   document.getElementById('poDeleteBtn').style.display = '';
   // 저장된 환율 복원
@@ -5771,10 +6190,18 @@ function editPO(id) {
     fxRateInput.value = '';
     fxStatusEl.textContent = '';
   }
-  _poItemsDraft = (po.items || []).map(i => ({ ...i }));
-  if (_poItemsDraft.length === 0) _poItemsDraft = [{ name: '', qty: 1, unitPrice: 0 }];
+  _poItemsDraft = (po.items || []).map(i => ({ ...i, id: i.id || newPOId('poi') }));
+  if (_poItemsDraft.length === 0) _poItemsDraft = [{ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 }];
+  const draftItemIds = new Set(_poItemsDraft.map(i => i.id));
+  _poAccessoriesDraft = (po.accessories || []).map((a, idx) => ({
+    ...a,
+    id: a.id || newPOId('poa'),
+    productItemId: draftItemIds.has(a.productItemId) ? a.productItemId : (_poItemsDraft[0]?.id || ''),
+    completed: !!a.completed
+  }));
   populateVendorSelect(po.vendorId);
   renderPOItemsForm();
+  renderPOAccessoriesForm();
   document.getElementById('poFormModal').classList.add('show');
 }
 
@@ -5798,6 +6225,7 @@ function onPOVendorChange() {
     onPOCurrencyOrDateChange();
   }
   renderPOItemsForm();
+  renderPOAccessoriesForm();
 }
 
 // 통화/날짜 변경 → 발주일 기준 환율 자동 조회 (KRW면 환율 영역 숨김)
@@ -5850,7 +6278,7 @@ function renderPOItemsForm() {
   }
   tbody.innerHTML = datalistHtml + _poItemsDraft.map((it, i) => `
     <tr>
-      <td><input type="text" value="${escapeHtml(it.name || '')}" oninput="updatePOItem(${i}, 'name', this.value); maybeAutofillPOPrice(${i}, this.value)" list="${vendorItems.length ? datalistId : ''}" placeholder="품목명" /></td>
+      <td><input type="text" value="${escapeHtml(it.name || '')}" oninput="updatePOItem(${i}, 'name', this.value); maybeAutofillPOPrice(${i}, this.value)" onchange="renderPOAccessoriesForm()" list="${vendorItems.length ? datalistId : ''}" placeholder="품목명" /></td>
       <td><input type="number" value="${it.qty || ''}" oninput="updatePOItem(${i}, 'qty', this.value); recalcPOTotal()" min="0" step="any" /></td>
       <td><input type="number" value="${it.unitPrice || ''}" oninput="updatePOItem(${i}, 'unitPrice', this.value); recalcPOTotal()" min="0" step="any" id="poUnitPrice_${i}" /></td>
       <td class="po-item-total" id="poItemTotal_${i}">${fmtMoney((parseFloat(it.qty)||0) * (parseFloat(it.unitPrice)||0), document.getElementById('poCurrency')?.value || 'KRW')}</td>
@@ -5889,20 +6317,87 @@ function maybeAutofillPOPrice(idx, name) {
 }
 
 function addPOItemRow() {
-  _poItemsDraft.push({ name: '', qty: 1, unitPrice: 0 });
+  _poItemsDraft.push({ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
+  renderPOAccessoriesForm();
 }
 
 function removePOItemRow(idx) {
+  const item = _poItemsDraft[idx];
+  const linked = item ? _poAccessoriesDraft.filter(a => a.productItemId === item.id).length : 0;
+  if (linked > 0 && !confirm(`이 제품에 연결된 부속품 일정 ${linked}개도 같이 삭제할까요?`)) return;
   _poItemsDraft.splice(idx, 1);
-  if (_poItemsDraft.length === 0) _poItemsDraft.push({ name: '', qty: 1, unitPrice: 0 });
+  if (item) _poAccessoriesDraft = _poAccessoriesDraft.filter(a => a.productItemId !== item.id);
+  if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
+  renderPOAccessoriesForm();
 }
 
 function updatePOItem(idx, key, val) {
   if (!_poItemsDraft[idx]) return;
   if (key === 'qty' || key === 'unitPrice') _poItemsDraft[idx][key] = parseFloat(val) || 0;
   else _poItemsDraft[idx][key] = val;
+}
+
+function addPOItemsFromVendor() {
+  const vendorId = document.getElementById('poVendor')?.value;
+  const vendor = (state.contacts || []).find(v => v.id === vendorId);
+  if (!vendor) return alert('먼저 거래처를 선택하세요.');
+  const items = (vendor.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i).filter(i => (i.name || '').trim());
+  if (items.length === 0) return alert('이 거래처에 등록된 품목이 없습니다.\n📇 거래처 관리에서 품목을 먼저 추가하세요.');
+  const existing = new Set(_poItemsDraft.map(i => (i.name || '').trim()).filter(Boolean));
+  const blankOnly = _poItemsDraft.length === 1 && !(_poItemsDraft[0].name || '').trim();
+  if (blankOnly) _poItemsDraft = [];
+  items.forEach(item => {
+    if (!existing.has(item.name.trim())) {
+      _poItemsDraft.push({ id: newPOId('poi'), name: item.name.trim(), qty: 1, unitPrice: parseFloat(item.unitPrice) || 0 });
+    }
+  });
+  if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 });
+  renderPOItemsForm();
+  renderPOAccessoriesForm();
+}
+
+function renderPOAccessoriesForm() {
+  const body = document.getElementById('poAccessoriesBody');
+  if (!body) return;
+  if (_poAccessoriesDraft.length === 0) {
+    body.innerHTML = '<div class="po-accessory-empty">설명서·패키지·라벨처럼 제품과 같이 준비할 항목을 추가하세요.</div>';
+    return;
+  }
+  const itemOptions = _poItemsDraft.map((item, idx) => ({ id: item.id, name: (item.name || '').trim() || `제품 ${idx + 1}` }));
+  body.innerHTML = _poAccessoriesDraft.map((acc, idx) => `
+    <div class="po-accessory-row">
+      <select onchange="updatePOAccessory(${idx}, 'productItemId', this.value)" title="연결 제품">
+        ${itemOptions.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === acc.productItemId ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
+      </select>
+      <input type="text" value="${escapeHtml(acc.name || '')}" oninput="updatePOAccessory(${idx}, 'name', this.value)" placeholder="예: 설명서" />
+      <input type="date" value="${escapeHtml(acc.orderDate || '')}" oninput="updatePOAccessory(${idx}, 'orderDate', this.value)" title="부속품 발주일" />
+      <input type="date" value="${escapeHtml(acc.dueDate || '')}" oninput="updatePOAccessory(${idx}, 'dueDate', this.value)" title="완료 예정일" />
+      <label style="font-size:11px;display:flex;gap:4px;align-items:center;justify-content:center;"><input class="po-acc-done" type="checkbox" ${acc.completed ? 'checked' : ''} onchange="updatePOAccessory(${idx}, 'completed', this.checked)" />완료</label>
+      <input type="text" value="${escapeHtml(acc.note || '')}" oninput="updatePOAccessory(${idx}, 'note', this.value)" placeholder="메모" />
+      <button type="button" class="po-item-del" onclick="removePOAccessoryRow(${idx})">✕</button>
+    </div>`).join('');
+}
+
+function addPOAccessoryRow() {
+  if (_poItemsDraft.length === 0) return alert('먼저 제품을 추가하세요.');
+  _poAccessoriesDraft.push({
+    id: newPOId('poa'), productItemId: _poItemsDraft[0].id, name: '',
+    orderDate: document.getElementById('poDate')?.value || todayStr(),
+    dueDate: document.getElementById('poDeliveryDate')?.value || '', completed: false, note: ''
+  });
+  renderPOAccessoriesForm();
+}
+
+function updatePOAccessory(idx, key, value) {
+  if (!_poAccessoriesDraft[idx]) return;
+  _poAccessoriesDraft[idx][key] = value;
+}
+
+function removePOAccessoryRow(idx) {
+  _poAccessoriesDraft.splice(idx, 1);
+  renderPOAccessoriesForm();
 }
 
 function recalcPOTotal() {
@@ -5929,18 +6424,28 @@ function onPODepositPaidToggle() {
   if (checked && !dateEl.value) dateEl.value = todayStr();
 }
 function onPOBalancePaidToggle() {
-  // 잔금 결제 시 별도 자동 처리 없음 (사용자가 금액/날짜 직접 확인)
+  const checked = document.getElementById('poBalancePaid').checked;
+  const dateEl = document.getElementById('poBalancePaidDate');
+  if (checked && !dateEl.value) dateEl.value = todayStr();
+}
+function onPOShipBookedToggle() {
+  const checked = document.getElementById('poShipBooked').checked;
+  const dateEl = document.getElementById('poShipBookingDate');
+  if (checked && !dateEl.value) dateEl.value = todayStr();
 }
 
 async function savePO() {
   const id = document.getElementById('poEditId').value;
   const date = document.getElementById('poDate').value;
+  const deliveryDate = document.getElementById('poDeliveryDate').value;
   const vendorId = document.getElementById('poVendor').value;
   const currency = document.getElementById('poCurrency').value;
   const status = document.getElementById('poStatus').value;
   const note = document.getElementById('poNote').value.trim();
 
   if (!date) return alert('발주일을 선택하세요.');
+  if (!deliveryDate) return alert('납기일을 선택하세요. 제작 캘린더에 발주일부터 납기일까지 표시됩니다.');
+  if (poDayNumber(deliveryDate) < poDayNumber(date)) return alert('납기일은 발주일보다 빠를 수 없습니다.');
   if (!vendorId) return alert('거래처를 선택하세요.');
   const validItems = _poItemsDraft.filter(i => (i.name || '').trim() && (parseFloat(i.qty) > 0));
   if (validItems.length === 0) return alert('품목을 1개 이상 입력하세요 (이름 + 수량).');
@@ -5952,6 +6457,22 @@ async function savePO() {
   const balancePaid = document.getElementById('poBalancePaid').checked;
   const balanceAmount = parseFloat(document.getElementById('poBalanceAmount').value) || (total - depositAmount);
   const balanceDueDate = document.getElementById('poBalanceDueDate').value;
+  const balancePaidDate = document.getElementById('poBalancePaidDate').value;
+  const shipBooked = document.getElementById('poShipBooked').checked;
+  const shipBookingDate = document.getElementById('poShipBookingDate').value;
+  const shipBookingRef = document.getElementById('poShipBookingRef').value.trim();
+  const shipDate = document.getElementById('poShipDate').value;
+  const color = document.getElementById('poColor').value || '#3b82f6';
+
+  const validItemIds = new Set(validItems.map(i => i.id));
+  const validAccessories = _poAccessoriesDraft.filter(a => (a.name || '').trim()).map(a => ({
+    id: a.id || newPOId('poa'),
+    productItemId: validItemIds.has(a.productItemId) ? a.productItemId : (validItems[0]?.id || ''),
+    name: a.name.trim(), orderDate: a.orderDate || date, dueDate: a.dueDate || '',
+    completed: !!a.completed, note: (a.note || '').trim()
+  }));
+  const invalidAccessory = validAccessories.find(a => a.dueDate && poDayNumber(a.dueDate) < poDayNumber(a.orderDate));
+  if (invalidAccessory) return alert(`'${invalidAccessory.name}'의 완료 예정일이 발주일보다 빠릅니다.`);
 
   // 환율 캡처 (외화일 때만 의미 있음)
   const exchangeRate = parseFloat(document.getElementById('poFxRate').value) || 0;
@@ -5959,13 +6480,15 @@ async function savePO() {
 
   const poData = {
     id: id || 'po_' + Date.now() + Math.random().toString(36).slice(2, 6),
-    date, vendorId, currency, status, note,
-    items: validItems.map(i => ({ name: i.name.trim(), qty: parseFloat(i.qty) || 0, unitPrice: parseFloat(i.unitPrice) || 0 })),
+    date, deliveryDate, vendorId, currency, status, note, color,
+    items: validItems.map(i => ({ id: i.id || newPOId('poi'), name: i.name.trim(), qty: parseFloat(i.qty) || 0, unitPrice: parseFloat(i.unitPrice) || 0 })),
+    accessories: validAccessories,
     total,
     exchangeRate: currency === 'KRW' ? 1 : exchangeRate,        // 발주 저장 시점 환율
     exchangeRateDate: currency === 'KRW' ? null : exchangeRateDate,
-    deposit: (depositAmount > 0 || depositPaid) ? { paid: depositPaid, amount: depositAmount, date: depositDate } : null,
-    balance: { paid: balancePaid, amount: balanceAmount, dueDate: balanceDueDate, paidDate: balancePaid ? (todayStr()) : '' }
+    deposit: { paid: depositPaid, amount: depositAmount, date: depositDate },
+    balance: { paid: balancePaid, amount: balanceAmount, dueDate: balanceDueDate, paidDate: balancePaid ? (balancePaidDate || todayStr()) : balancePaidDate },
+    shipBooking: { booked: shipBooked, bookingDate: shipBookingDate, reference: shipBookingRef, shipDate }
   };
 
   if (!state.purchaseOrders) state.purchaseOrders = [];
@@ -5995,7 +6518,7 @@ async function savePO() {
   }
   saveData();
   closePOForm();
-  renderPOList();
+  renderPOViews();
   checkPODueBanner();
   // 거래처에 자동 등록된 새 품목이 있을 수 있으니 거래처 화면도 같이 갱신
   refreshAfterVendorChange();
@@ -6011,7 +6534,7 @@ function deletePOFromForm() {
   state.purchaseOrders = state.purchaseOrders.filter(p => p.id !== id);
   saveData();
   closePOForm();
-  renderPOList();
+  renderPOViews();
   checkPODueBanner();
 }
 
