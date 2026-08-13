@@ -896,6 +896,11 @@
     gap: 8px; align-items: end; margin-top: 9px;
   }
   .po-delivery-alert-fields input { width: 100%; box-sizing: border-box; }
+  .po-fixed-email-toggle {
+    display: flex; align-items: center; gap: 7px; margin-top: 8px;
+    color: #245b88; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .po-fixed-email-toggle input { width: auto; margin: 0; }
   .po-delivery-alert-status { display:block; margin-top:7px; color:#70808d; font-size:11px; line-height:1.55; }
   .po-delivery-alert-status.ok { color:#227346; font-weight:bold; }
   .po-delivery-alert-status.warn { color:#b26a00; }
@@ -2408,6 +2413,10 @@
           <span class="po-payment-field"><small>알림 받을 이메일 · 여러 명은 쉼표로 구분</small><input type="text" id="poDeliveryReminderEmails" placeholder="name@company.com, staff@company.com" oninput="updatePODeliveryReminderStatus()" /></span>
           <button type="button" class="ghost small" onclick="fillPOVendorReminderEmails()">📇 거래처 이메일 불러오기</button>
         </div>
+        <label class="po-fixed-email-toggle">
+          <input type="checkbox" id="poReminderEmailsFixed" onchange="updatePODeliveryReminderStatus()" />
+          📌 이 이메일을 기본 수신자로 고정 (새 발주에 자동 입력)
+        </label>
         <small class="po-delivery-alert-status" id="poDeliveryReminderStatus">저장하면 납기 전날 알림 일정이 생성됩니다. 받는 사람은 캘린더 초대 메일을 받고, 일정 수락 후 알림을 받을 수 있습니다.</small>
       </div>
     </div>
@@ -2770,6 +2779,7 @@ function loadData() {
     meetingCalMonth: '',        // 'YYYY-MM' — 달력에 보여줄 월 (빈 값 = 현재 월)
     meetingSelectedDay: '',     // 'YYYY-MM-DD' — 달력에서 선택된 날 (빈 값 = 전체)
     purchaseOrders: [],         // 발주일지: 제품 제작기간·결제·선박부킹·부속품 일정 포함
+    poDefaultReminderRecipients: [], // 새 발주 알림에 자동 입력할 고정 이메일
     poVendorCollapsed: {},      // 발주일지 거래처별 접힘 여부 { vendorId: bool }
     poFilter: 'all',            // 'all' | 'unpaid' | 'overdue' | 'booking' | 'delivery' | 'ongoing' | 'completed'
     poView: 'calendar',         // 'calendar' | 'list'
@@ -3383,6 +3393,7 @@ function applyRemoteState(remote) {
   state.meetingCalMonth = r.meetingCalMonth || '';
   state.meetingSelectedDay = r.meetingSelectedDay || '';
   state.purchaseOrders = r.purchaseOrders || [];
+  state.poDefaultReminderRecipients = Array.isArray(r.poDefaultReminderRecipients) ? r.poDefaultReminderRecipients : [];
   state.poVendorCollapsed = r.poVendorCollapsed || {};
   state.poFilter = r.poFilter || 'all';
   state.poView = r.poView || 'calendar';
@@ -3597,6 +3608,17 @@ function fillPOVendorReminderEmails() {
   updatePODeliveryReminderStatus();
 }
 
+function getPOFixedReminderEmails() {
+  return parsePOReminderEmails((state.poDefaultReminderRecipients || []).join(','));
+}
+
+function setPOFixedReminderBaseline(emails, fixed) {
+  const emailInput = document.getElementById('poDeliveryReminderEmails');
+  const fixedInput = document.getElementById('poReminderEmailsFixed');
+  if (emailInput) emailInput.dataset.initialFixedEmails = parsePOReminderEmails(emails).join(',');
+  if (fixedInput) fixedInput.dataset.initialChecked = fixed ? 'true' : 'false';
+}
+
 function onPODeliveryReminderToggle() {
   const enabled = !!document.getElementById('poDeliveryReminderEnabled')?.checked;
   const fields = document.getElementById('poDeliveryReminderFields');
@@ -3604,6 +3626,8 @@ function onPODeliveryReminderToggle() {
     fields.style.opacity = enabled ? '1' : '.45';
     fields.querySelectorAll('input,button').forEach(el => { el.disabled = !enabled; });
   }
+  const fixed = document.getElementById('poReminderEmailsFixed');
+  if (fixed) fixed.disabled = !enabled;
   updatePODeliveryReminderStatus();
 }
 
@@ -3612,22 +3636,29 @@ function updatePODeliveryReminderStatus(savedReminder) {
   if (!status) return;
   const enabled = !!document.getElementById('poDeliveryReminderEnabled')?.checked;
   const emails = parsePOReminderEmails(document.getElementById('poDeliveryReminderEmails')?.value);
+  const fixed = !!document.getElementById('poReminderEmailsFixed')?.checked;
+  const fixedLabel = fixed ? ' · 기본 수신자 고정' : '';
   status.className = 'po-delivery-alert-status';
   if (!enabled) {
     status.textContent = '알림을 사용하지 않습니다. 기존 캘린더 일정이 있으면 저장할 때 삭제됩니다.';
     return;
   }
+  if (fixed && emails.length === 0) {
+    status.classList.add('warn');
+    status.textContent = '기본 수신자로 고정할 이메일을 1개 이상 입력하세요.';
+    return;
+  }
   if (savedReminder?.eventId) {
     status.classList.add('ok');
-    status.textContent = `✓ Google 캘린더 연결됨${emails.length ? ` · 받는 사람 ${emails.length}명` : ' · 내 캘린더 알림'}`;
+    status.textContent = `✓ Google 캘린더 연결됨${emails.length ? ` · 받는 사람 ${emails.length}명` : ' · 내 캘린더 알림'}${fixedLabel}`;
     return;
   }
   if (!Drive.accessToken) {
     status.classList.add('warn');
-    status.textContent = `구글 로그인 후 저장하면 납기 전날 알림 일정이 자동 생성됩니다${emails.length ? ` · 받는 사람 ${emails.length}명` : ''}. 이메일 수신자는 초대를 수락해야 자신의 캘린더 알림을 받을 수 있습니다.`;
+    status.textContent = `구글 로그인 후 저장하면 납기 전날 알림 일정이 자동 생성됩니다${emails.length ? ` · 받는 사람 ${emails.length}명` : ''}${fixedLabel}. 이메일 수신자는 초대를 수락해야 자신의 캘린더 알림을 받을 수 있습니다.`;
     return;
   }
-  status.textContent = `저장하면 납기 전날 알림 일정이 생성됩니다${emails.length ? ` · 받는 사람 ${emails.length}명에게 캘린더 초대 발송` : ' · 내 캘린더에만 알림'}`;
+  status.textContent = `저장하면 납기 전날 알림 일정이 생성됩니다${emails.length ? ` · 받는 사람 ${emails.length}명에게 캘린더 초대 발송` : ' · 내 캘린더에만 알림'}${fixedLabel}`;
 }
 
 function poDeliveryReminderSignature(po) {
@@ -3646,6 +3677,7 @@ function poDeliveryReminderSignature(po) {
 }
 
 function poDeliveryReminderBody(po) {
+  // 외부 수신자용 알림에는 단가·총액·선금·잔금·입금 상태·환율 등 비용 정보를 절대 포함하지 않는다.
   const r = po.deliveryReminder || {};
   const reminderDate = shiftISODate(po.deliveryDate, -1);
   const time = /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : '09:00';
@@ -6594,7 +6626,10 @@ function addPO() {
   document.getElementById('poFxRow').style.display = 'none';
   document.getElementById('poDeliveryReminderEnabled').checked = true;
   document.getElementById('poDeliveryReminderTime').value = '09:00';
-  document.getElementById('poDeliveryReminderEmails').value = '';
+  const fixedReminderEmails = getPOFixedReminderEmails();
+  document.getElementById('poDeliveryReminderEmails').value = fixedReminderEmails.join(', ');
+  document.getElementById('poReminderEmailsFixed').checked = fixedReminderEmails.length > 0;
+  setPOFixedReminderBaseline(fixedReminderEmails, fixedReminderEmails.length > 0);
   document.getElementById('poDeleteBtn').style.display = 'none';
   document.getElementById('poCloseBtn').style.display = 'none';
   _poItemsDraft = [{ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 }];
@@ -6651,9 +6686,15 @@ function editPO(id) {
   closedInfo.textContent = po.closed ? `✓ ${po.receivedDate || '날짜 미기록'} 입고완료 · 종료된 기록 (캘린더에 보관 중)` : '';
   document.getElementById('poNote').value = po.note || '';
   const deliveryReminder = po.deliveryReminder || {};
+  const fixedReminderEmails = getPOFixedReminderEmails();
+  const savedReminderEmails = parsePOReminderEmails((deliveryReminder.recipients || []).join(','));
+  const reminderEmailsToShow = savedReminderEmails.length > 0 ? savedReminderEmails : fixedReminderEmails;
+  const usesFixedReminderEmails = fixedReminderEmails.length > 0 && reminderEmailsToShow.join(',') === fixedReminderEmails.join(',');
   document.getElementById('poDeliveryReminderEnabled').checked = !!deliveryReminder.enabled;
   document.getElementById('poDeliveryReminderTime').value = deliveryReminder.time || '09:00';
-  document.getElementById('poDeliveryReminderEmails').value = (deliveryReminder.recipients || []).join(', ');
+  document.getElementById('poDeliveryReminderEmails').value = reminderEmailsToShow.join(', ');
+  document.getElementById('poReminderEmailsFixed').checked = usesFixedReminderEmails;
+  setPOFixedReminderBaseline(reminderEmailsToShow, usesFixedReminderEmails);
   document.getElementById('poDeleteBtn').style.display = '';
   document.getElementById('poCloseBtn').style.display = po.closed ? 'none' : '';
   // 저장된 환율 복원
@@ -7120,6 +7161,10 @@ async function savePO(options = {}) {
   const deliveryReminderTime = document.getElementById('poDeliveryReminderTime').value || '09:00';
   const deliveryReminderRawEmails = document.getElementById('poDeliveryReminderEmails').value;
   const deliveryReminderRecipients = parsePOReminderEmails(deliveryReminderRawEmails);
+  const fixedReminderInput = document.getElementById('poReminderEmailsFixed');
+  const reminderEmailsFixed = !!fixedReminderInput.checked;
+  const fixedReminderWasChecked = fixedReminderInput.dataset.initialChecked === 'true';
+  const fixedReminderEmailsChanged = deliveryReminderRecipients.join(',') !== (document.getElementById('poDeliveryReminderEmails').dataset.initialFixedEmails || '');
   const invalidReminderEmails = String(deliveryReminderRawEmails || '').split(/[\s,;]+/).map(v => v.trim()).filter(Boolean)
     .filter(v => !deliveryReminderRecipients.includes(v.toLowerCase()));
 
@@ -7128,6 +7173,9 @@ async function savePO(options = {}) {
   }
   if (deliveryReminderEnabled && invalidReminderEmails.length > 0) {
     return alert(`이메일 형식을 확인하세요:\n${invalidReminderEmails.join('\n')}`);
+  }
+  if (deliveryReminderEnabled && reminderEmailsFixed && deliveryReminderRecipients.length === 0) {
+    return alert('기본 수신자로 고정할 이메일을 1개 이상 입력하세요.');
   }
   if (options.closeAsReceived && !receivedDate) return alert('입고완료일을 선택하세요.');
 
@@ -7179,6 +7227,11 @@ async function savePO(options = {}) {
   };
 
   if (!state.purchaseOrders) state.purchaseOrders = [];
+  if (reminderEmailsFixed && (!id || !fixedReminderWasChecked || fixedReminderEmailsChanged || getPOFixedReminderEmails().length === 0)) {
+    state.poDefaultReminderRecipients = deliveryReminderRecipients.slice();
+  } else if (!reminderEmailsFixed && fixedReminderWasChecked) {
+    state.poDefaultReminderRecipients = [];
+  }
   if (id) {
     const idx = state.purchaseOrders.findIndex(p => p.id === id);
     if (idx >= 0) state.purchaseOrders[idx] = poData;
