@@ -510,6 +510,19 @@
     background: #f8f9fa; padding: 5px 8px;
     border-radius: 4px; line-height: 1.55;
   }
+  #contactPersonsWrap .person-row {
+    display: grid; grid-template-columns: .9fr 1.2fr 1.3fr auto;
+    gap: 6px; align-items: center;
+  }
+  #contactPersonsWrap .person-row input {
+    min-width: 0; padding: 6px 8px; font-size: 13px;
+    border: 1px solid #dfe4ea; border-radius: 5px;
+  }
+  @media (max-width: 600px) {
+    #contactPersonsWrap .person-row { grid-template-columns: 1fr 1fr auto; }
+    #contactPersonsWrap .person-row .person-note { grid-column: 1 / span 2; }
+    #contactPersonsWrap .person-row button { grid-column: 3; grid-row: 1 / span 2; }
+  }
 
   /* 템플릿 */
   .phrase-item {
@@ -1083,8 +1096,9 @@
     grid-column: span 2; border: 1px solid #d8e8f5; background: #f5faff;
     border-radius: 7px; padding: 10px;
   }
-  .po-shipping-fields { display: grid; grid-template-columns: 150px 1fr 150px; gap: 7px; margin-top: 7px; }
-  .po-shipping-fields input { width: 100%; box-sizing: border-box; }
+  .po-shipping-fields { display: grid; grid-template-columns: 125px 140px 1fr 150px; gap: 7px; margin-top: 7px; }
+  .po-shipping-fields input, .po-shipping-fields select { width: 100%; box-sizing: border-box; }
+  .po-shipping-fields select { padding: 6px 8px; border: 1px solid #dfe4ea; border-radius: 4px; background: white; }
   @media (max-width: 820px) {
     #poModal { padding: 0; }
     #poModal .po-modal-content {
@@ -2476,6 +2490,12 @@
           🚢 배 부킹 완료
         </label>
         <div class="po-shipping-fields">
+          <span class="po-payment-field"><small>운송 방식</small><select id="poShippingMethod">
+            <option value="">미정</option>
+            <option value="FCL">FCL</option>
+            <option value="LCL">LCL</option>
+            <option value="특송">특송</option>
+          </select></span>
           <span class="po-payment-field"><small>부킹일</small><input type="date" id="poShipBookingDate" title="부킹일" /></span>
           <span class="po-payment-field"><small>선사 · 선명 · 부킹번호</small><input type="text" id="poShipBookingRef" placeholder="예: ONE · ABC123" /></span>
           <span class="po-payment-field"><small>출항 예정일</small><input type="date" id="poShipDate" title="출항 예정일" /></span>
@@ -3619,6 +3639,7 @@ function poDeliveryReminderSignature(po) {
     recipients: (r.recipients || []).slice().sort(),
     vendor: getVendorName(po.vendorId),
     items: (po.items || []).map(i => `${i.name || ''}:${i.qty || 0}`),
+    shipping: `${po.shipBooking?.method || ''}:${po.shipBooking?.booked ? 'booked' : 'pending'}`,
     status: po.status || '',
     closed: !!po.closed
   });
@@ -3633,21 +3654,19 @@ function poDeliveryReminderBody(po) {
   const end = new Date(Date.UTC(y, m - 1, d, hour, minute + 30));
   const endDate = `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, '0')}` +
     `-${String(end.getUTCDate()).padStart(2, '0')}T${String(end.getUTCHours()).padStart(2, '0')}:${String(end.getUTCMinutes()).padStart(2, '0')}:00`;
-  const vendorName = getVendorName(po.vendorId);
-  const itemText = (po.items || []).map(i => `${i.name || '(품목)'} × ${i.qty || 0}`).join(', ');
+  const itemText = (po.items || []).filter(i => (i.kind || 'product') === 'product').map(i => i.name || '(제품)').join(', ') || poItemsSummary(po);
+  const shippingMethod = po.shipBooking?.method || '미정';
+  const bookingLabel = po.shipBooking?.booked ? '완료' : '미완료';
   const signedInEmail = String(Drive.userEmail || '').toLowerCase();
   const recipients = parsePOReminderEmails((r.recipients || []).join(',')).filter(email => email !== signedInEmail);
   return {
-    summary: `⏰ 납기 D-1 · ${vendorName} · ${poItemsSummary(po)}`,
+    summary: `⏰ ${itemText} 생산완료 예정`,
     description: [
-      `납기일: ${po.deliveryDate}`,
-      `발주일: ${po.date || '-'}`,
-      `거래처: ${vendorName}`,
-      `품목: ${itemText || '-'}`,
-      po.note ? `메모: ${po.note}` : '',
-      '',
-      '업무일지 발주일지에서 자동 생성된 납기 전날 알림 일정입니다.'
-    ].filter(Boolean).join('\n').slice(0, 3000),
+      `${itemText} 생산완료 예정입니다.`,
+      '곧 출고 진행 예정입니다.',
+      `운송 방식: ${shippingMethod}`,
+      `배 부킹 여부: ${bookingLabel}`
+    ].join('\n'),
     start: { dateTime: `${reminderDate}T${time}:00`, timeZone: 'Asia/Seoul' },
     end: { dateTime: endDate, timeZone: 'Asia/Seoul' },
     attendees: recipients.map(email => ({ email })),
@@ -4785,11 +4804,12 @@ function clearContactSearch() {
 function renderPersonRows(persons) {
   const wrap = document.getElementById('contactPersonsWrap');
   if (!wrap) return;
-  if (!persons || persons.length === 0) persons = [{ name: '', note: '' }];
+  if (!persons || persons.length === 0) persons = [{ name: '', email: '', note: '' }];
   wrap.innerHTML = persons.map((p, i) => `
-    <div class="person-row" data-idx="${i}" style="display:flex;gap:6px;align-items:center;">
-      <input type="text" class="person-name" placeholder="담당자 이름" value="${escapeHtml(p.name || '')}" style="flex:1;padding:6px 8px;font-size:13px;border:1px solid #dfe4ea;border-radius:5px;" />
-      <input type="text" class="person-note" placeholder="연락처/직책/메모" value="${escapeHtml(p.note || '')}" style="flex:1.3;padding:6px 8px;font-size:13px;border:1px solid #dfe4ea;border-radius:5px;" />
+    <div class="person-row" data-idx="${i}">
+      <input type="text" class="person-name" placeholder="담당자 이름" value="${escapeHtml(p.name || '')}" />
+      <input type="email" class="person-email" placeholder="이메일" value="${escapeHtml(p.email || '')}" />
+      <input type="text" class="person-note" placeholder="연락처/직책/메모" value="${escapeHtml(p.note || '')}" />
       <button type="button" class="ghost small" onclick="removePersonRow(${i})" title="삭제" style="padding:4px 8px;color:#c0392b;">×</button>
     </div>
   `).join('');
@@ -4800,15 +4820,16 @@ function getFormPersons() {
   const persons = [];
   rows.forEach(r => {
     const name = r.querySelector('.person-name').value.trim();
+    const email = r.querySelector('.person-email').value.trim().toLowerCase();
     const note = r.querySelector('.person-note').value.trim();
-    if (name || note) persons.push({ name, note });
+    if (name || email || note) persons.push({ name, email, note });
   });
   return persons;
 }
 
 function addPersonRow() {
   const current = getFormPersons();
-  current.push({ name: '', note: '' });
+  current.push({ name: '', email: '', note: '' });
   renderPersonRows(current);
   // focus newly added
   const rows = document.querySelectorAll('#contactPersonsWrap .person-row');
@@ -4819,7 +4840,7 @@ function addPersonRow() {
 function removePersonRow(idx) {
   const current = getFormPersons();
   current.splice(idx, 1);
-  renderPersonRows(current.length > 0 ? current : [{ name: '', note: '' }]);
+  renderPersonRows(current.length > 0 ? current : [{ name: '', email: '', note: '' }]);
 }
 
 function addContact() {
@@ -4828,7 +4849,7 @@ function addContact() {
   document.getElementById('contactName').value = '';
   document.getElementById('contactItems').value = '';
   document.getElementById('contactMemo').value = '';
-  renderPersonRows([{ name: '', note: '' }]);
+  renderPersonRows([{ name: '', email: '', note: '' }]);
   const radio = document.querySelector(`input[name=contactType][value="${contactFilter}"]`);
   if (radio) radio.checked = true;
   document.getElementById('contactModal').classList.add('show');
@@ -4845,8 +4866,8 @@ function editContact(id) {
   document.getElementById('contactMemo').value = c.memo || '';
   // 하위 호환: 기존 contact 필드가 있으면 persons로 마이그레이션
   let persons = c.persons;
-  if (!persons && c.contact) persons = [{ name: c.contact, note: '' }];
-  renderPersonRows(persons && persons.length > 0 ? persons : [{ name: '', note: '' }]);
+  if (!persons && c.contact) persons = [{ name: c.contact, email: '', note: '' }];
+  renderPersonRows(persons && persons.length > 0 ? persons : [{ name: '', email: '', note: '' }]);
   const radio = document.querySelector(`input[name=contactType][value="${c.type || 'domestic'}"]`);
   if (radio) radio.checked = true;
   document.getElementById('contactModal').classList.add('show');
@@ -4861,6 +4882,8 @@ function saveContact() {
   const typeEl = document.querySelector('input[name=contactType]:checked');
   const type = typeEl ? typeEl.value : 'domestic';
   if (!name) { alert('거래처 이름을 입력하세요.'); return; }
+  const invalidEmail = persons.find(p => p.email && parsePOReminderEmails(p.email)[0] !== p.email);
+  if (invalidEmail) { alert(`담당자 이메일 형식을 확인하세요: ${invalidEmail.email}`); return; }
   const newItemNames = itemsText ? itemsText.split('\n').map(s => s.trim()).filter(Boolean) : [];
   if (!state.contacts) state.contacts = [];
   if (id) {
@@ -4916,7 +4939,7 @@ function renderContacts() {
   let filtered;
   if (searching) {
     filtered = all.filter(c => {
-      const personsText = (c.persons || []).map(p => `${p.name || ''} ${p.note || ''}`).join(' ');
+      const personsText = (c.persons || []).map(p => `${p.name || ''} ${p.email || ''} ${p.note || ''}`).join(' ');
       const itemsText = (c.items || []).map(i => typeof i === 'string' ? i : (i.name || '')).join(' ');
       const hay = [
         c.name || '',
@@ -4960,12 +4983,13 @@ function renderContacts() {
   list.innerHTML = headerHtml + filtered.map(c => {
     // 하위 호환: 구 contact 필드를 persons에 임시 합침
     let persons = c.persons || [];
-    if ((!persons || persons.length === 0) && c.contact) persons = [{ name: c.contact, note: '' }];
+    if ((!persons || persons.length === 0) && c.contact) persons = [{ name: c.contact, email: '', note: '' }];
     const personsHtml = persons.length > 0
       ? `<div class="ci-sub" style="display:flex;flex-direction:column;gap:2px;">${persons.map(p => {
           const n = highlight(p.name);
+          const email = p.email ? ` <span style="color:#4776a6;">· ${highlight(p.email)}</span>` : '';
           const note = p.note ? ` <span style="color:#95a5a6;">· ${highlight(p.note)}</span>` : '';
-          return `<div>👤 ${n}${note}</div>`;
+          return `<div>👤 ${n}${email}${note}</div>`;
         }).join('')}</div>`
       : '';
     return `
@@ -4992,18 +5016,19 @@ function downloadContacts() {
     return;
   }
   if (typeof XLSX === 'undefined') { alert('엑셀 모듈이 로드되지 않았습니다.'); return; }
-  const rows = [['구분', '거래처명', '담당자', '연락처/메모', '관리 품목', '거래처 메모']];
+  const rows = [['구분', '거래처명', '담당자', '이메일', '연락처/메모', '관리 품목', '거래처 메모']];
   (state.contacts || []).forEach(c => {
     const type = c.type === 'overseas' ? '해외' : '국내';
     let persons = c.persons || [];
-    if ((!persons || persons.length === 0) && c.contact) persons = [{ name: c.contact, note: '' }];
+    if ((!persons || persons.length === 0) && c.contact) persons = [{ name: c.contact, email: '', note: '' }];
     const names = persons.map(p => p.name || '').join('\n');
+    const emails = persons.map(p => p.email || '').join('\n');
     const notes = persons.map(p => p.note || '').join('\n');
     const items = (c.items || []).map(i => typeof i === 'string' ? i : `${i.name || ''}${i.unitPrice ? ` (${fmtMoney(i.unitPrice, i.currency||'KRW')})` : ''}`).join('\n');
-    rows.push([type, c.name || '', names, notes, items, c.memo || '']);
+    rows.push([type, c.name || '', names, emails, notes, items, c.memo || '']);
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 18 }, { wch: 24 }, { wch: 30 }, { wch: 32 }];
+  ws['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 18 }, { wch: 28 }, { wch: 24 }, { wch: 30 }, { wch: 32 }];
   // 줄바꿈 있는 셀 wrap 처리
   Object.keys(ws).forEach(k => {
     if (k[0] === '!') return;
@@ -5853,7 +5878,7 @@ function renderVendorMgr() {
     vendors = vendors.filter(v => {
       const name = (v.name || '').toLowerCase();
       const memo = (v.memo || '').toLowerCase();
-      const persons = (v.persons || []).map(p => `${p.name || ''} ${p.role || ''} ${p.phone || ''}`).join(' ').toLowerCase();
+      const persons = (v.persons || []).map(p => `${p.name || ''} ${p.role || ''} ${p.phone || ''} ${p.email || ''} ${p.note || ''}`).join(' ').toLowerCase();
       const items = (v.items || []).map(i => typeof i === 'string' ? i : (i.name || '')).join(' ').toLowerCase();
       return name.includes(q) || memo.includes(q) || persons.includes(q) || items.includes(q);
     });
@@ -6242,7 +6267,7 @@ function getFilteredPurchaseOrders(includeClosed = false) {
       const vendor = getVendorName(po.vendorId).toLowerCase();
       const items = (po.items || []).map(i => i.name || '').join(' ').toLowerCase();
       const accessories = (po.accessories || []).map(a => `${a.name || ''} ${a.note || ''}`).join(' ').toLowerCase();
-      const shipping = `${po.shipBooking?.reference || ''}`.toLowerCase();
+      const shipping = `${po.shipBooking?.method || ''} ${po.shipBooking?.reference || ''}`.toLowerCase();
       return `${vendor} ${items} ${accessories} ${shipping} ${poPaymentLabel(po).toLowerCase()} ${(po.note || '').toLowerCase()}`.includes(q);
     });
   }
@@ -6354,7 +6379,8 @@ function renderPOTimeline() {
       const endShort = effectiveEnd ? effectiveEnd.slice(5).replace('-', '/') : '종료 미정';
       const leadTime = Number.isFinite(parseInt(po.leadTimeDays)) ? parseInt(po.leadTimeDays) : (poDayNumber(po.deliveryDate) - poDayNumber(po.date));
       const reminderMeta = po.deliveryReminder?.enabled ? ` · ⏰D-1 ${po.deliveryReminder.time || '09:00'}` : '';
-      const payment = `${poPaymentLabel(po)} ${poIsPaymentComplete(po) ? '✓' : '○'} · 🚢${po.shipBooking?.booked ? '✓' : '미정'}${reminderMeta}`;
+      const shippingMeta = po.shipBooking?.method ? `${po.shipBooking.method} · ` : '';
+      const payment = `${poPaymentLabel(po)} ${poIsPaymentComplete(po) ? '✓' : '○'} · 🚢${shippingMeta}${po.shipBooking?.booked ? '✓' : '미정'}${reminderMeta}`;
       const dateMeta = `${startShort}→${endShort} · LT ${Math.max(0, leadTime || 0)}일 · ${getVendorName(po.vendorId)} · ${payment}`;
       rows += `<div class="po-timeline-row" style="--po-days:${days};">
         <div class="po-timeline-label" style="grid-column:1;grid-row:1;" onclick="editPO('${escapeHtml(po.id)}')">
@@ -6486,9 +6512,10 @@ function poItemRowHtml(po, today) {
   const depositTag = paymentType === 'full' ? '' : (depositPaid
     ? `<span class="po-payment-tag paid">선금 ${dr ? `${dr}% ` : ''}✓</span>`
     : `<span class="po-payment-tag unpaid">선금 ${dr ? `${dr}% ` : ''}⏳</span>`);
+  const shippingMethod = po.shipBooking?.method || '미정';
   const shipTag = po.shipBooking?.booked
-    ? `<span class="po-ship-tag booked">🚢 부킹 ✓${po.shipBooking.shipDate ? ` · ${escapeHtml(po.shipBooking.shipDate)}` : ''}</span>`
-    : `<span class="po-ship-tag pending">🚢 미부킹</span>`;
+    ? `<span class="po-ship-tag booked">🚢 ${escapeHtml(shippingMethod)} · 부킹 ✓${po.shipBooking.shipDate ? ` · ${escapeHtml(po.shipBooking.shipDate)}` : ''}</span>`
+    : `<span class="po-ship-tag pending">🚢 ${escapeHtml(shippingMethod)} · 미부킹</span>`;
   const reminderTag = po.deliveryReminder?.enabled
     ? `<span class="po-reminder-tag">⏰ 납기 D-1 ${escapeHtml(po.deliveryReminder.time || '09:00')}${po.deliveryReminder.eventId ? ' ✓' : ' · 연결대기'}</span>`
     : '';
@@ -6554,6 +6581,7 @@ function addPO() {
   document.getElementById('poFullDueDate').value = '';
   document.getElementById('poFullPaidDate').value = '';
   document.getElementById('poShipBooked').checked = false;
+  document.getElementById('poShippingMethod').value = '';
   document.getElementById('poShipBookingDate').value = '';
   document.getElementById('poShipBookingRef').value = '';
   document.getElementById('poShipDate').value = '';
@@ -6612,6 +6640,7 @@ function editPO(id) {
   document.getElementById('poFullDueDate').value = po.fullPayment?.dueDate || (paymentType === 'full' ? po.balance?.dueDate || '' : '');
   document.getElementById('poFullPaidDate').value = po.fullPayment?.paidDate || (paymentType === 'full' ? po.balance?.paidDate || '' : '');
   document.getElementById('poShipBooked').checked = !!po.shipBooking?.booked;
+  document.getElementById('poShippingMethod').value = po.shipBooking?.method || '';
   document.getElementById('poShipBookingDate').value = po.shipBooking?.bookingDate || '';
   document.getElementById('poShipBookingRef').value = po.shipBooking?.reference || '';
   document.getElementById('poShipDate').value = po.shipBooking?.shipDate || '';
@@ -7081,6 +7110,7 @@ async function savePO(options = {}) {
   const fullDueDate = document.getElementById('poFullDueDate').value;
   const fullPaidDate = document.getElementById('poFullPaidDate').value;
   const shipBooked = document.getElementById('poShipBooked').checked;
+  const shippingMethod = document.getElementById('poShippingMethod').value;
   const shipBookingDate = document.getElementById('poShipBookingDate').value;
   const shipBookingRef = document.getElementById('poShipBookingRef').value.trim();
   const shipDate = document.getElementById('poShipDate').value;
@@ -7136,7 +7166,7 @@ async function savePO(options = {}) {
     fullPayment: paymentType === 'full'
       ? { paid: fullPaid, ratio: 100, amount: fullAmount, dueDate: fullDueDate, paidDate: fullPaid ? (fullPaidDate || todayStr()) : fullPaidDate }
       : null,
-    shipBooking: { booked: shipBooked, bookingDate: shipBookingDate, reference: shipBookingRef, shipDate },
+    shipBooking: { method: shippingMethod, booked: shipBooked, bookingDate: shipBookingDate, reference: shipBookingRef, shipDate },
     deliveryReminder: {
       enabled: deliveryReminderEnabled,
       time: deliveryReminderTime,
