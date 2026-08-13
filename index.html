@@ -892,15 +892,27 @@
     color: #245b88; font-size: 13px; font-weight: bold;
   }
   .po-delivery-alert-fields {
-    display: grid; grid-template-columns: 130px minmax(260px, 1fr) auto;
-    gap: 8px; align-items: end; margin-top: 9px;
+    display: grid; grid-template-columns: 130px minmax(360px, 1fr);
+    gap: 10px; align-items: start; margin-top: 9px;
   }
   .po-delivery-alert-fields input { width: 100%; box-sizing: border-box; }
-  .po-fixed-email-toggle {
-    display: flex; align-items: center; gap: 7px; margin-top: 8px;
+  .po-reminder-email-area { min-width: 0; }
+  .po-reminder-email-head {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px;
+  }
+  .po-reminder-email-head small { margin-right: auto; }
+  .po-reminder-email-rows { display: grid; gap: 6px; }
+  .po-reminder-email-row {
+    display: grid; grid-template-columns: minmax(180px, 1fr) auto 30px;
+    gap: 6px; align-items: center;
+  }
+  .po-reminder-email-row .po-email-fixed {
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
     color: #245b88; font-size: 12px; font-weight: 600; cursor: pointer;
   }
-  .po-fixed-email-toggle input { width: auto; margin: 0; }
+  .po-reminder-email-row .po-email-fixed input { width: auto; margin: 0; }
+  .po-reminder-email-help { display:block; margin-top:5px; color:#70808d; font-size:11px; }
+  .po-reminder-email-remove { width:30px; min-width:30px; padding:5px 0 !important; }
   .po-delivery-alert-status { display:block; margin-top:7px; color:#70808d; font-size:11px; line-height:1.55; }
   .po-delivery-alert-status.ok { color:#227346; font-weight:bold; }
   .po-delivery-alert-status.warn { color:#b26a00; }
@@ -908,6 +920,7 @@
     .po-form-grid { grid-template-columns: 1fr; }
     .po-delivery-alert-box { grid-column: span 1; }
     .po-delivery-alert-fields { grid-template-columns: 1fr; }
+    .po-reminder-email-row { grid-template-columns: minmax(150px, 1fr) auto 30px; }
   }
   .po-items-table {
     width: 100%; border-collapse: collapse; margin-top: 6px;
@@ -2410,13 +2423,16 @@
         </label>
         <div class="po-delivery-alert-fields" id="poDeliveryReminderFields">
           <span class="po-payment-field"><small>알림 시간</small><input type="time" id="poDeliveryReminderTime" value="09:00" /></span>
-          <span class="po-payment-field"><small>알림 받을 이메일 · 여러 명은 쉼표로 구분</small><input type="text" id="poDeliveryReminderEmails" placeholder="name@company.com, staff@company.com" oninput="updatePODeliveryReminderStatus()" /></span>
-          <button type="button" class="ghost small" onclick="fillPOVendorReminderEmails()">📇 거래처 이메일 불러오기</button>
+          <div class="po-reminder-email-area">
+            <div class="po-reminder-email-head">
+              <small>알림 받을 이메일</small>
+              <button type="button" class="ghost small" onclick="fillPOVendorReminderEmails()">📇 거래처 이메일 불러오기</button>
+              <button type="button" class="ghost small" onclick="addPOReminderEmailRow()">+ 메일 추가</button>
+            </div>
+            <div class="po-reminder-email-rows" id="poDeliveryReminderEmailRows"></div>
+            <small class="po-reminder-email-help">고정 체크한 이메일만 다음 새 발주에도 자동 입력됩니다. 비고정 이메일은 이번 발주에만 사용됩니다.</small>
+          </div>
         </div>
-        <label class="po-fixed-email-toggle">
-          <input type="checkbox" id="poReminderEmailsFixed" onchange="updatePODeliveryReminderStatus()" />
-          📌 이 이메일을 기본 수신자로 고정 (새 발주에 자동 입력)
-        </label>
         <small class="po-delivery-alert-status" id="poDeliveryReminderStatus">저장하면 납기 전날 알림 일정이 생성됩니다. 받는 사람은 캘린더 초대 메일을 받고, 일정 수락 후 알림을 받을 수 있습니다.</small>
       </div>
     </div>
@@ -3602,9 +3618,15 @@ function fillPOVendorReminderEmails() {
   if (!vendorId) return alert('먼저 거래처를 선택하세요.');
   const emails = getPOVendorEmails(vendorId);
   if (emails.length === 0) return alert('거래처 기록에서 이메일을 찾지 못했습니다.\n이메일 칸에 직접 입력해 주세요.');
-  const input = document.getElementById('poDeliveryReminderEmails');
-  const merged = [...new Set([...parsePOReminderEmails(input?.value), ...emails])];
-  if (input) input.value = merged.join(', ');
+  const existing = new Set(getPOReminderEmailEntries().map(entry => entry.email.toLowerCase()).filter(Boolean));
+  emails.forEach(email => {
+    if (existing.has(email)) return;
+    const emptyInput = [...document.querySelectorAll('#poDeliveryReminderEmailRows .po-reminder-email-input')]
+      .find(input => !String(input.value || '').trim());
+    if (emptyInput) emptyInput.value = email;
+    else addPOReminderEmailRow(email, false, false);
+    existing.add(email);
+  });
   updatePODeliveryReminderStatus();
 }
 
@@ -3612,11 +3634,52 @@ function getPOFixedReminderEmails() {
   return parsePOReminderEmails((state.poDefaultReminderRecipients || []).join(','));
 }
 
-function setPOFixedReminderBaseline(emails, fixed) {
-  const emailInput = document.getElementById('poDeliveryReminderEmails');
-  const fixedInput = document.getElementById('poReminderEmailsFixed');
-  if (emailInput) emailInput.dataset.initialFixedEmails = parsePOReminderEmails(emails).join(',');
-  if (fixedInput) fixedInput.dataset.initialChecked = fixed ? 'true' : 'false';
+function addPOReminderEmailRow(email = '', fixed = false, focus = true) {
+  const rows = document.getElementById('poDeliveryReminderEmailRows');
+  if (!rows) return;
+  const normalized = String(email || '').trim().toLowerCase();
+  const row = document.createElement('div');
+  row.className = 'po-reminder-email-row';
+  row.innerHTML = `
+    <input type="email" class="po-reminder-email-input" value="${escapeHtml(normalized)}" placeholder="name@company.com" aria-label="알림 받을 이메일" oninput="updatePODeliveryReminderStatus()" />
+    <label class="po-email-fixed" title="체크하면 다음 새 발주에도 자동 입력됩니다">
+      <input type="checkbox" class="po-reminder-email-fixed" ${fixed ? 'checked' : ''} onchange="updatePODeliveryReminderStatus()" /> 고정
+    </label>
+    <button type="button" class="ghost small po-reminder-email-remove" title="이메일 삭제" aria-label="이메일 삭제" onclick="removePOReminderEmailRow(this)">×</button>`;
+  rows.appendChild(row);
+  if (focus) row.querySelector('.po-reminder-email-input')?.focus();
+  updatePODeliveryReminderStatus();
+}
+
+function removePOReminderEmailRow(button) {
+  button?.closest('.po-reminder-email-row')?.remove();
+  const rows = document.getElementById('poDeliveryReminderEmailRows');
+  if (rows && rows.children.length === 0) addPOReminderEmailRow('', false, false);
+  updatePODeliveryReminderStatus();
+}
+
+function getPOReminderEmailEntries() {
+  return [...document.querySelectorAll('#poDeliveryReminderEmailRows .po-reminder-email-row')].map(row => ({
+    email: String(row.querySelector('.po-reminder-email-input')?.value || '').trim().toLowerCase(),
+    fixed: !!row.querySelector('.po-reminder-email-fixed')?.checked
+  }));
+}
+
+function renderPOReminderEmailRows(recipients = [], fixedRecipients = []) {
+  const rows = document.getElementById('poDeliveryReminderEmailRows');
+  if (!rows) return;
+  rows.innerHTML = '';
+  const fixedEmails = getPOFixedReminderEmails();
+  const fixedSet = new Set(parsePOReminderEmails(fixedRecipients.join(',')));
+  const combined = [...new Set([
+    ...parsePOReminderEmails(recipients.join(',')),
+    ...fixedEmails
+  ])];
+  if (combined.length === 0) {
+    addPOReminderEmailRow('', false, false);
+    return;
+  }
+  combined.forEach(email => addPOReminderEmailRow(email, fixedSet.has(email), false));
 }
 
 function onPODeliveryReminderToggle() {
@@ -3626,8 +3689,6 @@ function onPODeliveryReminderToggle() {
     fields.style.opacity = enabled ? '1' : '.45';
     fields.querySelectorAll('input,button').forEach(el => { el.disabled = !enabled; });
   }
-  const fixed = document.getElementById('poReminderEmailsFixed');
-  if (fixed) fixed.disabled = !enabled;
   updatePODeliveryReminderStatus();
 }
 
@@ -3635,17 +3696,19 @@ function updatePODeliveryReminderStatus(savedReminder) {
   const status = document.getElementById('poDeliveryReminderStatus');
   if (!status) return;
   const enabled = !!document.getElementById('poDeliveryReminderEnabled')?.checked;
-  const emails = parsePOReminderEmails(document.getElementById('poDeliveryReminderEmails')?.value);
-  const fixed = !!document.getElementById('poReminderEmailsFixed')?.checked;
-  const fixedLabel = fixed ? ' · 기본 수신자 고정' : '';
+  const entries = getPOReminderEmailEntries();
+  const emails = [...new Set(entries.flatMap(entry => parsePOReminderEmails(entry.email)))];
+  const fixedEmails = [...new Set(entries.filter(entry => entry.fixed).flatMap(entry => parsePOReminderEmails(entry.email)))];
+  const invalidEmails = entries.filter(entry => entry.email && parsePOReminderEmails(entry.email).length === 0);
+  const fixedLabel = fixedEmails.length ? ` · 고정 ${fixedEmails.length}명` : '';
   status.className = 'po-delivery-alert-status';
   if (!enabled) {
     status.textContent = '알림을 사용하지 않습니다. 기존 캘린더 일정이 있으면 저장할 때 삭제됩니다.';
     return;
   }
-  if (fixed && emails.length === 0) {
+  if (invalidEmails.length > 0) {
     status.classList.add('warn');
-    status.textContent = '기본 수신자로 고정할 이메일을 1개 이상 입력하세요.';
+    status.textContent = '이메일 형식을 확인하세요.';
     return;
   }
   if (savedReminder?.eventId) {
@@ -6627,9 +6690,7 @@ function addPO() {
   document.getElementById('poDeliveryReminderEnabled').checked = true;
   document.getElementById('poDeliveryReminderTime').value = '09:00';
   const fixedReminderEmails = getPOFixedReminderEmails();
-  document.getElementById('poDeliveryReminderEmails').value = fixedReminderEmails.join(', ');
-  document.getElementById('poReminderEmailsFixed').checked = fixedReminderEmails.length > 0;
-  setPOFixedReminderBaseline(fixedReminderEmails, fixedReminderEmails.length > 0);
+  renderPOReminderEmailRows(fixedReminderEmails, fixedReminderEmails);
   document.getElementById('poDeleteBtn').style.display = 'none';
   document.getElementById('poCloseBtn').style.display = 'none';
   _poItemsDraft = [{ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 }];
@@ -6688,13 +6749,9 @@ function editPO(id) {
   const deliveryReminder = po.deliveryReminder || {};
   const fixedReminderEmails = getPOFixedReminderEmails();
   const savedReminderEmails = parsePOReminderEmails((deliveryReminder.recipients || []).join(','));
-  const reminderEmailsToShow = savedReminderEmails.length > 0 ? savedReminderEmails : fixedReminderEmails;
-  const usesFixedReminderEmails = fixedReminderEmails.length > 0 && reminderEmailsToShow.join(',') === fixedReminderEmails.join(',');
   document.getElementById('poDeliveryReminderEnabled').checked = !!deliveryReminder.enabled;
   document.getElementById('poDeliveryReminderTime').value = deliveryReminder.time || '09:00';
-  document.getElementById('poDeliveryReminderEmails').value = reminderEmailsToShow.join(', ');
-  document.getElementById('poReminderEmailsFixed').checked = usesFixedReminderEmails;
-  setPOFixedReminderBaseline(reminderEmailsToShow, usesFixedReminderEmails);
+  renderPOReminderEmailRows(savedReminderEmails, fixedReminderEmails);
   document.getElementById('poDeleteBtn').style.display = '';
   document.getElementById('poCloseBtn').style.display = po.closed ? 'none' : '';
   // 저장된 환율 복원
@@ -7159,14 +7216,15 @@ async function savePO(options = {}) {
   const color = document.getElementById('poColor').value || '#3b82f6';
   const deliveryReminderEnabled = document.getElementById('poDeliveryReminderEnabled').checked;
   const deliveryReminderTime = document.getElementById('poDeliveryReminderTime').value || '09:00';
-  const deliveryReminderRawEmails = document.getElementById('poDeliveryReminderEmails').value;
-  const deliveryReminderRecipients = parsePOReminderEmails(deliveryReminderRawEmails);
-  const fixedReminderInput = document.getElementById('poReminderEmailsFixed');
-  const reminderEmailsFixed = !!fixedReminderInput.checked;
-  const fixedReminderWasChecked = fixedReminderInput.dataset.initialChecked === 'true';
-  const fixedReminderEmailsChanged = deliveryReminderRecipients.join(',') !== (document.getElementById('poDeliveryReminderEmails').dataset.initialFixedEmails || '');
-  const invalidReminderEmails = String(deliveryReminderRawEmails || '').split(/[\s,;]+/).map(v => v.trim()).filter(Boolean)
-    .filter(v => !deliveryReminderRecipients.includes(v.toLowerCase()));
+  const deliveryReminderEmailEntries = getPOReminderEmailEntries();
+  const invalidReminderEmails = deliveryReminderEmailEntries
+    .filter(entry => entry.email && parsePOReminderEmails(entry.email).length !== 1)
+    .map(entry => entry.email);
+  const emptyFixedReminderEmail = deliveryReminderEmailEntries.some(entry => entry.fixed && !entry.email);
+  const deliveryReminderRecipients = [...new Set(deliveryReminderEmailEntries.flatMap(entry => parsePOReminderEmails(entry.email)))];
+  const fixedReminderRecipients = [...new Set(deliveryReminderEmailEntries
+    .filter(entry => entry.fixed)
+    .flatMap(entry => parsePOReminderEmails(entry.email)))];
 
   if (paymentType !== 'full' && Math.abs((depositRatio + balanceRatio) - 100) > 0.01) {
     return alert('선금과 잔금 비율의 합계는 100%여야 합니다.');
@@ -7174,8 +7232,8 @@ async function savePO(options = {}) {
   if (deliveryReminderEnabled && invalidReminderEmails.length > 0) {
     return alert(`이메일 형식을 확인하세요:\n${invalidReminderEmails.join('\n')}`);
   }
-  if (deliveryReminderEnabled && reminderEmailsFixed && deliveryReminderRecipients.length === 0) {
-    return alert('기본 수신자로 고정할 이메일을 1개 이상 입력하세요.');
+  if (deliveryReminderEnabled && emptyFixedReminderEmail) {
+    return alert('고정할 이메일 주소를 입력하거나 빈 메일 행을 삭제하세요.');
   }
   if (options.closeAsReceived && !receivedDate) return alert('입고완료일을 선택하세요.');
 
@@ -7227,11 +7285,7 @@ async function savePO(options = {}) {
   };
 
   if (!state.purchaseOrders) state.purchaseOrders = [];
-  if (reminderEmailsFixed && (!id || !fixedReminderWasChecked || fixedReminderEmailsChanged || getPOFixedReminderEmails().length === 0)) {
-    state.poDefaultReminderRecipients = deliveryReminderRecipients.slice();
-  } else if (!reminderEmailsFixed && fixedReminderWasChecked) {
-    state.poDefaultReminderRecipients = [];
-  }
+  state.poDefaultReminderRecipients = fixedReminderRecipients;
   if (id) {
     const idx = state.purchaseOrders.findIndex(p => p.id === id);
     if (idx >= 0) state.purchaseOrders[idx] = poData;
