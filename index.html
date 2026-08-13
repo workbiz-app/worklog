@@ -427,6 +427,8 @@
     align-items: center; justify-content: center; padding: 20px;
   }
   .modal.show { display: flex; }
+  /* 거래처 관리 화면 위에서도 거래처 추가·수정 창이 보이도록 유지 */
+  #contactModal { z-index: 10001; }
   .modal-content {
     background: white; border-radius: 10px; padding: 24px;
     max-width: 800px; width: 100%; max-height: 90vh;
@@ -841,6 +843,18 @@
   .po-form-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
+  .po-leadtime-wrap { display:flex; align-items:center; gap:7px; }
+  .po-leadtime-wrap input { flex:1; min-width:0; }
+  .po-leadtime-unit { color:#2c3e50; font-size:13px; font-weight:bold; }
+  .po-auto-date-output {
+    min-height:38px; display:flex; align-items:center; padding:8px 11px;
+    border:1px dashed #cbd5df; border-radius:5px; box-sizing:border-box;
+    background:#f7f9fb; color:#95a5a6; font-size:13px;
+  }
+  .po-auto-date-output.ready {
+    border-style:solid; border-color:#9fd4b5; background:#edf9f3;
+    color:#227346; font-weight:bold;
+  }
   @media (max-width: 600px) {
     .po-form-grid { grid-template-columns: 1fr; }
   }
@@ -854,9 +868,9 @@
   .po-items-table th {
     background: #f8f9fa; color: #7f8c8d; font-size: 12px; font-weight: bold;
   }
-  .po-items-table td input {
+  .po-items-table td input, .po-items-table td select {
     width: 100%; padding: 5px 8px; font-size: 13px;
-    border: 1px solid #dfe4ea; border-radius: 4px;
+    border: 1px solid #dfe4ea; border-radius: 4px; background: white;
   }
   .po-items-table .po-item-total {
     font-weight: bold; color: #2c3e50; white-space: nowrap;
@@ -880,6 +894,40 @@
   .po-payment-field { padding: 0; border: 0; min-width: 0; }
   .po-payment-field small { display: block; margin: 0 0 3px 2px; color: #89949d; font-size: 10px; }
   .po-payment-field input { width: 100%; box-sizing: border-box; }
+  .po-payment-plan {
+    margin-top: 14px; border: 1px solid #dfe4ea; border-radius: 8px;
+    background: #fff; overflow: hidden;
+  }
+  .po-payment-plan-head {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: #f6f8fa; border-bottom: 1px solid #e8ecef;
+  }
+  .po-payment-plan-head label { font-size: 12px; font-weight: bold; color: #2c3e50; }
+  .po-payment-plan-head select {
+    padding: 6px 9px; border: 1px solid #d3dbe2; border-radius: 5px;
+    background: white; font-size: 12px;
+  }
+  .po-payment-plan-head .po-payment-summary { margin-left: auto; color: #66737e; font-size: 11px; }
+  .po-payment-plan-body { padding: 10px; }
+  .po-ratio-field { max-width: 92px; }
+  .po-ratio-wrap { position: relative; }
+  .po-ratio-wrap input { padding-right: 24px; }
+  .po-ratio-wrap::after { content: '%'; position: absolute; right: 8px; top: 7px; color: #7f8c8d; font-size: 11px; }
+  .po-full-payment-box { background: #f7fbff; border-color: #cfe2f3; }
+  .po-receipt-box {
+    grid-column: span 2; border: 1px solid #cfe5d8; background: #f3fbf6;
+    border-radius: 7px; padding: 10px;
+  }
+  .po-receipt-box.completed { background: #e8f7ee; border-color: #8fc6a5; }
+  .po-receipt-fields { display: grid; grid-template-columns: 150px 1fr; gap: 8px; margin-top: 7px; align-items: end; }
+  .po-received-tag {
+    display:inline-flex;align-items:center;padding:1px 7px;border-radius:8px;
+    font-size:11px;background:#dff3e7;color:#227346;font-weight:bold;
+  }
+  .po-item-kind-tag {
+    display:inline-block;padding:1px 6px;border-radius:7px;font-size:10px;
+    background:#eef1f4;color:#66737e;margin-right:4px;
+  }
 
   /* 발주 일정 대시보드 · 월간 제작 타임라인 */
   .po-view-toggle {
@@ -921,9 +969,9 @@
     max-height: 56vh; background: white;
   }
   .po-timeline-empty { padding: 52px 20px; text-align: center; color: #95a5a6; line-height: 1.7; }
-  .po-timeline-grid { min-width: calc(280px + var(--po-days) * 34px); }
+  .po-timeline-grid { min-width: calc(250px + var(--po-days) * 28px); }
   .po-timeline-head, .po-timeline-row {
-    display: grid; grid-template-columns: 280px repeat(var(--po-days), 34px);
+    display: grid; grid-template-columns: 250px repeat(var(--po-days), 28px);
     position: relative;
   }
   .po-timeline-head { position: sticky; top: 0; z-index: 8; background: #f5f7f9; border-bottom: 1px solid #dfe4ea; }
@@ -962,6 +1010,7 @@
     grid-row: 1;
   }
   .po-range-bar.completed { opacity: .62; }
+  .po-range-bar.closed { opacity: .46; background: #2e8b57 !important; }
   .po-range-bar.cancelled { opacity: .35; text-decoration: line-through; }
   .po-range-bar.undated { border: 2px dashed rgba(255,255,255,.9); }
   .po-range-bar.accessory { height: 19px; padding: 3px 7px; background: #687786; box-shadow: none; }
@@ -1010,6 +1059,9 @@
     .po-accessory-columns { display: none; }
     .po-accessory-row > *:last-child { grid-column: span 2; justify-self: end; }
     .po-shipping-fields { grid-template-columns: 1fr; }
+    .po-receipt-fields { grid-template-columns: 1fr; }
+    .po-payment-detail { flex-wrap: wrap; }
+    .po-payment-field { min-width: 120px; }
   }
 
   /* 미팅 — 달력 뷰 */
@@ -2221,7 +2273,7 @@
         <div class="po-calendar-legend">
           <span><i style="background:#3b82f6;"></i>제품 제작</span>
           <span><i style="background:#687786;"></i>부속품</span>
-          <span><i style="background:#2e8b57;"></i>부속품 완료</span>
+          <span><i style="background:#2e8b57;"></i>부속품 완료 · 입고완료</span>
         </div>
       </div>
       <div id="poTimeline" class="po-timeline-wrap"></div>
@@ -2241,11 +2293,20 @@
     <div class="po-form-grid">
       <div class="form-row">
         <label>발주일 *</label>
-        <input type="date" id="poDate" onchange="onPOCurrencyOrDateChange()" />
+        <input type="date" id="poDate" onchange="onPOCurrencyOrDateChange(); onPOLeadTimeChange()" />
       </div>
       <div class="form-row">
-        <label>납기일 *</label>
-        <input type="date" id="poDeliveryDate" />
+        <label>납기까지 걸리는 기간 *</label>
+        <div class="po-leadtime-wrap">
+          <input type="number" id="poLeadTimeDays" min="0" step="1" inputmode="numeric" placeholder="숫자만 입력 (예: 30)" oninput="onPOLeadTimeChange()" onchange="onPOLeadTimeChange()" />
+          <span class="po-leadtime-unit">일</span>
+        </div>
+        <small id="poLeadTimeHelp" style="color:#95a5a6;font-size:11px;">발주일로부터 며칠 걸리는지만 입력하세요</small>
+      </div>
+      <div class="form-row">
+        <label>자동 납기일</label>
+        <input type="hidden" id="poDeliveryDate" />
+        <div class="po-auto-date-output" id="poDeliveryDateDisplay">기간을 입력하면 납기일이 자동으로 표시됩니다</div>
       </div>
       <div class="form-row">
         <label>거래처 *</label>
@@ -2256,7 +2317,7 @@
         <label>상태</label>
         <select id="poStatus">
           <option value="ongoing">진행 중</option>
-          <option value="completed">완료</option>
+          <option value="completed">제작 완료 · 입고 전</option>
           <option value="cancelled">취소</option>
         </select>
       </div>
@@ -2289,12 +2350,13 @@
       <label>품목 *</label>
       <table class="po-items-table">
         <thead>
-          <tr><th style="width:50%;">품목명</th><th>수량</th><th>단가</th><th>합계</th><th></th></tr>
+          <tr><th style="width:105px;">구분</th><th style="width:37%;">품목명</th><th>수량</th><th>단가</th><th>합계</th><th></th></tr>
         </thead>
         <tbody id="poItemsBody"></tbody>
       </table>
       <div style="display:flex;gap:6px;margin-top:6px;">
         <button class="ghost small" onclick="addPOItemRow()">+ 품목 추가</button>
+        <button class="ghost small" onclick="addPOMoldFeeRow()">+ 몰드비</button>
         <button class="ghost small" onclick="addPOItemsFromVendor()">📇 거래처 품목 불러오기</button>
         <span style="margin-left:auto;font-weight:bold;font-size:15px;color:#2c3e50;">
           총액: <span id="poTotalDisplay">0</span>
@@ -2303,29 +2365,59 @@
       </div>
     </div>
 
+    <div class="po-payment-plan">
+      <div class="po-payment-plan-head">
+        <label for="poPaymentType">💳 결제 방식</label>
+        <select id="poPaymentType" onchange="onPOPaymentTypeChange()">
+          <option value="split">선금 + 잔금</option>
+          <option value="full">일시납 100%</option>
+          <option value="custom">직접 분할</option>
+        </select>
+        <span class="po-payment-summary" id="poPaymentSummary"></span>
+      </div>
+      <div class="po-payment-plan-body">
+        <div class="po-form-grid" id="poSplitPaymentFields">
+          <div class="form-row po-payment-box">
+            <label style="display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="poDepositPaid" onchange="onPODepositPaidToggle()" />
+              선금 입금 완료
+            </label>
+            <div class="po-payment-detail">
+              <span class="po-payment-field po-ratio-field"><small>선금 비율</small><span class="po-ratio-wrap"><input type="number" id="poDepositRatio" min="0" max="100" step="0.1" value="30" oninput="onPOPaymentRatioChange('deposit')" /></span></span>
+              <span class="po-payment-field"><small>선금 금액</small><input type="number" id="poDepositAmount" placeholder="0" step="0.01" oninput="onPOPaymentAmountChange('deposit')" /></span>
+              <span class="po-payment-field"><small>입금일</small><input type="date" id="poDepositDate" title="선금 입금일" /></span>
+            </div>
+          </div>
+          <div class="form-row po-payment-box">
+            <label style="display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="poBalancePaid" onchange="onPOBalancePaidToggle()" />
+              잔금 입금 완료
+            </label>
+            <div class="po-payment-detail">
+              <span class="po-payment-field po-ratio-field"><small>잔금 비율</small><span class="po-ratio-wrap"><input type="number" id="poBalanceRatio" min="0" max="100" step="0.1" value="70" oninput="onPOPaymentRatioChange('balance')" /></span></span>
+              <span class="po-payment-field"><small>잔금 금액</small><input type="number" id="poBalanceAmount" placeholder="자동 계산" step="0.01" oninput="onPOPaymentAmountChange('balance')" /></span>
+              <span class="po-payment-field"><small>입금 예정일</small><input type="date" id="poBalanceDueDate" title="잔금 입금 예정일" /></span>
+              <span class="po-payment-field"><small>실제 입금일</small><input type="date" id="poBalancePaidDate" title="잔금 입금일" /></span>
+            </div>
+            <small style="font-size:11px;color:#95a5a6;">잔금 예정일 3일 전부터 알림</small>
+          </div>
+        </div>
+        <div class="form-row po-payment-box po-full-payment-box" id="poFullPaymentFields" style="display:none;">
+          <label style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="poFullPaid" onchange="onPOFullPaidToggle()" />
+            일시납 입금 완료
+          </label>
+          <div class="po-payment-detail">
+            <span class="po-payment-field po-ratio-field"><small>비율</small><span class="po-ratio-wrap"><input type="number" id="poFullRatio" value="100" readonly /></span></span>
+            <span class="po-payment-field"><small>일시납 금액</small><input type="number" id="poFullAmount" placeholder="총액 자동 계산" step="0.01" oninput="updatePOPaymentSummary()" /></span>
+            <span class="po-payment-field"><small>입금 예정일</small><input type="date" id="poFullDueDate" /></span>
+            <span class="po-payment-field"><small>실제 입금일</small><input type="date" id="poFullPaidDate" /></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="po-form-grid" style="margin-top:14px;">
-      <div class="form-row po-payment-box">
-        <label style="display:flex;align-items:center;gap:6px;">
-          <input type="checkbox" id="poDepositPaid" onchange="onPODepositPaidToggle()" />
-          선금 입금 완료
-        </label>
-        <div class="po-payment-detail">
-          <span class="po-payment-field"><small>선금 금액</small><input type="number" id="poDepositAmount" placeholder="0" step="0.01" /></span>
-          <span class="po-payment-field"><small>입금일</small><input type="date" id="poDepositDate" title="선금 입금일" /></span>
-        </div>
-      </div>
-      <div class="form-row po-payment-box">
-        <label style="display:flex;align-items:center;gap:6px;">
-          <input type="checkbox" id="poBalancePaid" onchange="onPOBalancePaidToggle()" />
-          잔금 입금 완료
-        </label>
-        <div class="po-payment-detail">
-          <span class="po-payment-field"><small>잔금 금액</small><input type="number" id="poBalanceAmount" placeholder="비우면 자동" step="0.01" /></span>
-          <span class="po-payment-field"><small>입금 예정일</small><input type="date" id="poBalanceDueDate" title="잔금 입금 예정일" /></span>
-          <span class="po-payment-field"><small>실제 입금일</small><input type="date" id="poBalancePaidDate" title="잔금 입금일" /></span>
-        </div>
-        <small style="font-size:11px;color:#95a5a6;">잔금 예정일 3일 전부터 알림</small>
-      </div>
       <div class="form-row po-shipping-box">
         <label style="display:flex;align-items:center;gap:6px;">
           <input type="checkbox" id="poShipBooked" onchange="onPOShipBookedToggle()" />
@@ -2336,6 +2428,14 @@
           <span class="po-payment-field"><small>선사 · 선명 · 부킹번호</small><input type="text" id="poShipBookingRef" placeholder="예: ONE · ABC123" /></span>
           <span class="po-payment-field"><small>출항 예정일</small><input type="date" id="poShipDate" title="출항 예정일" /></span>
         </div>
+      </div>
+      <div class="form-row po-receipt-box" id="poReceiptBox">
+        <label>📥 입고 · 종료 상태</label>
+        <div class="po-receipt-fields">
+          <span class="po-payment-field"><small>입고완료일</small><input type="date" id="poReceivedDate" /></span>
+          <span style="font-size:11px;color:#668075;line-height:1.5;">입고완료 후 아래 <b>입고완료·종료처리</b>를 누르면 발주 목록에서는 사라지고 캘린더에는 기록이 남습니다.</span>
+        </div>
+        <div id="poClosedInfo" style="display:none;margin-top:7px;color:#227346;font-size:12px;font-weight:bold;"></div>
       </div>
     </div>
 
@@ -2355,6 +2455,7 @@
 
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="danger small" id="poDeleteBtn" onclick="deletePOFromForm()" style="margin-right:auto;display:none;">🗑 삭제</button>
+      <button class="ghost" id="poCloseBtn" onclick="closePOAsReceived()" style="display:none;color:#227346;border-color:#8fc6a5;">📥 입고완료·종료처리</button>
       <button class="secondary" onclick="closePOForm()">취소</button>
       <button class="primary" onclick="savePO()">저장</button>
     </div>
@@ -5502,7 +5603,7 @@ function renderVendorMgr() {
     list.innerHTML = vendors.map(v => {
       const flag = v.type === 'overseas' ? '🌏' : '🇰🇷';
       const itemCount = (v.items || []).length;
-      const poCount = (state.purchaseOrders || []).filter(p => p.vendorId === v.id).length;
+      const poCount = (state.purchaseOrders || []).filter(p => p.vendorId === v.id && !p.closed).length;
       const meta = `${itemCount}개 품목 · 발주 ${poCount}건`;
       return `
         <div class="vml-item ${v.id === _vendorMgrSelected ? 'selected' : ''}" onclick="selectVendorMgr('${v.id}')">
@@ -5532,7 +5633,8 @@ function renderVendorDetailHtml(v) {
   const itemsObj = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
   const persons = v.persons || [];
   const flag = v.type === 'overseas' ? '🌏 해외' : '🇰🇷 국내';
-  const recentPOs = (state.purchaseOrders || []).filter(p => p.vendorId === v.id)
+  const activePOCount = (state.purchaseOrders || []).filter(p => p.vendorId === v.id && !p.closed).length;
+  const recentPOs = (state.purchaseOrders || []).filter(p => p.vendorId === v.id && !p.closed)
     .sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
 
   return `
@@ -5588,7 +5690,7 @@ function renderVendorDetailHtml(v) {
 
     <div class="vmd-section">
       <h3 style="display:flex;justify-content:space-between;align-items:center;">
-        📋 최근 발주 (${recentPOs.length}/${(state.purchaseOrders || []).filter(p=>p.vendorId===v.id).length}건)
+        📋 최근 발주 (${recentPOs.length}/${activePOCount}건)
         <button class="ghost small" onclick="closeVendorMgr(); openPOModal();">📦 발주일지 열기</button>
       </h3>
       ${recentPOs.length === 0 ? '<div style="color:#bdc3c7;font-size:12px;">발주 기록 없음</div>' : `
@@ -5596,9 +5698,8 @@ function renderVendorDetailHtml(v) {
           ${recentPOs.map(po => {
             const items = poItemsSummary(po);
             const cur = po.currency || 'KRW';
-            const balanceState = !po.balance ? '' :
-              po.balance.paid ? '<span style="color:#27ae60;">잔금 ✓</span>' :
-              `<span style="color:#e67e22;">잔금 ⏳${po.balance.dueDate ? ' '+po.balance.dueDate : ''}</span>`;
+            const paymentDone = poIsPaymentComplete(po);
+            const balanceState = `<span style="color:${paymentDone ? '#27ae60' : '#e67e22'};">${escapeHtml(poPaymentLabel(po))} ${paymentDone ? '✓' : '대기'}</span>`;
             return `
               <div class="vmd-recent-po-item" onclick="closeVendorMgr(); editPO('${po.id}');">
                 <span class="vmd-po-date">${po.date}</span>
@@ -5742,6 +5843,30 @@ function ensureFxRates() {
   }
 }
 
+function getPOPaymentType(po) {
+  if (!po) return 'split';
+  return po.paymentType === 'full' || po.fullPayment ? 'full' : (po.paymentType || 'split');
+}
+
+function poIsPaymentComplete(po) {
+  if (!po) return false;
+  if (getPOPaymentType(po) === 'full') return !!(po.fullPayment?.paid ?? po.balance?.paid);
+  const depositRequired = (parseFloat(po.deposit?.ratio) || parseFloat(po.deposit?.amount) || 0) > 0;
+  const balanceRequired = (parseFloat(po.balance?.ratio) || parseFloat(po.balance?.amount) || 0) > 0;
+  return (!depositRequired || !!po.deposit?.paid) && (!balanceRequired || !!po.balance?.paid);
+}
+
+function poPaymentDueDate(po) {
+  return getPOPaymentType(po) === 'full' ? (po.fullPayment?.dueDate || po.balance?.dueDate || '') : (po.balance?.dueDate || '');
+}
+
+function poPaymentLabel(po) {
+  if (getPOPaymentType(po) === 'full') return '일시납 100%';
+  const dr = Number.isFinite(parseFloat(po.deposit?.ratio)) ? parseFloat(po.deposit.ratio) : Math.round(((po.deposit?.amount || 0) / Math.max(po.total || 0, 1)) * 100);
+  const br = Number.isFinite(parseFloat(po.balance?.ratio)) ? parseFloat(po.balance.ratio) : Math.max(0, 100 - dr);
+  return `선금 ${dr || 0}% · 잔금 ${br || 0}%`;
+}
+
 // 잔금 임박/초과 체크 → 상단 배너 표시
 function checkPODueBanner() {
   const banner = document.getElementById('poDueBanner');
@@ -5751,10 +5876,10 @@ function checkPODueBanner() {
   const upcoming = [];
   const overdue = [];
   (state.purchaseOrders || []).forEach(po => {
-    if (po.status === 'cancelled') return;
-    if (!po.balance || po.balance.paid) return;
-    if (!po.balance.dueDate) return;
-    const dueMs = new Date(po.balance.dueDate).getTime();
+    if (po.status === 'cancelled' || po.closed || poIsPaymentComplete(po)) return;
+    const dueDate = poPaymentDueDate(po);
+    if (!dueDate) return;
+    const dueMs = new Date(dueDate).getTime();
     const diffDays = Math.round((dueMs - todayMs) / (24 * 3600 * 1000));
     if (diffDays < 0) overdue.push({ po, diffDays });
     else if (diffDays <= 3) upcoming.push({ po, diffDays });
@@ -5766,8 +5891,8 @@ function checkPODueBanner() {
   banner.style.display = '';
   banner.classList.toggle('overdue', overdue.length > 0);
   const parts = [];
-  if (overdue.length > 0) parts.push(`❗ 잔금 기한 초과 ${overdue.length}건`);
-  if (upcoming.length > 0) parts.push(`⏰ 3일 내 잔금 ${upcoming.length}건`);
+  if (overdue.length > 0) parts.push(`❗ 결제 기한 초과 ${overdue.length}건`);
+  if (upcoming.length > 0) parts.push(`⏰ 3일 내 결제 ${upcoming.length}건`);
   banner.innerHTML = parts.join(' · ') + ' <span style="font-weight:normal;font-size:12px;">(클릭하여 확인)</span>';
   banner.onclick = () => {
     state.poFilter = overdue.length > 0 ? 'overdue' : 'unpaid';
@@ -5822,17 +5947,18 @@ function poDayNumber(dateStr) {
   return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
 }
 
-function getFilteredPurchaseOrders() {
+function getFilteredPurchaseOrders(includeClosed = false) {
   const q = (document.getElementById('poSearch')?.value || '').trim().toLowerCase();
   const filter = state.poFilter || 'all';
   const today = todayStr();
   const todayDay = poDayNumber(today);
   let pos = (state.purchaseOrders || []).slice();
+  if (!includeClosed) pos = pos.filter(po => !po.closed);
 
   if (filter === 'unpaid') {
-    pos = pos.filter(po => po.status !== 'cancelled' && (!po.balance || !po.balance.paid));
+    pos = pos.filter(po => po.status !== 'cancelled' && !po.closed && !poIsPaymentComplete(po));
   } else if (filter === 'overdue') {
-    pos = pos.filter(po => po.status !== 'cancelled' && po.balance && !po.balance.paid && po.balance.dueDate && poDayNumber(po.balance.dueDate) < todayDay);
+    pos = pos.filter(po => po.status !== 'cancelled' && !po.closed && !poIsPaymentComplete(po) && poPaymentDueDate(po) && poDayNumber(poPaymentDueDate(po)) < todayDay);
   } else if (filter === 'booking') {
     pos = pos.filter(po => po.status === 'ongoing' && !(po.shipBooking && po.shipBooking.booked));
   } else if (filter === 'delivery') {
@@ -5853,7 +5979,7 @@ function getFilteredPurchaseOrders() {
       const items = (po.items || []).map(i => i.name || '').join(' ').toLowerCase();
       const accessories = (po.accessories || []).map(a => `${a.name || ''} ${a.note || ''}`).join(' ').toLowerCase();
       const shipping = `${po.shipBooking?.reference || ''}`.toLowerCase();
-      return `${vendor} ${items} ${accessories} ${shipping} ${(po.note || '').toLowerCase()}`.includes(q);
+      return `${vendor} ${items} ${accessories} ${shipping} ${poPaymentLabel(po).toLowerCase()} ${(po.note || '').toLowerCase()}`.includes(q);
     });
   }
   return pos;
@@ -5876,7 +6002,7 @@ function renderPOViews() {
 function renderPOSummary() {
   const el = document.getElementById('poSummary');
   if (!el) return;
-  const pos = getFilteredPurchaseOrders();
+  const pos = getFilteredPurchaseOrders(false);
   const todayDay = poDayNumber(todayStr());
   const ongoing = pos.filter(po => po.status === 'ongoing').length;
   const deliverySoon = pos.filter(po => {
@@ -5885,7 +6011,7 @@ function renderPOSummary() {
     return diff >= 0 && diff <= 7;
   }).length;
   const bookingMissing = pos.filter(po => po.status === 'ongoing' && !(po.shipBooking && po.shipBooking.booked)).length;
-  const unpaid = pos.filter(po => po.status !== 'cancelled' && (!po.balance || !po.balance.paid)).length;
+  const unpaid = pos.filter(po => po.status !== 'cancelled' && !poIsPaymentComplete(po)).length;
   el.innerHTML = `
     <div class="po-summary-card good">현재 제작 중<strong>${ongoing}건</strong></div>
     <div class="po-summary-card ${deliverySoon ? 'warn' : ''}">7일 내 납기<strong>${deliverySoon}건</strong></div>
@@ -5930,9 +6056,9 @@ function renderPOTimeline() {
   const label = document.getElementById('poCalendarMonthLabel');
   if (label) label.textContent = `${year}년 ${month}월`;
 
-  const pos = getFilteredPurchaseOrders().filter(po => {
+  const pos = getFilteredPurchaseOrders(true).filter(po => {
     const start = poDayNumber(po.date);
-    const end = poDayNumber(po.deliveryDate || po.date);
+    const end = poDayNumber((po.closed && po.receivedDate) || po.deliveryDate || po.date);
     return start != null && end != null && end >= monthStartDay && start <= monthEndDay;
   }).sort((a, b) => (a.date || '').localeCompare(b.date || '') || getVendorName(a.vendorId).localeCompare(getVendorName(b.vendorId), 'ko'));
 
@@ -5954,20 +6080,24 @@ function renderPOTimeline() {
   pos.forEach(po => {
     const items = (po.items && po.items.length) ? po.items : [{ id: `${po.id}_item`, name: '(품목 없음)', qty: 0 }];
     const color = /^#[0-9a-f]{6}$/i.test(po.color || '') ? po.color : '#3b82f6';
-    const statusClass = po.status === 'completed' ? 'completed' : po.status === 'cancelled' ? 'cancelled' : '';
+    const statusClass = po.closed ? 'closed' : po.status === 'completed' ? 'completed' : po.status === 'cancelled' ? 'cancelled' : '';
     items.forEach((item, itemIndex) => {
       const itemId = item.id || `${po.id}_item_${itemIndex}`;
+      const itemIcon = item.kind === 'mold' ? '🧰' : item.kind === 'other' ? '➕' : '📦';
+      const progressLabel = item.kind === 'mold' ? '몰드 진행' : item.kind === 'other' ? '별도 진행' : '제작 중';
       const startShort = po.date ? po.date.slice(5).replace('-', '/') : '?';
-      const endShort = po.deliveryDate ? po.deliveryDate.slice(5).replace('-', '/') : '납기 미정';
-      const payment = `선${po.deposit?.paid ? '✓' : '○'} 잔${po.balance?.paid ? '✓' : '○'} 🚢${po.shipBooking?.booked ? '✓' : '미정'}`;
-      const dateMeta = `${startShort}→${endShort} · ${getVendorName(po.vendorId)} · ${payment}`;
+      const effectiveEnd = (po.closed && po.receivedDate) || po.deliveryDate || '';
+      const endShort = effectiveEnd ? effectiveEnd.slice(5).replace('-', '/') : '종료 미정';
+      const leadTime = Number.isFinite(parseInt(po.leadTimeDays)) ? parseInt(po.leadTimeDays) : (poDayNumber(po.deliveryDate) - poDayNumber(po.date));
+      const payment = `${poPaymentLabel(po)} ${poIsPaymentComplete(po) ? '✓' : '○'} · 🚢${po.shipBooking?.booked ? '✓' : '미정'}`;
+      const dateMeta = `${startShort}→${endShort} · LT ${Math.max(0, leadTime || 0)}일 · ${getVendorName(po.vendorId)} · ${payment}`;
       rows += `<div class="po-timeline-row" style="--po-days:${days};">
         <div class="po-timeline-label" style="grid-column:1;grid-row:1;" onclick="editPO('${escapeHtml(po.id)}')">
-          <div class="ptl-title">📦 ${escapeHtml(item.name || '(품목 없음)')} ${item.qty ? `× ${escapeHtml(item.qty)}` : ''}</div>
+          <div class="ptl-title">${itemIcon} ${escapeHtml(item.name || '(품목 없음)')} ${item.qty ? `× ${escapeHtml(item.qty)}` : ''}</div>
           <div class="ptl-meta">${escapeHtml(dateMeta)}</div>
         </div>
         ${poTimelineDayCells(days, year, month, today)}
-        ${poTimelineBar(po.date, po.deliveryDate || po.date, monthStartDay, monthEndDay, color, po.deliveryDate ? `${item.name || ''} 제작 중` : `${item.name || ''} · 납기일 미정`, `${statusClass}${po.deliveryDate ? '' : ' undated'}`, `editPO('${escapeHtml(po.id)}')`)}
+        ${poTimelineBar(po.date, effectiveEnd || po.date, monthStartDay, monthEndDay, color, po.closed ? `${item.name || ''} · 입고완료` : po.deliveryDate ? `${item.name || ''} ${progressLabel}` : `${item.name || ''} · 종료일 미정`, `${statusClass}${effectiveEnd ? '' : ' undated'}`, `editPO('${escapeHtml(po.id)}')`)}
       </div>`;
 
       const accessories = (po.accessories || []).filter(acc => {
@@ -6004,8 +6134,9 @@ function getVendorName(vid) {
 
 function poItemsSummary(po) {
   if (!po.items || po.items.length === 0) return '(품목 없음)';
-  if (po.items.length === 1) return `${po.items[0].name} × ${po.items[0].qty || 0}`;
-  return `${po.items[0].name} 외 ${po.items.length - 1}건`;
+  const moldCount = po.items.filter(i => i.kind === 'mold').length;
+  if (po.items.length === 1) return `${po.items[0].kind === 'mold' ? '[몰드비] ' : ''}${po.items[0].name} × ${po.items[0].qty || 0}`;
+  return `${po.items[0].name} 외 ${po.items.length - 1}건${moldCount ? ` · 몰드비 ${moldCount}건` : ''}`;
 }
 
 function renderPOList() {
@@ -6037,7 +6168,7 @@ function renderPOList() {
   list.innerHTML = vendorIds.map(vid => {
     const arr = groups[vid];
     const vname = getVendorName(vid);
-    const unpaidCount = arr.filter(p => p.status !== 'cancelled' && (!p.balance || !p.balance.paid)).length;
+    const unpaidCount = arr.filter(p => p.status !== 'cancelled' && !poIsPaymentComplete(p)).length;
     const isCollapsed = !!collapsed[vid];
     const totalKRW = arr.reduce((s, p) => s + poToKRW(p), 0);
     const stats = `${arr.length}건 · 총 ${fmtMoney(totalKRW, 'KRW')}${unpaidCount > 0 ? ` · <span style="color:#e67e22;">미결 ${unpaidCount}</span>` : ''}`;
@@ -6061,22 +6192,35 @@ function poItemRowHtml(po, today) {
   const totalCur = fmtMoney(po.total || 0, cur);
   const totalKrw = cur === 'KRW' ? '' : `<span class="pir-amount-krw" title="${po.exchangeRate ? `발주일 환율 1${cur}=${po.exchangeRate.toFixed(4)}원` : '저장된 환율 없음 → 현재 환율로 추정'}">≈ ${fmtMoney(poToKRW(po), 'KRW')}${!po.exchangeRate ? ' *' : ''}</span>`;
   // 결제 상태
+  const paymentType = getPOPaymentType(po);
   const depositPaid = po.deposit && po.deposit.paid;
-  const balancePaid = po.balance && po.balance.paid;
+  const balancePaid = paymentType === 'full' ? !!(po.fullPayment?.paid ?? po.balance?.paid) : !!po.balance?.paid;
   let balanceTag = '';
-  if (po.balance) {
-    if (balancePaid) balanceTag = `<span class="po-payment-tag paid">잔금 ✓</span>`;
-    else if (po.balance.dueDate) {
-      const dueMs = poDayNumber(po.balance.dueDate);
+  const dueDate = poPaymentDueDate(po);
+  if (paymentType === 'full') {
+    if (balancePaid) balanceTag = `<span class="po-payment-tag paid">일시납 100% ✓</span>`;
+    else if (dueDate) {
+      const dueMs = poDayNumber(dueDate);
       const diff = dueMs - todayMs;
-      if (diff < 0) balanceTag = `<span class="po-payment-tag overdue">잔금 ❗ ${Math.abs(diff)}일 초과</span>`;
-      else if (diff <= 3) balanceTag = `<span class="po-payment-tag overdue">잔금 ⏰ ${diff === 0 ? '오늘' : `D-${diff}`}</span>`;
-      else balanceTag = `<span class="po-payment-tag unpaid">잔금 ⏳ ${po.balance.dueDate}</span>`;
-    } else balanceTag = `<span class="po-payment-tag unpaid">잔금 ⏳ 미정</span>`;
+      if (diff < 0) balanceTag = `<span class="po-payment-tag overdue">일시납 ❗ ${Math.abs(diff)}일 초과</span>`;
+      else if (diff <= 3) balanceTag = `<span class="po-payment-tag overdue">일시납 ⏰ ${diff === 0 ? '오늘' : `D-${diff}`}</span>`;
+      else balanceTag = `<span class="po-payment-tag unpaid">일시납 ⏳ ${dueDate}</span>`;
+    } else balanceTag = `<span class="po-payment-tag unpaid">일시납 ⏳ 미정</span>`;
+  } else if (po.balance) {
+    const br = parseFloat(po.balance.ratio) || 0;
+    if (balancePaid) balanceTag = `<span class="po-payment-tag paid">잔금 ${br ? `${br}% ` : ''}✓</span>`;
+    else if (dueDate) {
+      const dueMs = poDayNumber(dueDate);
+      const diff = dueMs - todayMs;
+      if (diff < 0) balanceTag = `<span class="po-payment-tag overdue">잔금 ${br ? `${br}% ` : ''}❗ ${Math.abs(diff)}일 초과</span>`;
+      else if (diff <= 3) balanceTag = `<span class="po-payment-tag overdue">잔금 ${br ? `${br}% ` : ''}⏰ ${diff === 0 ? '오늘' : `D-${diff}`}</span>`;
+      else balanceTag = `<span class="po-payment-tag unpaid">잔금 ${br ? `${br}% ` : ''}⏳ ${dueDate}</span>`;
+    } else balanceTag = `<span class="po-payment-tag unpaid">잔금 ${br ? `${br}% ` : ''}⏳ 미정</span>`;
   }
-  const depositTag = depositPaid
-    ? `<span class="po-payment-tag paid">선금 ✓</span>`
-    : `<span class="po-payment-tag unpaid">선금 ⏳</span>`;
+  const dr = parseFloat(po.deposit?.ratio) || 0;
+  const depositTag = paymentType === 'full' ? '' : (depositPaid
+    ? `<span class="po-payment-tag paid">선금 ${dr ? `${dr}% ` : ''}✓</span>`
+    : `<span class="po-payment-tag unpaid">선금 ${dr ? `${dr}% ` : ''}⏳</span>`);
   const shipTag = po.shipBooking?.booked
     ? `<span class="po-ship-tag booked">🚢 부킹 ✓${po.shipBooking.shipDate ? ` · ${escapeHtml(po.shipBooking.shipDate)}` : ''}</span>`
     : `<span class="po-ship-tag pending">🚢 미부킹</span>`;
@@ -6084,14 +6228,15 @@ function poItemRowHtml(po, today) {
     const parent = (po.items || []).find(i => i.id === acc.productItemId);
     return `<div class="po-list-accessory">↳ ${parent ? `${escapeHtml(parent.name)} · ` : ''}${acc.completed ? '✓ ' : ''}${escapeHtml(acc.name || '부속품')} · ${escapeHtml(acc.orderDate || po.date || '?')} → ${escapeHtml(acc.dueDate || '완료일 미정')}</div>`;
   }).join('');
-  const statusBadge = po.status === 'completed' ? `<span class="po-status-badge completed">완료</span>`
+  const itemKinds = (po.items || []).filter(i => i.kind && i.kind !== 'product').map(i => `<span class="po-item-kind-tag">${i.kind === 'mold' ? '몰드비' : '기타'}</span>`).join('');
+  const statusBadge = po.status === 'completed' ? `<span class="po-status-badge completed">제작 완료</span>`
                     : po.status === 'cancelled' ? `<span class="po-status-badge cancelled">취소</span>`
                     : `<span class="po-status-badge ongoing">진행 중</span>`;
   return `
     <div class="po-item-row" onclick="editPO('${po.id}')">
       <div class="pir-date">${escapeHtml(po.date || '')}<br><span style="color:#95a5a6;font-weight:normal;">→ ${escapeHtml(po.deliveryDate || '납기 미정')}</span></div>
       <div class="pir-main">
-        <div class="pir-items">${escapeHtml(items)} ${statusBadge}</div>
+        <div class="pir-items">${itemKinds}${escapeHtml(items)} ${statusBadge}</div>
         <div class="pir-payment">${depositTag} ${balanceTag} ${shipTag}${po.note ? `<span style="color:#95a5a6;">· ${escapeHtml(po.note.slice(0, 40))}${po.note.length > 40 ? '…' : ''}</span>` : ''}</div>
         ${accessoryHtml ? `<div class="po-list-accessories">${accessoryHtml}</div>` : ''}
       </div>
@@ -6119,31 +6264,46 @@ function addPO() {
   document.getElementById('poFormTitle').textContent = '새 발주';
   document.getElementById('poEditId').value = '';
   document.getElementById('poDate').value = todayStr();
+  document.getElementById('poLeadTimeDays').value = '';
   document.getElementById('poDeliveryDate').value = '';
+  renderPODeliveryDateDisplay();
+  document.getElementById('poLeadTimeHelp').textContent = '발주일로부터 며칠 걸리는지만 입력하세요';
   document.getElementById('poCurrency').value = 'KRW';
   document.getElementById('poStatus').value = 'ongoing';
   document.getElementById('poColor').value = '#3b82f6';
+  document.getElementById('poPaymentType').value = 'split';
   document.getElementById('poDepositPaid').checked = false;
+  document.getElementById('poDepositRatio').value = '30';
   document.getElementById('poDepositAmount').value = '';
   document.getElementById('poDepositDate').value = '';
   document.getElementById('poBalancePaid').checked = false;
+  document.getElementById('poBalanceRatio').value = '70';
   document.getElementById('poBalanceAmount').value = '';
   document.getElementById('poBalanceDueDate').value = '';
   document.getElementById('poBalancePaidDate').value = '';
+  document.getElementById('poFullPaid').checked = false;
+  document.getElementById('poFullAmount').value = '';
+  document.getElementById('poFullDueDate').value = '';
+  document.getElementById('poFullPaidDate').value = '';
   document.getElementById('poShipBooked').checked = false;
   document.getElementById('poShipBookingDate').value = '';
   document.getElementById('poShipBookingRef').value = '';
   document.getElementById('poShipDate').value = '';
+  document.getElementById('poReceivedDate').value = '';
+  document.getElementById('poReceiptBox').classList.remove('completed');
+  document.getElementById('poClosedInfo').style.display = 'none';
   document.getElementById('poNote').value = '';
   document.getElementById('poFxRate').value = '';
   document.getElementById('poFxStatus').textContent = '';
   document.getElementById('poFxRow').style.display = 'none';
   document.getElementById('poDeleteBtn').style.display = 'none';
-  _poItemsDraft = [{ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 }];
+  document.getElementById('poCloseBtn').style.display = 'none';
+  _poItemsDraft = [{ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 }];
   _poAccessoriesDraft = [];
   populateVendorSelect();
   renderPOItemsForm();
   renderPOAccessoriesForm();
+  onPOPaymentTypeChange();
   document.getElementById('poFormModal').classList.add('show');
   setTimeout(() => document.getElementById('poVendor')?.focus(), 100);
 }
@@ -6151,26 +6311,46 @@ function addPO() {
 function editPO(id) {
   const po = (state.purchaseOrders || []).find(p => p.id === id);
   if (!po) return;
-  document.getElementById('poFormTitle').textContent = '발주 수정';
+  document.getElementById('poFormTitle').textContent = '발주 수정 · 납기 변경 가능';
   document.getElementById('poEditId').value = po.id;
   document.getElementById('poDate').value = po.date || '';
+  const savedLeadTime = Number.isFinite(parseInt(po.leadTimeDays)) ? parseInt(po.leadTimeDays) : Math.max(0, (poDayNumber(po.deliveryDate) ?? 0) - (poDayNumber(po.date) ?? 0));
+  document.getElementById('poLeadTimeDays').value = Number.isFinite(savedLeadTime) ? savedLeadTime : '';
   document.getElementById('poDeliveryDate').value = po.deliveryDate || '';
+  renderPODeliveryDateDisplay();
+  document.getElementById('poLeadTimeHelp').textContent = '기존 발주도 기간 숫자를 바꾸면 납기일이 즉시 다시 계산됩니다';
   document.getElementById('poCurrency').value = po.currency || 'KRW';
   document.getElementById('poStatus').value = po.status || 'ongoing';
   document.getElementById('poColor').value = /^#[0-9a-f]{6}$/i.test(po.color || '') ? po.color : '#3b82f6';
+  const paymentType = getPOPaymentType(po);
+  document.getElementById('poPaymentType').value = paymentType;
   document.getElementById('poDepositPaid').checked = !!(po.deposit && po.deposit.paid);
+  const storedDepositRatio = Number.isFinite(parseFloat(po.deposit?.ratio)) ? parseFloat(po.deposit.ratio) : Math.round(((po.deposit?.amount || 0) / Math.max(po.total || 0, 1)) * 1000) / 10;
+  document.getElementById('poDepositRatio').value = storedDepositRatio || (paymentType === 'full' ? 0 : 30);
   document.getElementById('poDepositAmount').value = po.deposit?.amount || '';
   document.getElementById('poDepositDate').value = po.deposit?.date || '';
   document.getElementById('poBalancePaid').checked = !!(po.balance && po.balance.paid);
+  const storedBalanceRatio = Number.isFinite(parseFloat(po.balance?.ratio)) ? parseFloat(po.balance.ratio) : Math.max(0, 100 - (storedDepositRatio || 0));
+  document.getElementById('poBalanceRatio').value = storedBalanceRatio || (paymentType === 'full' ? 0 : 70);
   document.getElementById('poBalanceAmount').value = po.balance?.amount || '';
   document.getElementById('poBalanceDueDate').value = po.balance?.dueDate || '';
   document.getElementById('poBalancePaidDate').value = po.balance?.paidDate || '';
+  document.getElementById('poFullPaid').checked = !!(po.fullPayment?.paid ?? (paymentType === 'full' && po.balance?.paid));
+  document.getElementById('poFullAmount').value = po.fullPayment?.amount || (paymentType === 'full' ? po.total || '' : '');
+  document.getElementById('poFullDueDate').value = po.fullPayment?.dueDate || (paymentType === 'full' ? po.balance?.dueDate || '' : '');
+  document.getElementById('poFullPaidDate').value = po.fullPayment?.paidDate || (paymentType === 'full' ? po.balance?.paidDate || '' : '');
   document.getElementById('poShipBooked').checked = !!po.shipBooking?.booked;
   document.getElementById('poShipBookingDate').value = po.shipBooking?.bookingDate || '';
   document.getElementById('poShipBookingRef').value = po.shipBooking?.reference || '';
   document.getElementById('poShipDate').value = po.shipBooking?.shipDate || '';
+  document.getElementById('poReceivedDate').value = po.receivedDate || '';
+  document.getElementById('poReceiptBox').classList.toggle('completed', !!po.closed);
+  const closedInfo = document.getElementById('poClosedInfo');
+  closedInfo.style.display = po.closed ? '' : 'none';
+  closedInfo.textContent = po.closed ? `✓ ${po.receivedDate || '날짜 미기록'} 입고완료 · 종료된 기록 (캘린더에 보관 중)` : '';
   document.getElementById('poNote').value = po.note || '';
   document.getElementById('poDeleteBtn').style.display = '';
+  document.getElementById('poCloseBtn').style.display = po.closed ? 'none' : '';
   // 저장된 환율 복원
   const fxRow = document.getElementById('poFxRow');
   const fxRateInput = document.getElementById('poFxRate');
@@ -6190,8 +6370,8 @@ function editPO(id) {
     fxRateInput.value = '';
     fxStatusEl.textContent = '';
   }
-  _poItemsDraft = (po.items || []).map(i => ({ ...i, id: i.id || newPOId('poi') }));
-  if (_poItemsDraft.length === 0) _poItemsDraft = [{ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 }];
+  _poItemsDraft = (po.items || []).map(i => ({ ...i, id: i.id || newPOId('poi'), kind: i.kind || 'product' }));
+  if (_poItemsDraft.length === 0) _poItemsDraft = [{ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 }];
   const draftItemIds = new Set(_poItemsDraft.map(i => i.id));
   _poAccessoriesDraft = (po.accessories || []).map((a, idx) => ({
     ...a,
@@ -6202,6 +6382,7 @@ function editPO(id) {
   populateVendorSelect(po.vendorId);
   renderPOItemsForm();
   renderPOAccessoriesForm();
+  onPOPaymentTypeChange(true);
   document.getElementById('poFormModal').classList.add('show');
 }
 
@@ -6226,6 +6407,141 @@ function onPOVendorChange() {
   }
   renderPOItemsForm();
   renderPOAccessoriesForm();
+}
+
+function onPOLeadTimeChange() {
+  const date = document.getElementById('poDate')?.value;
+  const rawDays = document.getElementById('poLeadTimeDays')?.value;
+  const days = parseInt(rawDays);
+  const delivery = document.getElementById('poDeliveryDate');
+  if (!delivery) return;
+  if (!date || rawDays === '' || !Number.isFinite(days) || days < 0) {
+    delivery.value = '';
+    renderPODeliveryDateDisplay();
+    return;
+  }
+  const [y, m, d] = date.split('-').map(Number);
+  const end = new Date(Date.UTC(y, m - 1, d + days));
+  delivery.value = `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, '0')}-${String(end.getUTCDate()).padStart(2, '0')}`;
+  renderPODeliveryDateDisplay();
+}
+
+function renderPODeliveryDateDisplay() {
+  const output = document.getElementById('poDeliveryDateDisplay');
+  const value = document.getElementById('poDeliveryDate')?.value || '';
+  if (!output) return;
+  if (!value) {
+    output.textContent = '기간을 입력하면 납기일이 자동으로 표시됩니다';
+    output.classList.remove('ready');
+    return;
+  }
+  const [y, m, d] = value.split('-').map(Number);
+  const dayName = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
+  output.textContent = `${value} (${dayName}) · 자동 계산`;
+  output.classList.add('ready');
+}
+
+function onPODeliveryDateChange() {
+  const date = document.getElementById('poDate')?.value;
+  const delivery = document.getElementById('poDeliveryDate')?.value;
+  const lead = document.getElementById('poLeadTimeDays');
+  const startDay = poDayNumber(date);
+  const endDay = poDayNumber(delivery);
+  if (lead && startDay != null && endDay != null && endDay >= startDay) lead.value = endDay - startDay;
+}
+
+let _poPaymentSyncing = false;
+
+function getPODraftTotal() {
+  return _poItemsDraft.reduce((sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0), 0);
+}
+
+function onPOPaymentTypeChange(keepValues = false) {
+  const type = document.getElementById('poPaymentType')?.value || 'split';
+  const split = document.getElementById('poSplitPaymentFields');
+  const full = document.getElementById('poFullPaymentFields');
+  if (split) split.style.display = type === 'full' ? 'none' : '';
+  if (full) full.style.display = type === 'full' ? '' : 'none';
+  if (!keepValues && type === 'split') {
+    document.getElementById('poDepositRatio').value = '30';
+    document.getElementById('poBalanceRatio').value = '70';
+  }
+  if (type === 'full') {
+    const amount = document.getElementById('poFullAmount');
+    if (amount && (!keepValues || !amount.value)) amount.value = getPODraftTotal() || '';
+  }
+  syncPOPaymentFromRatios();
+}
+
+function onPOPaymentRatioChange(source) {
+  if (_poPaymentSyncing) return;
+  _poPaymentSyncing = true;
+  const type = document.getElementById('poPaymentType')?.value || 'split';
+  const depositEl = document.getElementById('poDepositRatio');
+  const balanceEl = document.getElementById('poBalanceRatio');
+  let depositRatio = Math.min(100, Math.max(0, parseFloat(depositEl.value) || 0));
+  let balanceRatio = Math.min(100, Math.max(0, parseFloat(balanceEl.value) || 0));
+  if (type === 'split') {
+    if (source === 'deposit') balanceRatio = Math.max(0, 100 - depositRatio);
+    else depositRatio = Math.max(0, 100 - balanceRatio);
+    depositEl.value = depositRatio;
+    balanceEl.value = balanceRatio;
+  }
+  const total = getPODraftTotal();
+  document.getElementById('poDepositAmount').value = total ? roundPOAmount(total * depositRatio / 100) : '';
+  document.getElementById('poBalanceAmount').value = total ? roundPOAmount(total * balanceRatio / 100) : '';
+  _poPaymentSyncing = false;
+  updatePOPaymentSummary();
+}
+
+function onPOPaymentAmountChange(source) {
+  if (_poPaymentSyncing) return;
+  const total = getPODraftTotal();
+  if (!total) return updatePOPaymentSummary();
+  _poPaymentSyncing = true;
+  const amountEl = document.getElementById(source === 'deposit' ? 'poDepositAmount' : 'poBalanceAmount');
+  const ratioEl = document.getElementById(source === 'deposit' ? 'poDepositRatio' : 'poBalanceRatio');
+  const ratio = Math.round(((parseFloat(amountEl.value) || 0) / total) * 1000) / 10;
+  ratioEl.value = ratio;
+  _poPaymentSyncing = false;
+  if ((document.getElementById('poPaymentType')?.value || 'split') === 'split') onPOPaymentRatioChange(source);
+  else updatePOPaymentSummary();
+}
+
+function roundPOAmount(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function syncPOPaymentFromRatios() {
+  if (_poPaymentSyncing) return;
+  _poPaymentSyncing = true;
+  const type = document.getElementById('poPaymentType')?.value || 'split';
+  const total = getPODraftTotal();
+  if (type === 'full') {
+    const fullAmount = document.getElementById('poFullAmount');
+    if (fullAmount) fullAmount.value = total ? roundPOAmount(total) : '';
+  } else {
+    const dr = Math.min(100, Math.max(0, parseFloat(document.getElementById('poDepositRatio')?.value) || 0));
+    const br = Math.min(100, Math.max(0, parseFloat(document.getElementById('poBalanceRatio')?.value) || 0));
+    document.getElementById('poDepositAmount').value = total ? roundPOAmount(total * dr / 100) : '';
+    document.getElementById('poBalanceAmount').value = total ? roundPOAmount(total * br / 100) : '';
+  }
+  _poPaymentSyncing = false;
+  updatePOPaymentSummary();
+}
+
+function updatePOPaymentSummary() {
+  const el = document.getElementById('poPaymentSummary');
+  if (!el) return;
+  const type = document.getElementById('poPaymentType')?.value || 'split';
+  const cur = document.getElementById('poCurrency')?.value || 'KRW';
+  if (type === 'full') {
+    el.textContent = `일시납 100% · ${fmtMoney(parseFloat(document.getElementById('poFullAmount')?.value) || getPODraftTotal(), cur)}`;
+  } else {
+    const dr = parseFloat(document.getElementById('poDepositRatio')?.value) || 0;
+    const br = parseFloat(document.getElementById('poBalanceRatio')?.value) || 0;
+    el.textContent = `선금 ${dr}% + 잔금 ${br}%${type === 'custom' && dr + br !== 100 ? ` · 합계 ${dr + br}%` : ''}`;
+  }
 }
 
 // 통화/날짜 변경 → 발주일 기준 환율 자동 조회 (KRW면 환율 영역 숨김)
@@ -6278,6 +6594,11 @@ function renderPOItemsForm() {
   }
   tbody.innerHTML = datalistHtml + _poItemsDraft.map((it, i) => `
     <tr>
+      <td><select onchange="updatePOItem(${i}, 'kind', this.value)">
+        <option value="product" ${(it.kind || 'product') === 'product' ? 'selected' : ''}>제품</option>
+        <option value="mold" ${it.kind === 'mold' ? 'selected' : ''}>몰드비</option>
+        <option value="other" ${it.kind === 'other' ? 'selected' : ''}>기타</option>
+      </select></td>
       <td><input type="text" value="${escapeHtml(it.name || '')}" oninput="updatePOItem(${i}, 'name', this.value); maybeAutofillPOPrice(${i}, this.value)" onchange="renderPOAccessoriesForm()" list="${vendorItems.length ? datalistId : ''}" placeholder="품목명" /></td>
       <td><input type="number" value="${it.qty || ''}" oninput="updatePOItem(${i}, 'qty', this.value); recalcPOTotal()" min="0" step="any" /></td>
       <td><input type="number" value="${it.unitPrice || ''}" oninput="updatePOItem(${i}, 'unitPrice', this.value); recalcPOTotal()" min="0" step="any" id="poUnitPrice_${i}" /></td>
@@ -6317,7 +6638,13 @@ function maybeAutofillPOPrice(idx, name) {
 }
 
 function addPOItemRow() {
-  _poItemsDraft.push({ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 });
+  _poItemsDraft.push({ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 });
+  renderPOItemsForm();
+  renderPOAccessoriesForm();
+}
+
+function addPOMoldFeeRow() {
+  _poItemsDraft.push({ id: newPOId('poi'), kind: 'mold', name: '몰드비', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
   renderPOAccessoriesForm();
 }
@@ -6328,7 +6655,7 @@ function removePOItemRow(idx) {
   if (linked > 0 && !confirm(`이 제품에 연결된 부속품 일정 ${linked}개도 같이 삭제할까요?`)) return;
   _poItemsDraft.splice(idx, 1);
   if (item) _poAccessoriesDraft = _poAccessoriesDraft.filter(a => a.productItemId !== item.id);
-  if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 });
+  if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
   renderPOAccessoriesForm();
 }
@@ -6350,10 +6677,10 @@ function addPOItemsFromVendor() {
   if (blankOnly) _poItemsDraft = [];
   items.forEach(item => {
     if (!existing.has(item.name.trim())) {
-      _poItemsDraft.push({ id: newPOId('poi'), name: item.name.trim(), qty: 1, unitPrice: parseFloat(item.unitPrice) || 0 });
+      _poItemsDraft.push({ id: newPOId('poi'), kind: 'product', name: item.name.trim(), qty: 1, unitPrice: parseFloat(item.unitPrice) || 0 });
     }
   });
-  if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), name: '', qty: 1, unitPrice: 0 });
+  if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
   renderPOAccessoriesForm();
 }
@@ -6416,6 +6743,7 @@ function recalcPOTotal() {
   const krwTotal = cur === 'KRW' ? total : (formRate > 0 ? total * formRate : toKRW(total, cur));
   const krwEl = document.getElementById('poTotalKrwDisplay');
   if (krwEl) krwEl.textContent = cur === 'KRW' ? '' : ` (≈ ${fmtMoney(krwTotal, 'KRW')})`;
+  syncPOPaymentFromRatios();
 }
 
 function onPODepositPaidToggle() {
@@ -6428,41 +6756,63 @@ function onPOBalancePaidToggle() {
   const dateEl = document.getElementById('poBalancePaidDate');
   if (checked && !dateEl.value) dateEl.value = todayStr();
 }
+function onPOFullPaidToggle() {
+  const checked = document.getElementById('poFullPaid').checked;
+  const dateEl = document.getElementById('poFullPaidDate');
+  if (checked && !dateEl.value) dateEl.value = todayStr();
+}
 function onPOShipBookedToggle() {
   const checked = document.getElementById('poShipBooked').checked;
   const dateEl = document.getElementById('poShipBookingDate');
   if (checked && !dateEl.value) dateEl.value = todayStr();
 }
 
-async function savePO() {
+async function savePO(options = {}) {
   const id = document.getElementById('poEditId').value;
+  const existingPO = id ? (state.purchaseOrders || []).find(p => p.id === id) : null;
+  // 새 발주뿐 아니라 기존 발주 수정도 현재 기간 값으로 납기일을 확정한다.
+  onPOLeadTimeChange();
   const date = document.getElementById('poDate').value;
   const deliveryDate = document.getElementById('poDeliveryDate').value;
+  const leadTimeDays = parseInt(document.getElementById('poLeadTimeDays').value);
   const vendorId = document.getElementById('poVendor').value;
   const currency = document.getElementById('poCurrency').value;
-  const status = document.getElementById('poStatus').value;
+  const status = options.closeAsReceived ? 'completed' : document.getElementById('poStatus').value;
   const note = document.getElementById('poNote').value.trim();
 
   if (!date) return alert('발주일을 선택하세요.');
-  if (!deliveryDate) return alert('납기일을 선택하세요. 제작 캘린더에 발주일부터 납기일까지 표시됩니다.');
+  if (!Number.isFinite(leadTimeDays) || leadTimeDays < 0 || !deliveryDate) return alert('납기까지 걸리는 일수를 입력하세요. 납기일은 자동으로 계산됩니다.');
   if (poDayNumber(deliveryDate) < poDayNumber(date)) return alert('납기일은 발주일보다 빠를 수 없습니다.');
   if (!vendorId) return alert('거래처를 선택하세요.');
   const validItems = _poItemsDraft.filter(i => (i.name || '').trim() && (parseFloat(i.qty) > 0));
   if (validItems.length === 0) return alert('품목을 1개 이상 입력하세요 (이름 + 수량).');
 
   const total = validItems.reduce((s, i) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0), 0);
+  const paymentType = document.getElementById('poPaymentType').value || 'split';
   const depositPaid = document.getElementById('poDepositPaid').checked;
+  const depositRatio = parseFloat(document.getElementById('poDepositRatio').value) || 0;
   const depositAmount = parseFloat(document.getElementById('poDepositAmount').value) || 0;
   const depositDate = document.getElementById('poDepositDate').value;
   const balancePaid = document.getElementById('poBalancePaid').checked;
-  const balanceAmount = parseFloat(document.getElementById('poBalanceAmount').value) || (total - depositAmount);
+  const balanceRatio = parseFloat(document.getElementById('poBalanceRatio').value) || 0;
+  const balanceAmount = parseFloat(document.getElementById('poBalanceAmount').value) || 0;
   const balanceDueDate = document.getElementById('poBalanceDueDate').value;
   const balancePaidDate = document.getElementById('poBalancePaidDate').value;
+  const fullPaid = document.getElementById('poFullPaid').checked;
+  const fullAmount = parseFloat(document.getElementById('poFullAmount').value) || total;
+  const fullDueDate = document.getElementById('poFullDueDate').value;
+  const fullPaidDate = document.getElementById('poFullPaidDate').value;
   const shipBooked = document.getElementById('poShipBooked').checked;
   const shipBookingDate = document.getElementById('poShipBookingDate').value;
   const shipBookingRef = document.getElementById('poShipBookingRef').value.trim();
   const shipDate = document.getElementById('poShipDate').value;
+  const receivedDate = document.getElementById('poReceivedDate').value;
   const color = document.getElementById('poColor').value || '#3b82f6';
+
+  if (paymentType !== 'full' && Math.abs((depositRatio + balanceRatio) - 100) > 0.01) {
+    return alert('선금과 잔금 비율의 합계는 100%여야 합니다.');
+  }
+  if (options.closeAsReceived && !receivedDate) return alert('입고완료일을 선택하세요.');
 
   const validItemIds = new Set(validItems.map(i => i.id));
   const validAccessories = _poAccessoriesDraft.filter(a => (a.name || '').trim()).map(a => ({
@@ -6480,14 +6830,25 @@ async function savePO() {
 
   const poData = {
     id: id || 'po_' + Date.now() + Math.random().toString(36).slice(2, 6),
-    date, deliveryDate, vendorId, currency, status, note, color,
-    items: validItems.map(i => ({ id: i.id || newPOId('poi'), name: i.name.trim(), qty: parseFloat(i.qty) || 0, unitPrice: parseFloat(i.unitPrice) || 0 })),
+    date, deliveryDate, leadTimeDays: Number.isFinite(leadTimeDays) ? leadTimeDays : Math.max(0, poDayNumber(deliveryDate) - poDayNumber(date)),
+    vendorId, currency, status, note, color,
+    closed: options.closeAsReceived ? true : !!existingPO?.closed,
+    receivedDate: receivedDate || existingPO?.receivedDate || '',
+    items: validItems.map(i => ({ id: i.id || newPOId('poi'), kind: i.kind || 'product', name: i.name.trim(), qty: parseFloat(i.qty) || 0, unitPrice: parseFloat(i.unitPrice) || 0 })),
     accessories: validAccessories,
     total,
     exchangeRate: currency === 'KRW' ? 1 : exchangeRate,        // 발주 저장 시점 환율
     exchangeRateDate: currency === 'KRW' ? null : exchangeRateDate,
-    deposit: { paid: depositPaid, amount: depositAmount, date: depositDate },
-    balance: { paid: balancePaid, amount: balanceAmount, dueDate: balanceDueDate, paidDate: balancePaid ? (balancePaidDate || todayStr()) : balancePaidDate },
+    paymentType,
+    deposit: paymentType === 'full'
+      ? { paid: false, ratio: 0, amount: 0, date: '' }
+      : { paid: depositPaid, ratio: depositRatio, amount: depositAmount, date: depositDate },
+    balance: paymentType === 'full'
+      ? { paid: fullPaid, ratio: 100, amount: fullAmount, dueDate: fullDueDate, paidDate: fullPaid ? (fullPaidDate || todayStr()) : fullPaidDate }
+      : { paid: balancePaid, ratio: balanceRatio, amount: balanceAmount, dueDate: balanceDueDate, paidDate: balancePaid ? (balancePaidDate || todayStr()) : balancePaidDate },
+    fullPayment: paymentType === 'full'
+      ? { paid: fullPaid, ratio: 100, amount: fullAmount, dueDate: fullDueDate, paidDate: fullPaid ? (fullPaidDate || todayStr()) : fullPaidDate }
+      : null,
     shipBooking: { booked: shipBooked, bookingDate: shipBookingDate, reference: shipBookingRef, shipDate }
   };
 
@@ -6504,7 +6865,7 @@ async function savePO() {
     if (!vendor.items) vendor.items = [];
     // 기존 문자열 항목들을 객체로 마이그레이션
     vendor.items = vendor.items.map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: vendor.type === 'overseas' ? 'USD' : 'KRW' } : i);
-    validItems.forEach(it => {
+    validItems.filter(it => (it.kind || 'product') !== 'mold').forEach(it => {
       const nm = it.name.trim();
       const exists = vendor.items.find(vi => vi.name === nm);
       if (!exists) {
@@ -6522,6 +6883,18 @@ async function savePO() {
   checkPODueBanner();
   // 거래처에 자동 등록된 새 품목이 있을 수 있으니 거래처 화면도 같이 갱신
   refreshAfterVendorChange();
+  return true;
+}
+
+async function closePOAsReceived() {
+  const id = document.getElementById('poEditId').value;
+  if (!id) return;
+  const receivedDate = document.getElementById('poReceivedDate');
+  if (!receivedDate.value) receivedDate.value = todayStr();
+  const po = (state.purchaseOrders || []).find(p => p.id === id);
+  if (!po || po.closed) return;
+  if (!confirm(`${getVendorName(po.vendorId)} · ${poItemsSummary(po)}\n\n${receivedDate.value} 입고완료로 종료할까요?\n발주 목록에서는 사라지고 캘린더 기록은 유지됩니다.`)) return;
+  await savePO({ closeAsReceived: true });
 }
 
 function deletePOFromForm() {
