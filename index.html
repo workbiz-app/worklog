@@ -2802,6 +2802,7 @@ function loadData() {
     meetingCalMonth: '',        // 'YYYY-MM' — 달력에 보여줄 월 (빈 값 = 현재 월)
     meetingSelectedDay: '',     // 'YYYY-MM-DD' — 달력에서 선택된 날 (빈 값 = 전체)
     purchaseOrders: [],         // 발주일지: 제품 제작기간·결제·선박부킹·부속품 일정 포함
+    poDeletedOrderIds: {},      // 기기 간 삭제 동기화용 { 발주ID: 삭제시각 }
     poDefaultReminderRecipients: [], // 새 발주 알림에 자동 입력할 고정 이메일
     poVendorCollapsed: {},      // 발주일지 거래처별 접힘 여부 { vendorId: bool }
     poFilter: 'all',            // 'all' | 'unpaid' | 'overdue' | 'booking' | 'delivery' | 'ongoing' | 'completed'
@@ -2836,6 +2837,88 @@ function saveData() {
       alert('⚠ 브라우저 저장 공간이 가득 찼습니다.\n백업 내보내기 후 오래된 이미지를 정리해 주세요.');
     } else { alert('저장 실패: ' + e.message); }
   }
+}
+
+// ===== 발주일지 안전 동기화 =====
+// 예전 방식은 PC/휴대폰의 state 전체를 한 파일로 덮어써서, 한쪽에만 있던 발주가
+// 사라질 수 있었다. 발주는 ID와 수정시각으로 병합하고, 명시적으로 삭제한 ID만
+// tombstone(삭제 기록)으로 전파한다.
+const PO_BACKUP_KEY = STORAGE_KEY + '_purchase_orders_backup';
+
+function poSyncTime(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : (Number(fallback) || 0);
+}
+
+function normalizePurchaseOrderForSync(po, fallbackTime = 0) {
+  if (!po || !po.id) return null;
+  const createdAt = poSyncTime(po.createdAt, fallbackTime);
+  const updatedAt = poSyncTime(po.updatedAt, createdAt || fallbackTime);
+  return { ...po, createdAt, updatedAt };
+}
+
+function mergePurchaseOrderSync(localState, remoteState, localModified = 0, remoteModified = 0) {
+  const localOrders = Array.isArray(localState?.purchaseOrders) ? localState.purchaseOrders : [];
+  const remoteOrders = Array.isArray(remoteState?.purchaseOrders) ? remoteState.purchaseOrders : [];
+  const deleted = {};
+
+  [localState?.poDeletedOrderIds, remoteState?.poDeletedOrderIds].forEach(source => {
+    if (!source || typeof source !== 'object') return;
+    Object.entries(source).forEach(([id, deletedAt]) => {
+      if (!id) return;
+      deleted[id] = Math.max(poSyncTime(deleted[id]), poSyncTime(deletedAt));
+    });
+  });
+
+  const byId = new Map();
+  const order = [];
+  const accept = (raw, fallbackTime, preferOnTie = false) => {
+    const po = normalizePurchaseOrderForSync(raw, fallbackTime);
+    if (!po) return;
+    if (!byId.has(po.id)) order.push(po.id);
+    const current = byId.get(po.id);
+    if (!current || po.updatedAt > current.updatedAt || (preferOnTie && po.updatedAt === current.updatedAt)) {
+      byId.set(po.id, po);
+    }
+  };
+
+  // 원격을 먼저 넣고 로컬을 나중에 넣는다. 같은 수정시각이면 현재 화면의 값을 유지한다.
+  remoteOrders.forEach(po => accept(po, remoteModified, false));
+  localOrders.forEach(po => accept(po, localModified, true));
+
+  const orders = order
+    .map(id => byId.get(id))
+    .filter(po => po && po.updatedAt > poSyncTime(deleted[po.id]));
+
+  return { orders, deleted };
+}
+
+function purchaseOrderSyncSignature(source) {
+  return JSON.stringify({
+    purchaseOrders: Array.isArray(source?.purchaseOrders) ? source.purchaseOrders : [],
+    poDeletedOrderIds: source?.poDeletedOrderIds || {}
+  });
+}
+
+function backupPurchaseOrders(reason) {
+  if (!Array.isArray(state?.purchaseOrders) || state.purchaseOrders.length === 0) return;
+  try {
+    localStorage.setItem(PO_BACKUP_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      reason: reason || '동기화 전',
+      purchaseOrders: state.purchaseOrders,
+      poDeletedOrderIds: state.poDeletedOrderIds || {}
+    }));
+  } catch (e) {
+    console.warn('발주 안전 백업 저장 실패:', e);
+  }
+}
+
+function applyMergedPurchaseOrders(merged, modifiedTime = Date.now()) {
+  state.purchaseOrders = merged.orders;
+  state.poDeletedOrderIds = merged.deleted;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY + '_mod', String(modifiedTime || Date.now()));
 }
 
 // ===== Google Drive 클라우드 싱크 =====
@@ -2984,7 +3067,9 @@ const Drive = {
                          (state.archive && Object.keys(state.archive).length > 0) ||
                          (state.contacts && state.contacts.length > 0) ||
                          (state.phrases && state.phrases.length > 0) ||
-                         (state.meetings && state.meetings.length > 0);
+                         (state.meetings && state.meetings.length > 0) ||
+                         (state.purchaseOrders && state.purchaseOrders.length > 0) ||
+                         (state.poDeletedOrderIds && Object.keys(state.poDeletedOrderIds).length > 0);
     this._justUpgradedFromGuest = wasGuest && hadLocalData;
     localStorage.removeItem('guest_mode');
     hideGuestBanner();
@@ -3257,7 +3342,8 @@ const Drive = {
         // 원격에 파일 없음 → 현재 로컬 데이터를 첫 업로드
         if (Object.keys(state.archive).length > 0 || state.todayTasks.length > 0 ||
             (state.contacts || []).length > 0 || (state.phrases || []).length > 0 ||
-            (state.meetings || []).length > 0 || (state.purchaseOrders || []).length > 0) {
+            (state.meetings || []).length > 0 || (state.purchaseOrders || []).length > 0 ||
+            Object.keys(state.poDeletedOrderIds || {}).length > 0) {
           await this.pushToDrive(true);
           if (this._justUpgradedFromGuest) {
             this._justUpgradedFromGuest = false;
@@ -3277,16 +3363,41 @@ const Drive = {
       const remote = JSON.parse(text);
       const localMod = parseInt(localStorage.getItem(STORAGE_KEY + '_mod') || '0');
 
-      // 초기 로딩이고 로컬이 비어있으면 무조건 원격 사용
+      // 병합으로 state가 바뀌기 전의 실제 로컬 상태를 기준으로 판단한다.
       const localEmpty = Object.keys(state.archive).length === 0 && state.todayTasks.length === 0 &&
                          (state.contacts || []).length === 0 && (state.phrases || []).length === 0 &&
-                         (state.meetings || []).length === 0 && (state.purchaseOrders || []).length === 0;
+                         (state.meetings || []).length === 0 && (state.purchaseOrders || []).length === 0 &&
+                         Object.keys(state.poDeletedOrderIds || {}).length === 0;
 
+      // 발주는 통파일 덮어쓰기 전에 먼저 레코드 단위로 합친다.
+      // 어느 기기에만 있는 발주도 보존하고, 사용자가 직접 삭제한 발주만 삭제 기록으로 제거한다.
+      const localPOSignature = purchaseOrderSyncSignature(state);
+      const remotePOSignature = purchaseOrderSyncSignature(remote.state || {});
+      const mergedPO = mergePurchaseOrderSync(
+        state,
+        remote.state || {},
+        localMod,
+        remote.lastModified || this.lastRemoteModified
+      );
+      const mergedPOSignature = purchaseOrderSyncSignature({
+        purchaseOrders: mergedPO.orders,
+        poDeletedOrderIds: mergedPO.deleted
+      });
+      const poChangedLocal = localPOSignature !== mergedPOSignature;
+      const poChangedRemote = remotePOSignature !== mergedPOSignature;
+      if (poChangedLocal) backupPurchaseOrders('Drive 병합 전');
+      applyMergedPurchaseOrders(mergedPO, Math.max(localMod, remote.lastModified || this.lastRemoteModified || 0));
+      if (!remote.state) remote.state = {};
+      remote.state.purchaseOrders = mergedPO.orders;
+      remote.state.poDeletedOrderIds = mergedPO.deleted;
+
+      // 초기 로딩이고 로컬이 비어있으면 무조건 원격 사용
       if (isInitial && localEmpty) {
         applyRemoteState(remote);
         this.lastSyncedAt = Date.now();
         updateSyncUI('Drive에서 불러옴', 'synced');
         warmImageCache();
+        if (poChangedRemote) await this.pushToDrive(true);
         return;
       }
 
@@ -3304,6 +3415,7 @@ const Drive = {
           this.lastSyncedAt = Date.now();
           updateSyncUI('Drive 기록 불러옴', 'synced');
           warmImageCache();
+          if (poChangedRemote) await this.pushToDrive(true);
         } else {
           await this.pushToDrive(true);
           setTimeout(() => alert('✅ 게스트 기록으로 Drive를 덮어썼습니다.'), 300);
@@ -3324,12 +3436,17 @@ const Drive = {
           applyRemoteState(remote);
           this.lastSyncedAt = Date.now();
           updateSyncUI('원격으로 덮어쓰기 완료', 'synced');
+          if (poChangedRemote) await this.pushToDrive(true);
+          return;
+        } else {
+          // 발주 병합분까지 포함한 현재 로컬 상태를 즉시 Drive에 저장한다.
+          await this.pushToDrive(true);
           return;
         }
       }
       // 원격과 로컬이 사실상 같은 시점이면 불필요하게 다시 업로드하지 않는다.
       // 로컬이 확실히 더 최신일 때만 원격으로 보낸다.
-      if (localMod - this.lastRemoteModified > 10000) {
+      if (poChangedRemote || localMod - this.lastRemoteModified > 10000) {
         await this.pushToDrive(true);
       } else {
         this.lastSyncedAt = Date.now();
@@ -3374,14 +3491,38 @@ const Drive = {
     try {
       if (!this.accessToken) return; // 로그아웃 등으로 중단
       if (!silent) updateSyncUI('업로드 중...', 'syncing');
+      if (!this.fileId) await this.findFile();
+      if (!this.accessToken) return; // 진행 중 로그아웃 감지
+
+      // 저장 직전에도 Drive의 최신 발주와 한 번 더 병합한다.
+      // 오래 열어 둔 PC/휴대폰이 상대 기기의 발주를 통째로 지우는 것을 막는다.
+      if (this.fileId) {
+        const remoteText = await this.downloadFile();
+        const latestRemote = JSON.parse(remoteText);
+        const localMod = parseInt(localStorage.getItem(STORAGE_KEY + '_mod') || '0');
+        const beforeSignature = purchaseOrderSyncSignature(state);
+        const mergedPO = mergePurchaseOrderSync(
+          state,
+          latestRemote.state || {},
+          localMod,
+          latestRemote.lastModified || this.lastRemoteModified
+        );
+        const afterSignature = purchaseOrderSyncSignature({
+          purchaseOrders: mergedPO.orders,
+          poDeletedOrderIds: mergedPO.deleted
+        });
+        if (beforeSignature !== afterSignature) {
+          backupPurchaseOrders('Drive 업로드 전');
+          applyMergedPurchaseOrders(mergedPO, Math.max(localMod, latestRemote.lastModified || this.lastRemoteModified || 0));
+        }
+      }
+
       const payload = {
-        version: 2,
+        version: 3,
         lastModified: Date.now(),
         state: state
       };
       const json = JSON.stringify(payload);
-      if (!this.fileId) await this.findFile();
-      if (!this.accessToken) return; // 진행 중 로그아웃 감지
       if (this.fileId) await this.updateFile(json);
       else await this.createFile(json);
       // Drive 서버가 찍은 modifiedTime을 기준으로 맞춘다 (서버 시계와 로컬 시계 차이로 인한 가짜 충돌 경고 방지)
@@ -3416,6 +3557,7 @@ function applyRemoteState(remote) {
   state.meetingCalMonth = r.meetingCalMonth || '';
   state.meetingSelectedDay = r.meetingSelectedDay || '';
   state.purchaseOrders = r.purchaseOrders || [];
+  state.poDeletedOrderIds = r.poDeletedOrderIds || {};
   state.poDefaultReminderRecipients = Array.isArray(r.poDefaultReminderRecipients) ? r.poDefaultReminderRecipients : [];
   state.poVendorCollapsed = r.poVendorCollapsed || {};
   state.poFilter = r.poFilter || 'all';
@@ -7328,6 +7470,8 @@ async function savePO(options = {}) {
 
   const poData = {
     id: id || 'po_' + Date.now() + Math.random().toString(36).slice(2, 6),
+    createdAt: poSyncTime(existingPO?.createdAt, Date.now()),
+    updatedAt: Date.now(),
     date, deliveryDate, leadTimeDays: Number.isFinite(leadTimeDays) ? leadTimeDays : Math.max(0, poDayNumber(deliveryDate) - poDayNumber(date)),
     vendorId, currency, status, note, color,
     closed: options.closeAsReceived ? true : !!existingPO?.closed,
@@ -7364,6 +7508,8 @@ async function savePO(options = {}) {
   };
 
   if (!state.purchaseOrders) state.purchaseOrders = [];
+  if (!state.poDeletedOrderIds) state.poDeletedOrderIds = {};
+  delete state.poDeletedOrderIds[poData.id];
   state.poDefaultReminderRecipients = fixedReminderRecipients;
   if (id) {
     const idx = state.purchaseOrders.findIndex(p => p.id === id);
@@ -7428,6 +7574,8 @@ async function deletePOFromForm() {
   if (po.deliveryReminder?.eventId && Drive.accessToken) {
     await Calendar.deleteEvent(po.deliveryReminder.eventId);
   }
+  if (!state.poDeletedOrderIds) state.poDeletedOrderIds = {};
+  state.poDeletedOrderIds[id] = Date.now();
   state.purchaseOrders = state.purchaseOrders.filter(p => p.id !== id);
   saveData();
   closePOForm();
