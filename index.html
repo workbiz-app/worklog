@@ -2969,12 +2969,13 @@ const Drive = {
       let savedTok = null;
       if (saved) { try { savedTok = JSON.parse(saved); } catch (e) {} }
       const autoLogin = localStorage.getItem('drive_auto_login') === 'true';
+      this.userEmail = savedTok?.email || localStorage.getItem('drive_user_email') || '';
 
       // ① 아직 유효한 토큰이 남아있으면 그대로 복원
       if (savedTok && savedTok.expiresAt > Date.now() + 30000) {
         this.accessToken = savedTok.accessToken;
         this.tokenExpiresAt = savedTok.expiresAt;
-        this.userEmail = savedTok.email || '';
+        this.userEmail = savedTok.email || this.userEmail;
         this._scheduleSilentRefresh();
         hideLoginGate();
         updateSyncUI('복원된 세션', 'synced');
@@ -2987,8 +2988,7 @@ const Drive = {
       if (autoLogin) {
         if (savedTok && savedTok.email) this.userEmail = savedTok.email;
         hideLoginGate();
-        updateSyncUI('세션 갱신 중…', 'syncing');
-        this._silentReauth();
+        this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
         return;
       }
 
@@ -3016,13 +3016,19 @@ const Drive = {
     }
     if (!this.tokenClient) { this.init(); setTimeout(() => this.login(), 800); return; }
     updateSyncUI('로그인 중...', 'syncing');
-    this.tokenClient.requestAccessToken({ prompt: this.accessToken ? '' : 'consent' });
+    // 빈 prompt는 최초 승인 때만 동의를 묻고, 이후에는 같은 계정으로 빠르게 재연결한다.
+    // login_hint를 주면 여러 Google 계정이 로그인된 브라우저에서도 계정 선택 실수를 줄인다.
+    const request = { prompt: '' };
+    if (this.userEmail) request.login_hint = this.userEmail;
+    this.tokenClient.requestAccessToken(request);
   },
 
   async _onToken(resp) {
     if (resp.error) {
-      // 자동로그인 사용자는 조용히 재시도 (게이트/에러 표시 안 함)
-      if (localStorage.getItem('drive_auto_login') === 'true') { this._scheduleRetry(); return; }
+      if (localStorage.getItem('drive_auto_login') === 'true') {
+        this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
+        return;
+      }
       updateSyncUI('로그인 실패: ' + resp.error, 'error');
       return;
     }
@@ -3051,6 +3057,7 @@ const Drive = {
       expiresAt: this.tokenExpiresAt,
       email: this.userEmail
     }));
+    if (this.userEmail) localStorage.setItem('drive_user_email', this.userEmail);
     localStorage.setItem('drive_auto_login', 'true');
 
     if (isRefresh) {
@@ -3082,42 +3089,31 @@ const Drive = {
 
   _scheduleSilentRefresh() {
     if (this._refreshTimer) clearTimeout(this._refreshTimer);
-    // 만료 5분 전에 갱신 (최소 1분 후)
-    const delay = Math.max(60000, this.tokenExpiresAt - Date.now() - 5 * 60 * 1000);
+    // GIS 브라우저 토큰은 자동 갱신이 보장되지 않고 새 토큰 발급에 사용자 동작이 필요하다.
+    // 만료 직전에 상태와 재연결 버튼만 정확히 표시한다 (기록은 계속 로컬 저장).
+    const delay = Math.max(1000, this.tokenExpiresAt - Date.now() - 10000);
     this._refreshTimer = setTimeout(() => {
-      if (!this.tokenClient) return;
-      try { this.tokenClient.requestAccessToken({ prompt: '' }); }
-      catch (e) { console.warn('silent refresh 실패:', e); this._scheduleRetry(); }
+      this._markReconnectRequired('구글 세션 만료 · 재연결하면 자동 동기화');
     }, delay);
   },
 
-  // 조용한 재로그인 시도 (앱 로드 시 / 토큰 만료 시) — 게이트 안 띄우고 백그라운드 처리
+  _markReconnectRequired(message) {
+    if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }
+    this.accessToken = null;
+    this.tokenExpiresAt = 0;
+    localStorage.removeItem('drive_token');
+    hideLoginGate();
+    updateSyncUI(message || '구글 재연결 필요 · 로컬 저장은 정상', 'offline');
+  },
+
+  // 이전 버전 호출 호환: 브라우저가 막을 수 있는 무동작 팝업 대신 재연결 버튼을 표시한다.
   _silentReauth() {
-    if (!this.tokenClient) return;
-    // 8초 안에 토큰 못 받으면 '재연결 대기' 상태로 두고 자동 재시도 (블로킹 X)
-    if (this._reauthGuard) clearTimeout(this._reauthGuard);
-    this._reauthGuard = setTimeout(() => {
-      if (!this.accessToken) updateSyncUI('재연결 대기 중… (로컬 저장 정상 · 자동 재시도 중)', 'offline');
-    }, 8000);
-    try { this.tokenClient.requestAccessToken({ prompt: '' }); }
-    catch (e) { this._scheduleRetry(); }
+    this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
   },
 
-  // 자동 재시도 (점증 백오프: 30초 → 2분 → 5분, 이후 5분 고정). 게이트 안 띄움.
+  // 이전 버전 호출 호환: 자동 팝업 재시도 대신 사용자가 누를 수 있는 재연결 상태 유지.
   _scheduleRetry() {
-    if (this._retryTimer) clearTimeout(this._retryTimer);
-    const delays = [30000, 120000, 300000];
-    const n = this._retryCount || 0;
-    const delay = delays[Math.min(n, delays.length - 1)];
-    this._retryCount = n + 1;
-    if (n >= 1) updateSyncUI('재연결 대기 중… (로컬 저장 정상 · 자동 재시도 중)', 'offline');
-    this._retryTimer = setTimeout(() => {
-      // 이미 복구됐으면 중단
-      if (this.accessToken && this.tokenExpiresAt > Date.now() + 60000) return;
-      if (!this.tokenClient) return;
-      try { this.tokenClient.requestAccessToken({ prompt: '' }); }
-      catch (e) { this._scheduleRetry(); }
-    }, delay);
+    this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
   },
 
   logout() {
@@ -3134,6 +3130,7 @@ const Drive = {
     this.fileId = null;
     this.lastRemoteModified = 0;
     localStorage.removeItem('drive_token');
+    localStorage.removeItem('drive_user_email');
     sessionStorage.removeItem('drive_token'); // 이전 버전 잔존분 정리
     localStorage.removeItem('drive_auto_login');
     localStorage.removeItem('guest_mode');
@@ -3143,47 +3140,10 @@ const Drive = {
   },
 
   _checkToken() {
-    if (!this.accessToken) throw new Error('로그인 필요');
+    if (!this.accessToken) throw new Error('구글 재연결 필요');
     if (this.tokenExpiresAt >= Date.now() + 10000) return;
-    // 이미 진행 중인 갱신이 있으면 같은 Promise 반환 (중복 요청 방지)
-    if (this._pendingRefresh) return this._pendingRefresh;
-    this._pendingRefresh = new Promise((resolve, reject) => {
-      const origCallback = this.tokenClient.callback;
-      let done = false;
-      // 15초 내 콜백 없으면 실패로 처리 (영구 점유 방지)
-      const timer = setTimeout(() => {
-        if (done) return;
-        done = true;
-        this.tokenClient.callback = origCallback;
-        this._pendingRefresh = null;
-        reject(new Error('토큰 갱신 타임아웃'));
-      }, 15000);
-      this.tokenClient.callback = (resp) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        this.tokenClient.callback = origCallback;
-        this._pendingRefresh = null;
-        if (resp.error) return reject(new Error(resp.error));
-        this.accessToken = resp.access_token;
-        this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
-        this._scheduleSilentRefresh();
-        localStorage.setItem('drive_token', JSON.stringify({
-          accessToken: this.accessToken, expiresAt: this.tokenExpiresAt, email: this.userEmail
-        }));
-        resolve();
-      };
-      try { this.tokenClient.requestAccessToken({ prompt: '' }); }
-      catch (e) {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        this.tokenClient.callback = origCallback;
-        this._pendingRefresh = null;
-        reject(e);
-      }
-    });
-    return this._pendingRefresh;
+    this._markReconnectRequired('구글 세션 만료 · 재연결하면 자동 동기화');
+    throw new Error('구글 세션 만료 · 재연결 필요');
   },
 
   async _apiFetch(url, opts = {}) {
@@ -3194,6 +3154,7 @@ const Drive = {
     });
     if (!res.ok) {
       const text = await res.text();
+      if (res.status === 401) this._markReconnectRequired('구글 세션 만료 · 재연결하면 자동 동기화');
       throw new Error(`Drive API ${res.status}: ${text.slice(0, 200)}`);
     }
     return res;
@@ -3592,7 +3553,10 @@ function updateSyncUI(text, status) {
   dot.className = 'sync-dot ' + (status || '');
   txt.textContent = text || '';
   email.textContent = Drive.userEmail ? `· ${Drive.userEmail}` : '';
-  const loggedIn = !!Drive.accessToken;
+  const loggedIn = !!Drive.accessToken && Drive.tokenExpiresAt > Date.now() + 10000;
+  loginBtn.textContent = localStorage.getItem('drive_auto_login') === 'true'
+    ? '☁️ 구글 재연결'
+    : '☁️ 구글 로그인';
   loginBtn.style.display = loggedIn ? 'none' : '';
   syncNowBtn.style.display = loggedIn ? '' : 'none';
   logoutBtn.style.display = loggedIn ? '' : 'none';
@@ -8449,9 +8413,9 @@ window.addEventListener('load', () => {
 // 창 포커스 복귀 시 원격 변경 확인
 window.addEventListener('focus', () => {
   if (localStorage.getItem('drive_auto_login') !== 'true' || !Drive.tokenClient) return;
-  // 토큰 만료/임박 시 조용히 재발급, 아니면 오래된 경우만 동기화
+  // 만료된 토큰은 자동 팝업으로 갱신할 수 없으므로 재연결 버튼을 정확히 표시한다.
   if (!Drive.accessToken || Drive.tokenExpiresAt < Date.now() + 60000) {
-    Drive._silentReauth();
+    Drive._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
   } else if (Date.now() - Drive.lastSyncedAt > 60000) {
     Drive.pullFromDrive(false);
   }
