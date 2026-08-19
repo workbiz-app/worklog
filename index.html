@@ -689,6 +689,10 @@
   .pt-row .pt-pname { flex: 1; font-size: 14px; color: #2c3e50; font-weight: 600; word-break: break-word; }
   .pt-row .pt-price { font-size: 15px; font-weight: bold; color: #00695c; white-space: nowrap; }
   .pt-row .pt-price.none { color: #bdc3c7; font-weight: normal; font-size: 13px; }
+  .pt-row .pt-leadtime {
+    padding: 3px 7px; border-radius: 999px; background: #e8f4fd;
+    color: #2471a3; font-size: 12px; font-weight: bold; white-space: nowrap;
+  }
   .pt-list:empty::before,
   .pt-empty { display: block; text-align: center; color: #bdc3c7; padding: 36px 20px; font-size: 14px; }
 
@@ -756,6 +760,7 @@
     width: 100%; padding: 5px 8px; font-size: 13px;
     border: 1px solid #dfe4ea; border-radius: 4px;
   }
+  .vmd-items-table .vmd-leadtime-input { min-width: 78px; }
   .vmd-items-table .vmd-item-del {
     padding: 4px 8px; background: white; color: #e74c3c;
     border: 1px solid #f0c0c0; border-radius: 4px; cursor: pointer; font-size: 11px;
@@ -2236,8 +2241,9 @@
         <button class="ghost small" type="button" onclick="addPersonRow()" style="align-self:flex-start;margin-top:4px;">+ 담당자 추가</button>
       </div>
       <div class="form-row">
-        <label>관리 품목 (줄바꿈으로 구분)</label>
-        <textarea id="contactItems" rows="3" placeholder="예:&#10;MCB 시리즈&#10;RCCB 라인&#10;산업용 전원장치"></textarea>
+        <label>관리 품목 (한 줄에 품목명 | 리드타임 일수)</label>
+        <textarea id="contactItems" rows="3" placeholder="예:&#10;MCB 시리즈 | 30&#10;RCCB 라인 | 45&#10;산업용 전원장치"></textarea>
+        <small style="color:#95a5a6;font-size:11px;">리드타임을 모르면 품목명만 입력해도 됩니다. 저장 후 📇 거래처 관리에서도 수정할 수 있습니다.</small>
       </div>
       <div class="form-row">
         <label>거래처 메모</label>
@@ -2284,7 +2290,7 @@
     </div>
     <div id="priceTableList" class="pt-list"></div>
     <p style="font-size:12px;color:#95a5a6;margin-top:10px;line-height:1.5;">
-      💡 단가는 <b>📇 거래처 관리</b>의 품목 단가에서 자동으로 불러옵니다. 제품을 클릭하면 단가가 복사됩니다.
+      💡 단가와 리드타임은 <b>📇 거래처 관리</b>의 품목 기본값입니다. 제품을 클릭하면 단가가 복사됩니다.
     </p>
   </div>
 </div>
@@ -2377,10 +2383,13 @@
       <div class="form-row">
         <label>납기까지 걸리는 기간 *</label>
         <div class="po-leadtime-wrap">
-          <input type="number" id="poLeadTimeDays" min="0" step="1" inputmode="numeric" placeholder="숫자만 입력 (예: 30)" oninput="onPOLeadTimeChange()" onchange="onPOLeadTimeChange()" />
+          <input type="number" id="poLeadTimeDays" min="0" step="1" inputmode="numeric" placeholder="숫자만 입력 (예: 30)" oninput="onPOLeadTimeManualInput()" onchange="onPOLeadTimeManualInput()" />
           <span class="po-leadtime-unit">일</span>
         </div>
-        <small id="poLeadTimeHelp" style="color:#95a5a6;font-size:11px;">발주일로부터 며칠 걸리는지만 입력하세요</small>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px;">
+          <small id="poLeadTimeHelp" style="color:#95a5a6;font-size:11px;">발주일로부터 며칠 걸리는지만 입력하세요</small>
+          <button type="button" class="ghost small" id="poApplyVendorLeadTimeBtn" onclick="applyPOLeadTimeFromVendorItems(true)" style="padding:2px 7px;font-size:10px;">📇 품목 기준 적용</button>
+        </div>
       </div>
       <div class="form-row">
         <label>자동 납기일</label>
@@ -5070,7 +5079,11 @@ function editContact(id) {
   document.getElementById('contactModalTitle').textContent = '거래처 수정';
   document.getElementById('contactEditId').value = c.id;
   document.getElementById('contactName').value = c.name || '';
-  document.getElementById('contactItems').value = (c.items || []).map(i => typeof i === 'string' ? i : (i.name || '')).join('\n');
+  document.getElementById('contactItems').value = (c.items || []).map(i => {
+    if (typeof i === 'string') return i;
+    const lead = getVendorItemLeadTimeDays(i);
+    return `${i.name || ''}${lead != null ? ` | ${lead}` : ''}`;
+  }).join('\n');
   document.getElementById('contactMemo').value = c.memo || '';
   // 하위 호환: 기존 contact 필드가 있으면 persons로 마이그레이션
   let persons = c.persons;
@@ -5092,7 +5105,25 @@ function saveContact() {
   if (!name) { alert('거래처 이름을 입력하세요.'); return; }
   const invalidEmail = persons.find(p => p.email && parsePOReminderEmails(p.email)[0] !== p.email);
   if (invalidEmail) { alert(`담당자 이메일 형식을 확인하세요: ${invalidEmail.email}`); return; }
-  const newItemNames = itemsText ? itemsText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+  const itemLines = itemsText ? itemsText.split('\n').map(line => line.trim()).filter(Boolean) : [];
+  const invalidLeadLine = itemLines.find(line => {
+    if (!line.includes('|')) return false;
+    const leadRaw = line.split('|').slice(1).join('|').trim();
+    if (leadRaw === '') return false;
+    const days = Number(leadRaw);
+    return !Number.isInteger(days) || days < 0;
+  });
+  if (invalidLeadLine) {
+    alert(`품목 리드타임은 0 이상의 일수로 입력하세요.\n예: 제품명 | 30\n\n확인할 줄: ${invalidLeadLine}`);
+    return;
+  }
+  const newItemDefs = itemLines.map(line => {
+    const parts = line.split('|');
+    const name = (parts.shift() || '').trim();
+    const leadRaw = parts.join('|').trim();
+    const leadTimeDays = leadRaw === '' ? null : Number(leadRaw);
+    return { name, leadTimeDays };
+  }).filter(item => item.name);
   if (!state.contacts) state.contacts = [];
   if (id) {
     const c = state.contacts.find(x => x.id === id);
@@ -5100,15 +5131,18 @@ function saveContact() {
       // 기존 items(객체 또는 문자열)에서 단가 정보 보존
       const oldItemsMap = {};
       (c.items || []).forEach(i => {
-        if (typeof i === 'string') oldItemsMap[i] = { name: i, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW' };
+        if (typeof i === 'string') oldItemsMap[i] = { name: i, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null };
         else if (i.name) oldItemsMap[i.name] = i;
       });
-      const newItems = newItemNames.map(n => oldItemsMap[n] || { name: n, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW' });
+      const newItems = newItemDefs.map(item => {
+        const existing = oldItemsMap[item.name] || { name: item.name, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null };
+        return { ...existing, name: item.name, leadTimeDays: item.leadTimeDays != null ? item.leadTimeDays : (existing.leadTimeDays ?? null) };
+      });
       c.type = type; c.name = name; c.persons = persons; c.items = newItems; c.memo = memo;
       delete c.contact; // 구 필드 제거
     }
   } else {
-    const items = newItemNames.map(n => ({ name: n, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW' }));
+    const items = newItemDefs.map(item => ({ name: item.name, unitPrice: 0, currency: type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: item.leadTimeDays }));
     state.contacts.push({
       id: 'c_' + Date.now() + Math.random().toString(36).slice(2, 6),
       type, name, persons, items, memo
@@ -5123,6 +5157,12 @@ function saveContact() {
 
 function closeContactModal() {
   document.getElementById('contactModal').classList.remove('show');
+}
+
+function getVendorItemLeadTimeDays(item) {
+  if (!item || typeof item === 'string' || item.leadTimeDays === '' || item.leadTimeDays == null) return null;
+  const days = parseInt(item.leadTimeDays);
+  return Number.isFinite(days) && days >= 0 ? days : null;
 }
 
 function deleteContact(id) {
@@ -5210,7 +5250,11 @@ function renderContacts() {
         </div>
       </div>
       ${personsHtml}
-      ${(c.items || []).length > 0 ? `<div class="ci-items">📦 ${c.items.map(i => highlight(typeof i === 'string' ? i : (i.name || ''))).join(' · ')}</div>` : ''}
+      ${(c.items || []).length > 0 ? `<div class="ci-items">📦 ${c.items.map(i => {
+        const name = highlight(typeof i === 'string' ? i : (i.name || ''));
+        const lead = getVendorItemLeadTimeDays(i);
+        return `${name}${lead != null ? ` <span style="color:#2471a3;">(${lead}일)</span>` : ''}`;
+      }).join(' · ')}</div>` : ''}
       ${c.memo ? `<div class="ci-items" style="background:#fff8e7;color:#856404;">📝 ${highlight(c.memo)}</div>` : ''}
     </div>
     `;
@@ -5232,7 +5276,12 @@ function downloadContacts() {
     const names = persons.map(p => p.name || '').join('\n');
     const emails = persons.map(p => p.email || '').join('\n');
     const notes = persons.map(p => p.note || '').join('\n');
-    const items = (c.items || []).map(i => typeof i === 'string' ? i : `${i.name || ''}${i.unitPrice ? ` (${fmtMoney(i.unitPrice, i.currency||'KRW')})` : ''}`).join('\n');
+    const items = (c.items || []).map(i => {
+      if (typeof i === 'string') return i;
+      const price = i.unitPrice ? ` · ${fmtMoney(i.unitPrice, i.currency||'KRW')}` : '';
+      const lead = getVendorItemLeadTimeDays(i);
+      return `${i.name || ''}${price}${lead != null ? ` · 리드타임 ${lead}일` : ''}`;
+    }).join('\n');
     rows.push([type, c.name || '', names, emails, notes, items, c.memo || '']);
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -5918,7 +5967,7 @@ window.addEventListener('message', function (ev) {
           const myProducts = stockLibrary.filter(p => p && p.vendorId === sv.id);
           if (myProducts.length > 0) {
             existing.items = (existing.items || []).map(i => typeof i === 'string'
-              ? { name: i, unitPrice: 0, currency: existing.type === 'overseas' ? 'USD' : 'KRW' } : i);
+              ? { name: i, unitPrice: 0, currency: existing.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
             myProducts.forEach(p => {
               if (!p.name) return;
               const itemMatch = existing.items.find(i => i.name === p.name);
@@ -5926,7 +5975,8 @@ window.addEventListener('message', function (ev) {
                 existing.items.push({
                   name: p.name,
                   unitPrice: p.unitPrice || 0,
-                  currency: p.currency || sv.defaultCurrency || (existing.type === 'overseas' ? 'USD' : 'KRW')
+                  currency: p.currency || sv.defaultCurrency || (existing.type === 'overseas' ? 'USD' : 'KRW'),
+                  leadTimeDays: null
                 });
                 contactsChanged = true;
               } else if ((!itemMatch.unitPrice || itemMatch.unitPrice === 0) && p.unitPrice > 0) {
@@ -6016,7 +6066,7 @@ function renderPriceTable() {
   let totalItems = 0;
   const groups = vendors.map(v => {
     const flag = v.type === 'overseas' ? '🌏' : '🇰🇷';
-    let items = (v.items || []).map(i => (typeof i === 'string') ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+    let items = (v.items || []).map(i => (typeof i === 'string') ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
     if (q) {
       const vMatch = (v.name || '').toLowerCase().includes(q);
       items = items.filter(it => vMatch || (it.name || '').toLowerCase().includes(q));
@@ -6027,9 +6077,12 @@ function renderPriceTable() {
       const priceStr = (it.unitPrice && it.unitPrice > 0)
         ? `<span class="pt-price">${fmtMoney(it.unitPrice, it.currency || 'KRW')}</span>`
         : `<span class="pt-price none">단가 미등록</span>`;
+      const leadTimeDays = getVendorItemLeadTimeDays(it);
+      const leadTimeStr = leadTimeDays != null ? `<span class="pt-leadtime">⏱ ${leadTimeDays}일</span>` : '';
       const payload = (it.unitPrice && it.unitPrice > 0) ? String(Math.round(it.unitPrice)) : '';
       return `<div class="pt-row" onclick="copyPriceRow(this, '${escapeHtml(payload)}')">
         <span class="pt-pname">${escapeHtml(it.name || '(이름 없음)')}</span>
+        ${leadTimeStr}
         ${priceStr}
       </div>`;
     }).join('');
@@ -6126,8 +6179,8 @@ function selectVendorMgr(vid) {
 }
 
 function renderVendorDetailHtml(v) {
-  // items 마이그레이션: 문자열 배열 → 객체 배열 ({name, unitPrice, currency})
-  const itemsObj = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+  // items 마이그레이션: 문자열 배열 → 객체 배열 ({name, unitPrice, currency, leadTimeDays})
+  const itemsObj = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
   const persons = v.persons || [];
   const flag = v.type === 'overseas' ? '🌏 해외' : '🇰🇷 국내';
   const activePOCount = (state.purchaseOrders || []).filter(p => p.vendorId === v.id && !p.closed).length;
@@ -6158,12 +6211,12 @@ function renderVendorDetailHtml(v) {
 
     <div class="vmd-section">
       <h3 style="display:flex;justify-content:space-between;align-items:center;">
-        📦 취급 품목 · 단가 (${itemsObj.length}건)
+        📦 취급 품목 · 단가 · 리드타임 (${itemsObj.length}건)
         <button class="ghost small" onclick="addVendorItem('${v.id}')">+ 품목 추가</button>
       </h3>
       ${itemsObj.length === 0 ? '<div style="color:#bdc3c7;font-size:12px;padding:8px;">등록된 품목 없음 · 발주서 작성 시 자동 등록도 됩니다</div>' : `
         <table class="vmd-items-table">
-          <thead><tr><th style="width:50%;">품목명</th><th>표준 단가</th><th style="width:80px;">통화</th><th style="width:60px;"></th></tr></thead>
+          <thead><tr><th>품목명</th><th style="width:150px;">표준 단가</th><th style="width:80px;">통화</th><th style="width:105px;">리드타임</th><th style="width:60px;"></th></tr></thead>
           <tbody>
             ${itemsObj.map((it, i) => `
               <tr>
@@ -6177,6 +6230,7 @@ function renderVendorDetailHtml(v) {
                     <option value="JPY" ${it.currency==='JPY'?'selected':''}>¥JP</option>
                   </select>
                 </td>
+                <td><input class="vmd-leadtime-input" type="number" value="${getVendorItemLeadTimeDays(it) ?? ''}" oninput="updateVendorItem('${v.id}', ${i}, 'leadTimeDays', this.value)" min="0" step="1" inputmode="numeric" placeholder="일수" title="발주일로부터 납기까지 걸리는 기본 일수" /></td>
                 <td><button class="vmd-item-del" onclick="removeVendorItem('${v.id}', ${i})">✕</button></td>
               </tr>
             `).join('')}
@@ -6216,23 +6270,25 @@ function updateVendorItem(vid, idx, key, val) {
   const v = (state.contacts || []).find(c => c.id === vid);
   if (!v) return;
   // 문자열 배열을 객체 배열로 한 번에 마이그레이션
-  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
+  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
   if (!v.items[idx]) return;
   if (key === 'unitPrice') v.items[idx][key] = parseFloat(val) || 0;
+  else if (key === 'leadTimeDays') v.items[idx][key] = val === '' ? null : Math.max(0, parseInt(val) || 0);
   else v.items[idx][key] = val;
   saveData();
   // 발주 폼이 열려있고 같은 거래처면 자동완성 단가도 즉시 반영
   if (document.getElementById('poFormModal')?.classList.contains('show') &&
       document.getElementById('poVendor')?.value === vid) {
     try { renderPOItemsForm(); } catch (e) {}
+    try { applyPOLeadTimeFromVendorItems(false); } catch (e) {}
   }
 }
 
 function addVendorItem(vid) {
   const v = (state.contacts || []).find(c => c.id === vid);
   if (!v) return;
-  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' } : i);
-  v.items.push({ name: '', unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW' });
+  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
+  v.items.push({ name: '', unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null });
   saveData();
   refreshAfterVendorChange();
 }
@@ -6241,7 +6297,7 @@ function removeVendorItem(vid, idx) {
   const v = (state.contacts || []).find(c => c.id === vid);
   if (!v) return;
   if (!confirm('이 품목을 삭제할까요?')) return;
-  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i);
+  v.items = (v.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: v.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
   v.items.splice(idx, 1);
   saveData();
   refreshAfterVendorChange();
@@ -6769,16 +6825,19 @@ function togglePOVendor(vid) {
 // ===== 발주 추가/수정 폼 =====
 let _poItemsDraft = []; // 폼에서 편집 중인 품목 리스트
 let _poAccessoriesDraft = []; // 제품별 부속품 제작 일정
+let _poLeadTimeMode = 'auto'; // 'auto' | 'manual' | 'saved' — 기존 발주값은 임의 덮어쓰기 금지
 
 function newPOId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function addPO() {
+  _poLeadTimeMode = 'auto';
   document.getElementById('poFormTitle').textContent = '새 발주';
   document.getElementById('poEditId').value = '';
   document.getElementById('poDate').value = todayStr();
   document.getElementById('poLeadTimeDays').value = '';
+  delete document.getElementById('poLeadTimeDays').dataset.vendorAuto;
   document.getElementById('poDeliveryDate').value = '';
   renderPODeliveryDateDisplay();
   document.getElementById('poLeadTimeHelp').textContent = '발주일로부터 며칠 걸리는지만 입력하세요';
@@ -6831,11 +6890,13 @@ function addPO() {
 function editPO(id) {
   const po = (state.purchaseOrders || []).find(p => p.id === id);
   if (!po) return;
+  _poLeadTimeMode = 'saved';
   document.getElementById('poFormTitle').textContent = '발주 수정 · 납기 변경 가능';
   document.getElementById('poEditId').value = po.id;
   document.getElementById('poDate').value = po.date || '';
   const savedLeadTime = Number.isFinite(parseInt(po.leadTimeDays)) ? parseInt(po.leadTimeDays) : Math.max(0, (poDayNumber(po.deliveryDate) ?? 0) - (poDayNumber(po.date) ?? 0));
   document.getElementById('poLeadTimeDays').value = Number.isFinite(savedLeadTime) ? savedLeadTime : '';
+  delete document.getElementById('poLeadTimeDays').dataset.vendorAuto;
   document.getElementById('poDeliveryDate').value = po.deliveryDate || '';
   renderPODeliveryDateDisplay();
   document.getElementById('poLeadTimeHelp').textContent = '기존 발주도 기간 숫자를 바꾸면 납기일이 즉시 다시 계산됩니다';
@@ -6941,6 +7002,7 @@ function onPOVendorChange() {
   }
   renderPOItemsForm();
   renderPOAccessoriesForm();
+  applyPOLeadTimeFromVendorItems(false);
 }
 
 function onPOLeadTimeChange() {
@@ -6958,6 +7020,76 @@ function onPOLeadTimeChange() {
   const end = new Date(Date.UTC(y, m - 1, d + days));
   delivery.value = `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, '0')}-${String(end.getUTCDate()).padStart(2, '0')}`;
   renderPODeliveryDateDisplay();
+}
+
+function onPOLeadTimeManualInput() {
+  _poLeadTimeMode = 'manual';
+  const leadInput = document.getElementById('poLeadTimeDays');
+  if (leadInput) delete leadInput.dataset.vendorAuto;
+  const help = document.getElementById('poLeadTimeHelp');
+  if (help) {
+    help.textContent = '직접 입력한 기간입니다 · 품목 기본값으로 바꾸려면 오른쪽 버튼을 누르세요';
+    help.style.color = '#7f8c8d';
+  }
+  onPOLeadTimeChange();
+}
+
+function findVendorItemByName(vendor, name) {
+  const target = String(name || '').trim().toLocaleLowerCase('ko');
+  if (!target || !vendor) return null;
+  return (vendor.items || []).find(item => {
+    const itemName = typeof item === 'string' ? item : (item.name || '');
+    return itemName.trim().toLocaleLowerCase('ko') === target;
+  }) || null;
+}
+
+function getPODraftVendorLeadTimes() {
+  const vendorId = document.getElementById('poVendor')?.value;
+  const vendor = (state.contacts || []).find(v => v.id === vendorId);
+  if (!vendor) return [];
+  return _poItemsDraft
+    .filter(item => (item.kind || 'product') === 'product' && (item.name || '').trim())
+    .map(item => {
+      const vendorItem = findVendorItemByName(vendor, item.name);
+      const days = getVendorItemLeadTimeDays(vendorItem);
+      return days == null ? null : { name: (item.name || '').trim(), days };
+    })
+    .filter(Boolean);
+}
+
+// 한 발주에 여러 제품이 있으면 모두 제작될 수 있도록 가장 긴 리드타임을 적용한다.
+// 기존 발주값이나 사용자가 직접 입력한 값은 force=true(버튼 클릭)가 아니면 덮어쓰지 않는다.
+function applyPOLeadTimeFromVendorItems(force = false) {
+  if (!force && _poLeadTimeMode !== 'auto') return false;
+  const matches = getPODraftVendorLeadTimes();
+  const leadInput = document.getElementById('poLeadTimeDays');
+  const help = document.getElementById('poLeadTimeHelp');
+  if (!leadInput) return false;
+
+  if (matches.length === 0) {
+    if (_poLeadTimeMode === 'auto' && leadInput.dataset.vendorAuto === 'true') {
+      leadInput.value = '';
+      delete leadInput.dataset.vendorAuto;
+      onPOLeadTimeChange();
+    }
+    if (force) {
+      alert('선택한 거래처 품목에 등록된 리드타임이 없습니다.\n📇 거래처 관리에서 품목별 리드타임을 먼저 입력하세요.');
+    }
+    return false;
+  }
+
+  const maxDays = Math.max(...matches.map(item => item.days));
+  const longest = matches.filter(item => item.days === maxDays).map(item => item.name);
+  _poLeadTimeMode = 'auto';
+  leadInput.value = maxDays;
+  leadInput.dataset.vendorAuto = 'true';
+  onPOLeadTimeChange();
+  if (help) {
+    const itemText = longest.length === 1 ? longest[0] : `${longest[0]} 외 ${longest.length - 1}개`;
+    help.textContent = `📇 거래처 품목 기준 자동 · ${itemText} ${maxDays}일${matches.length > 1 ? ' (여러 품목 중 최장)' : ''}`;
+    help.style.color = '#2471a3';
+  }
+  return true;
 }
 
 function renderPODeliveryDateDisplay() {
@@ -7155,11 +7287,14 @@ function renderPOItemsForm() {
   const vid = document.getElementById('poVendor')?.value;
   const vendor = (state.contacts || []).find(c => c.id === vid);
   const vendorItemsRaw = vendor?.items || [];
-  const vendorItems = vendorItemsRaw.map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i);
+  const vendorItems = vendorItemsRaw.map(i => typeof i === 'string' ? { name: i, unitPrice: 0, leadTimeDays: null } : i);
   const datalistId = 'poItemsDatalist';
   let datalistHtml = '';
   if (vendorItems.length > 0) {
-    datalistHtml = `<datalist id="${datalistId}">${vendorItems.map(i => `<option value="${escapeHtml(i.name || '')}">`).join('')}</datalist>`;
+    datalistHtml = `<datalist id="${datalistId}">${vendorItems.map(i => {
+      const lead = getVendorItemLeadTimeDays(i);
+      return `<option value="${escapeHtml(i.name || '')}"${lead != null ? ` label="기본 리드타임 ${lead}일"` : ''}>`;
+    }).join('')}</datalist>`;
   }
   tbody.innerHTML = datalistHtml + _poItemsDraft.map((it, i) => `
     <tr>
@@ -7182,23 +7317,22 @@ function renderPOItemsForm() {
   recalcPOTotal();
 }
 
-// 품목명 입력 시 거래처에 등록된 단가 자동 채우기 (사용자가 이미 단가 입력했으면 건드리지 않음)
+// 품목명 입력 시 거래처에 등록된 단가와 리드타임 자동 채우기
 function maybeAutofillPOPrice(idx, name) {
   const vid = document.getElementById('poVendor')?.value;
   const vendor = (state.contacts || []).find(c => c.id === vid);
   if (!vendor || !vendor.items) return;
   const it = _poItemsDraft[idx];
   if (!it) return;
-  // 기존에 단가가 이미 0보다 크면 덮어쓰지 않음
-  if ((parseFloat(it.unitPrice) || 0) > 0) return;
-  const match = vendor.items.find(vi => {
-    const vn = typeof vi === 'string' ? vi : (vi.name || '');
-    return vn === name;
-  });
-  if (!match) return;
+  const match = findVendorItemByName(vendor, name);
+  if (!match) {
+    applyPOLeadTimeFromVendorItems(false);
+    return;
+  }
   const price = typeof match === 'string' ? 0 : (parseFloat(match.unitPrice) || 0);
   const cur = typeof match === 'string' ? null : match.currency;
-  if (price > 0) {
+  // 사용자가 이미 단가를 직접 입력했다면 단가는 덮어쓰지 않는다.
+  if (price > 0 && (parseFloat(it.unitPrice) || 0) <= 0) {
     it.unitPrice = price;
     const input = document.getElementById(`poUnitPrice_${idx}`);
     if (input) input.value = price;
@@ -7208,6 +7342,7 @@ function maybeAutofillPOPrice(idx, name) {
     }
     recalcPOTotal();
   }
+  applyPOLeadTimeFromVendorItems(false);
 }
 
 function addPOItemRow() {
@@ -7238,6 +7373,7 @@ function removePOItemRow(idx) {
   if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
   renderPOAccessoriesForm();
+  applyPOLeadTimeFromVendorItems(false);
 }
 
 function updatePOItem(idx, key, val) {
@@ -7256,7 +7392,7 @@ function addPOItemsFromVendor() {
   const vendorId = document.getElementById('poVendor')?.value;
   const vendor = (state.contacts || []).find(v => v.id === vendorId);
   if (!vendor) return alert('먼저 거래처를 선택하세요.');
-  const items = (vendor.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0 } : i).filter(i => (i.name || '').trim());
+  const items = (vendor.items || []).map(i => typeof i === 'string' ? { name: i, unitPrice: 0, leadTimeDays: null } : i).filter(i => (i.name || '').trim());
   if (items.length === 0) return alert('이 거래처에 등록된 품목이 없습니다.\n📇 거래처 관리에서 품목을 먼저 추가하세요.');
   const existing = new Set(_poItemsDraft.map(i => (i.name || '').trim()).filter(Boolean));
   const blankOnly = _poItemsDraft.length === 1 && !(_poItemsDraft[0].name || '').trim();
@@ -7269,6 +7405,7 @@ function addPOItemsFromVendor() {
   if (_poItemsDraft.length === 0) _poItemsDraft.push({ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 });
   renderPOItemsForm();
   renderPOAccessoriesForm();
+  applyPOLeadTimeFromVendorItems(false);
 }
 
 function renderPOAccessoriesForm() {
@@ -7486,12 +7623,12 @@ async function savePO(options = {}) {
   if (vendor) {
     if (!vendor.items) vendor.items = [];
     // 기존 문자열 항목들을 객체로 마이그레이션
-    vendor.items = vendor.items.map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: vendor.type === 'overseas' ? 'USD' : 'KRW' } : i);
+    vendor.items = vendor.items.map(i => typeof i === 'string' ? { name: i, unitPrice: 0, currency: vendor.type === 'overseas' ? 'USD' : 'KRW', leadTimeDays: null } : i);
     validItems.filter(it => (it.kind || 'product') !== 'mold').forEach(it => {
       const nm = it.name.trim();
       const exists = vendor.items.find(vi => vi.name === nm);
       if (!exists) {
-        vendor.items.push({ name: nm, unitPrice: it.unitPrice || 0, currency });
+        vendor.items.push({ name: nm, unitPrice: it.unitPrice || 0, currency, leadTimeDays: null });
       } else if (!exists.unitPrice && it.unitPrice > 0) {
         // 기존 항목에 단가 없으면 이번 발주 단가로 채워줌
         exists.unitPrice = it.unitPrice;
