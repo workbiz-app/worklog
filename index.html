@@ -2398,8 +2398,9 @@
       </div>
       <div class="form-row">
         <label>거래처 *</label>
+        <input type="search" id="poVendorSearch" placeholder="🔍 거래처명 · 담당자 · 품목 검색" oninput="filterPOVendorOptions()" onkeydown="onPOVendorSearchKeydown(event)" autocomplete="off" style="margin-bottom:6px;" />
         <select id="poVendor" onchange="onPOVendorChange()"></select>
-        <small style="color:#95a5a6;font-size:11px;">📇 거래처 기록의 품목·단가를 아래에서 불러옵니다</small>
+        <small id="poVendorSearchInfo" style="color:#95a5a6;font-size:11px;">📇 거래처 기록의 품목·단가를 아래에서 불러옵니다</small>
       </div>
       <div class="form-row">
         <label>상태</label>
@@ -6878,13 +6879,14 @@ function addPO() {
   document.getElementById('poCloseBtn').style.display = 'none';
   _poItemsDraft = [{ id: newPOId('poi'), kind: 'product', name: '', qty: 1, unitPrice: 0 }];
   _poAccessoriesDraft = [];
+  document.getElementById('poVendorSearch').value = '';
   populateVendorSelect();
   renderPOItemsForm();
   renderPOAccessoriesForm();
   onPOPaymentTypeChange();
   onPODeliveryReminderToggle();
   document.getElementById('poFormModal').classList.add('show');
-  setTimeout(() => document.getElementById('poVendor')?.focus(), 100);
+  setTimeout(() => document.getElementById('poVendorSearch')?.focus(), 100);
 }
 
 function editPO(id) {
@@ -6972,6 +6974,7 @@ function editPO(id) {
     productItemId: draftItemIds.has(a.productItemId) ? a.productItemId : (_poItemsDraft[0]?.id || ''),
     completed: !!a.completed
   }));
+  document.getElementById('poVendorSearch').value = '';
   populateVendorSelect(po.vendorId);
   renderPOItemsForm();
   renderPOAccessoriesForm();
@@ -6985,16 +6988,64 @@ function closePOForm() {
   document.getElementById('poFormModal').classList.remove('show');
 }
 
-function populateVendorSelect(selectedId) {
-  const sel = document.getElementById('poVendor');
+function getPOVendorSearchHaystack(vendor) {
+  const persons = (vendor.persons || []).map(p => `${p.name || ''} ${p.email || ''} ${p.phone || ''} ${p.role || ''}`).join(' ');
+  const items = (vendor.items || []).map(item => typeof item === 'string' ? item : (item.name || '')).join(' ');
+  return `${vendor.name || ''} ${persons} ${items}`.toLocaleLowerCase('ko');
+}
+
+function getFilteredPOVendors(query = '') {
+  const q = String(query || '').trim().toLocaleLowerCase('ko');
   const vendors = (state.contacts || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  return q ? vendors.filter(vendor => getPOVendorSearchHaystack(vendor).includes(q)) : vendors;
+}
+
+function populateVendorSelect(selectedId, queryOverride) {
+  const sel = document.getElementById('poVendor');
+  if (!sel) return;
+  const search = document.getElementById('poVendorSearch');
+  const query = queryOverride !== undefined ? queryOverride : (search?.value || '');
+  const allVendors = (state.contacts || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  const matchedVendors = getFilteredPOVendors(query);
+  const vendors = matchedVendors.slice();
+  const selectedVendor = allVendors.find(v => v.id === selectedId);
+  if (selectedVendor && !vendors.some(v => v.id === selectedVendor.id)) vendors.unshift(selectedVendor);
   sel.innerHTML = '<option value="">— 거래처 선택 —</option>' +
     vendors.map(v => `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${escapeHtml(v.name)} ${v.type === 'overseas' ? '🌏' : '🇰🇷'}</option>`).join('');
+  const info = document.getElementById('poVendorSearchInfo');
+  if (info) {
+    const q = String(query || '').trim();
+    info.textContent = q
+      ? `🔍 ${matchedVendors.length}개 검색됨 · 선택하면 품목·단가·리드타임을 불러옵니다`
+      : `📇 전체 ${allVendors.length}개 · 거래처명, 담당자, 품목으로 검색 가능`;
+    info.style.color = q && matchedVendors.length === 0 ? '#c0392b' : '#95a5a6';
+  }
+}
+
+function filterPOVendorOptions() {
+  const selectedId = document.getElementById('poVendor')?.value || '';
+  populateVendorSelect(selectedId);
+}
+
+function onPOVendorSearchKeydown(event) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  const search = document.getElementById('poVendorSearch');
+  const matches = getFilteredPOVendors(search?.value || '');
+  if (matches.length === 0) return;
+  const sel = document.getElementById('poVendor');
+  sel.value = matches[0].id;
+  onPOVendorChange();
 }
 
 function onPOVendorChange() {
   // 거래처 변경 시 해외면 통화 USD로 추천 (사용자가 변경 가능)
   const vid = document.getElementById('poVendor').value;
+  const search = document.getElementById('poVendorSearch');
+  if (search && search.value) {
+    search.value = '';
+    populateVendorSelect(vid, '');
+  }
   const v = (state.contacts || []).find(c => c.id === vid);
   if (v && v.type === 'overseas' && document.getElementById('poCurrency').value === 'KRW') {
     document.getElementById('poCurrency').value = 'USD';
