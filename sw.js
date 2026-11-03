@@ -1,16 +1,16 @@
 // 업무일지 Service Worker (v1)
 // 오프라인 지원 + 앱 쉘 캐싱
 
-const CACHE = 'worklog-v51';
+const CACHE = 'worklog-v52';
 const ASSETS = [
   './',
   './index.html',
-  './sync-core.js?v=51',
-  './cloud-config.js?v=51',
-  './cloud-core.js?v=51',
-  './cloud-backend.js?v=51',
-  './cloud-runtime.js?v=51',
-  './drive-optional.js?v=51',
+  './sync-core.js?v=52',
+  './cloud-config.js?v=52',
+  './cloud-core.js?v=52',
+  './cloud-backend.js?v=52',
+  './cloud-runtime.js?v=52',
+  './drive-optional.js?v=52',
   './cost.html',
   './stock.html',
   './remit.html',
