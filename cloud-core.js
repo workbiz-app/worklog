@@ -125,7 +125,7 @@
       }
       const r=result.record;
       if(!this.server[r.key]||this.server[r.key].revision<=r.revision)this.server[r.key]=clone(r);
-      if(!pending){this.model[r.key]=clone(r);return;}
+      if(!pending){this.model[r.key]=clone(this.server[r.key]);return;}
       if(pending.id===op.id){delete this.queue[r.key];this.model[r.key]=clone(this.server[r.key]);return;}
       if(pending.actor!==op.actor)return;
       // A later keystroke was based on the submitted draft, not the old server.
