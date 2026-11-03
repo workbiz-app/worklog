@@ -295,6 +295,15 @@
     margin-top: -4px;
   }
   .task.expanded .task-body { display: block; }
+  .task-note-preview {
+    display: block; width: calc(100% - 52px); margin: 0 12px 10px 40px;
+    padding: 8px 10px; background: #fff8e7; color: #6c5316;
+    border: 1px solid #f3e2b8; border-radius: 6px; text-align: left;
+    font: inherit; font-size: 12px; line-height: 1.5; white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .task-note-preview:hover { background: #fff1cb; }
+  .task.expanded .task-note-preview { display: none; }
   .task-body textarea {
     width: 100%; min-height: 70px; padding: 8px 10px;
     border: 1px solid #dfe4ea; border-radius: 6px;
@@ -1892,7 +1901,7 @@
   </aside>
 
   <div class="main">
-    <h1>📘 업무일지 <span style="font-size:13px;color:#95a5a6;font-weight:normal;">v2 · 클라우드 싱크</span></h1>
+    <h1>📘 업무일지 <span style="font-size:13px;color:#95a5a6;font-weight:normal;">v5 · 기록 보관</span></h1>
 
     <div class="sync-bar" id="syncBar">
       <div class="sb-left">
@@ -1960,7 +1969,7 @@
         <button class="ghost small" onclick="addTodayLink()" title="링크 추가">🔗 링크</button>
         <button class="ghost small" onclick="document.getElementById('todayFileInput').click()" title="파일 첨부">📎 파일</button>
         <input type="file" id="todayFileInput" style="display:none;" onchange="handleTodayFileChange(event)" />
-        <span class="save-status" id="memoStatus">✓ 저장됨</span>
+        <span class="save-status" id="memoStatus">✓ 이 기기에 저장됨</span>
         <span style="font-size:11px;color:#95a5a6;margin-left:auto;">자동 저장됩니다</span>
       </div>
       <div id="todayAttachList" class="today-attach-list"></div>
@@ -2646,71 +2655,14 @@
 
 <div class="modal" id="setupModal">
   <div class="modal-content setup-modal-content">
-    <button class="modal-close" onclick="document.getElementById('setupModal').classList.remove('show')">닫기</button>
-    <h2>🔧 첫 설치 가이드</h2>
-    <p style="color:#7f8c8d;font-size:13px;">
-      한 번만 설정하면 <b>모든 기기(핸드폰·노트북·데스크탑)에서 자동 싱크</b>됩니다.<br>
-      총 소요 시간 <b>약 15분</b>. 순서대로 따라오세요.
-    </p>
-
-    <div class="step-header">STEP 1 — GitHub Pages 무료 호스팅 (약 5분)</div>
-    <p style="font-size:13px;color:#7f8c8d;">OAuth는 <code>file://</code>에서 작동 안 함 → 무료 웹 주소 필요.</p>
-    <ol style="font-size:14px;">
-      <li>가입: <a href="https://github.com/signup" target="_blank">github.com/signup</a></li>
-      <li>저장소 생성: <a href="https://github.com/new" target="_blank">github.com/new</a> — 이름 <code>worklog</code>, <b>Public</b> 선택</li>
-      <li>저장소에서 <code>Add file → Upload files</code> → <b>이 HTML 파일을 <code>index.html</code>로 이름 변경</b>해서 업로드</li>
-      <li>저장소 <code>Settings → Pages</code> → Branch <code>main / root</code> → Save</li>
-      <li>1~2분 대기 → 주소 표시됨: <code>https://[사용자명].github.io/worklog/</code>
-        <br>⭐ <b>이 주소 메모</b> (STEP 2에서 필요)</li>
-    </ol>
-
-    <div class="step-header">STEP 2 — Google OAuth Client ID 발급 (약 10분)</div>
-    <p style="font-size:13px;color:#7f8c8d;">본인 Drive 접근 권한 — <b>1회만</b> 발급.</p>
-    <ol style="font-size:14px;">
-      <li>접속: <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> (업무일지 저장할 구글 계정으로 로그인)</li>
-      <li>새 프로젝트 생성: <a href="https://console.cloud.google.com/projectcreate" target="_blank">프로젝트 생성</a>  (이름: <code>업무일지</code>)</li>
-      <li>Drive API 활성화: <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API 페이지</a> → <b>"사용" 클릭</b></li>
-      <li>OAuth 동의 화면: <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank">동의 화면 구성</a>
-        <br>→ User Type: <b>외부</b> → 앱 이름 <code>업무일지</code>, 이메일 본인 것 → 저장 후 계속
-        <br>→ "테스트 사용자" 섹션에서 <b>본인 Gmail 추가</b> (딱 본인만 추가하면 됨)</li>
-      <li>Client ID 발급: <a href="https://console.cloud.google.com/apis/credentials" target="_blank">사용자 인증 정보</a>
-        <br>→ 상단 <code>+ 사용자 인증 정보 만들기 → OAuth 클라이언트 ID</code>
-        <br>→ 유형: <b>웹 애플리케이션</b>
-        <br>→ 승인된 JavaScript 원본: <code>https://[사용자명].github.io</code> (주소 끝 <code>/worklog</code> 빼고 도메인까지만)
-        <br>→ 생성 → <b>Client ID 복사</b>
-      </li>
-    </ol>
-
-    <div class="step-header">STEP 3 — HTML에 Client ID 박기 (약 1분)</div>
-    <ol style="font-size:14px;">
-      <li><code>index.html</code>을 <b>메모장으로 열기</b></li>
-      <li><code>Ctrl+F</code>로 <code>여기에_CLIENT_ID_붙여넣기</code> 검색</li>
-      <li>그 줄을 STEP 2에서 복사한 Client ID로 교체:
-        <br><code>const GOOGLE_CLIENT_ID = "1234-abc.apps.googleusercontent.com";</code></li>
-      <li>저장 → GitHub에 <b>다시 업로드</b> (같은 파일명으로 덮어쓰기)</li>
-    </ol>
-
-    <div class="step-header">STEP 4 — 사용 시작 (딸깍 딸깍)</div>
-    <ol style="font-size:14px;">
-      <li>GitHub Pages 주소로 접속 (핸드폰/노트북/데스크탑 아무거나)</li>
-      <li>"구글로 로그인" 클릭</li>
-      <li>첫 1회만: "확인되지 않은 앱" 경고 → <code>고급 → 안전하지 않음(이동)</code> (본인이 만든 앱이라 문제없음)</li>
-      <li>권한 허용 → ✅ 완료. 이후 자동 로그인</li>
-    </ol>
-
-    <div style="margin-top:18px;padding:12px;background:#d4edda;border-radius:6px;font-size:13px;">
-      ✅ <b>설정 후 사용법:</b> 어떤 기기에서든 주소 접속 → 자동 로그인 → 바로 사용.
-      별도 로그인 버튼 클릭도 필요 없을 때가 많습니다 (이전 세션 자동 복원).
-    </div>
-
-    <div style="margin-top:10px;padding:12px;background:#fff3cd;border-radius:6px;font-size:13px;">
-      💡 <b>v3 예정 기능:</b> 팀장 초대코드로 팀원들과 공유 워크스페이스 사용 (별도 업데이트)
-    </div>
-
-    <div style="margin-top:10px;padding:12px;background:#eaf2ff;border-radius:6px;font-size:13px;">
-      🔄 <b>자동 로그인 해제:</b> 브라우저 콘솔(F12)에서
-      <code>localStorage.removeItem('drive_auto_login'); location.reload();</code>
-    </div>
+    <button class="modal-close" onclick="document.getElementById(&quot;setupModal&quot;).classList.remove(&quot;show&quot;)">닫기</button>
+    <h2>저장·로그인 안내</h2>
+    <p>기록은 입력할 때 이 기기에 저장되고, 로그인 후 서버에 전송됩니다. 상단의 저장 상태를 확인해 주세요.</p>
+    <p><b>이 기기 저장됨</b>: 현재 브라우저에 보관된 상태입니다. <b>서버 저장 완료</b>: 같은 구글 계정으로 로그인한 다른 기기에서도 확인할 수 있습니다.</p>
+    <p><b>수정 충돌</b>: 같은 기록을 여러 기기에서 다르게 수정한 경우입니다. 양쪽 내용이 보관되며, 충돌 확인 화면에서 사용할 내용을 선택할 수 있습니다.</p>
+    <p><b>변경 이력 · 복원</b>에서 업무별 이전 내용을 확인하고 되돌릴 수 있습니다. 복원 전 내용도 서버 이력에 남습니다.</p>
+    <p>앱 로그인은 브라우저를 닫아도 유지되도록 설정됩니다. Drive·캘린더는 별도 연결이며, 이 연결이 만료돼도 업무 작성과 서버 저장은 계속됩니다.</p>
+    <p>서버 설정 대기 상태가 계속되면 관리자에게 연결 설정을 요청해 주세요. 이 상태에서는 기기 백업을 함께 보관해 주세요.</p>
   </div>
 </div>
 
@@ -2743,6 +2695,12 @@
   </div>
 </div>
 
+<script src="./sync-core.js?v=51"></script>
+<script src="./cloud-config.js?v=51"></script>
+<script src="./cloud-core.js?v=51"></script>
+<script src="./cloud-backend.js?v=51"></script>
+<script src="./cloud-runtime.js?v=51"></script>
+<script src="./drive-optional.js?v=51"></script>
 <script>
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  🔑 GOOGLE OAUTH CLIENT ID 설정 (여기만 수정)                          ║
@@ -2795,8 +2753,8 @@ function formatMonthKo(s) {
   return `${y}년 ${parseInt(m)}월`;
 }
 
-function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+function loadData(rawOverride) {
+  const raw = arguments.length ? rawOverride : localStorage.getItem(STORAGE_KEY);
   const defaults = {
     currentDate: todayStr(),
     todayTasks: [], todayMemo: '',
@@ -2832,7 +2790,10 @@ function loadData() {
     data.todayTasks.forEach(t => { if (!t.images) t.images = []; if (t.selected === undefined) t.selected = false; });
     Object.values(data.archive).forEach(arr => arr.forEach(t => { if (!t.images) t.images = []; }));
     return data;
-  } catch (e) { return defaults; }
+  } catch (e) {
+    window.worklogBrokenStorage = { raw, savedAt: Date.now(), error: String(e.message) };
+    return defaults;
+  }
 }
 
 function saveData() {
@@ -2849,399 +2810,16 @@ function saveData() {
   }
 }
 
-// ===== 발주일지 안전 동기화 =====
-// 예전 방식은 PC/휴대폰의 state 전체를 한 파일로 덮어써서, 한쪽에만 있던 발주가
-// 사라질 수 있었다. 발주는 ID와 수정시각으로 병합하고, 명시적으로 삭제한 ID만
-// tombstone(삭제 기록)으로 전파한다.
-const PO_BACKUP_KEY = STORAGE_KEY + '_purchase_orders_backup';
-
+// ===== 발주 시각 및 Google Drive 파일 도우미 =====
 function poSyncTime(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? n : (Number(fallback) || 0);
 }
 
-function normalizePurchaseOrderForSync(po, fallbackTime = 0) {
-  if (!po || !po.id) return null;
-  const createdAt = poSyncTime(po.createdAt, fallbackTime);
-  const updatedAt = poSyncTime(po.updatedAt, createdAt || fallbackTime);
-  return { ...po, createdAt, updatedAt };
-}
-
-function mergePurchaseOrderSync(localState, remoteState, localModified = 0, remoteModified = 0) {
-  const localOrders = Array.isArray(localState?.purchaseOrders) ? localState.purchaseOrders : [];
-  const remoteOrders = Array.isArray(remoteState?.purchaseOrders) ? remoteState.purchaseOrders : [];
-  const deleted = {};
-
-  [localState?.poDeletedOrderIds, remoteState?.poDeletedOrderIds].forEach(source => {
-    if (!source || typeof source !== 'object') return;
-    Object.entries(source).forEach(([id, deletedAt]) => {
-      if (!id) return;
-      deleted[id] = Math.max(poSyncTime(deleted[id]), poSyncTime(deletedAt));
-    });
-  });
-
-  const byId = new Map();
-  const order = [];
-  const accept = (raw, fallbackTime, preferOnTie = false) => {
-    const po = normalizePurchaseOrderForSync(raw, fallbackTime);
-    if (!po) return;
-    if (!byId.has(po.id)) order.push(po.id);
-    const current = byId.get(po.id);
-    if (!current || po.updatedAt > current.updatedAt || (preferOnTie && po.updatedAt === current.updatedAt)) {
-      byId.set(po.id, po);
-    }
-  };
-
-  // 원격을 먼저 넣고 로컬을 나중에 넣는다. 같은 수정시각이면 현재 화면의 값을 유지한다.
-  remoteOrders.forEach(po => accept(po, remoteModified, false));
-  localOrders.forEach(po => accept(po, localModified, true));
-
-  const orders = order
-    .map(id => byId.get(id))
-    .filter(po => po && po.updatedAt > poSyncTime(deleted[po.id]));
-
-  return { orders, deleted };
-}
-
-function purchaseOrderSyncSignature(source) {
-  return JSON.stringify({
-    purchaseOrders: Array.isArray(source?.purchaseOrders) ? source.purchaseOrders : [],
-    poDeletedOrderIds: source?.poDeletedOrderIds || {}
-  });
-}
-
-function backupPurchaseOrders(reason) {
-  if (!Array.isArray(state?.purchaseOrders) || state.purchaseOrders.length === 0) return;
-  try {
-    localStorage.setItem(PO_BACKUP_KEY, JSON.stringify({
-      savedAt: Date.now(),
-      reason: reason || '동기화 전',
-      purchaseOrders: state.purchaseOrders,
-      poDeletedOrderIds: state.poDeletedOrderIds || {}
-    }));
-  } catch (e) {
-    console.warn('발주 안전 백업 저장 실패:', e);
-  }
-}
-
-function applyMergedPurchaseOrders(merged, modifiedTime = Date.now()) {
-  state.purchaseOrders = merged.orders;
-  state.poDeletedOrderIds = merged.deleted;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  localStorage.setItem(STORAGE_KEY + '_mod', String(modifiedTime || Date.now()));
-}
-
-// ===== Google Drive 클라우드 싱크 =====
+// Authentication, durable saves and cross-device merge live in sync-runtime.js.
 const Drive = {
-  tokenClient: null,
-  accessToken: null,
-  tokenExpiresAt: 0,
-  userEmail: '',
-  fileId: null,
-  lastSyncedAt: 0,
-  lastRemoteModified: 0,
-  pendingUpload: null,
-  status: 'idle', // 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
-
-  init() {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('여기에_CLIENT_ID_붙여넣기')) {
-      updateSyncUI('⚠ Client ID 미설정 (❓ 참고)', 'error');
-      showLoginGate('setup');
-      return;
-    }
-    if (typeof google === 'undefined' || !google.accounts) {
-      // GIS 로드 대기
-      setTimeout(() => this.init(), 500);
-      return;
-    }
-    try {
-      this.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: DRIVE_SCOPE,
-        callback: (resp) => this._onToken(resp),
-        error_callback: (err) => {
-          console.warn('OAuth 오류:', err);
-          // 이전에 로그인한 적 있으면(자동로그인) — 게이트/에러로 막지 말고 조용히 재시도
-          if (localStorage.getItem('drive_auto_login') === 'true') {
-            this._scheduleRetry();
-          } else {
-            updateSyncUI('로그인 오류: ' + (err.message || err.type || '알 수 없음'), 'error');
-          }
-        }
-      });
-      // 저장된 토큰 복원 (localStorage — 탭/브라우저 재시작해도 유지)
-      // 이전 버전의 sessionStorage 토큰도 1회 마이그레이션
-      let saved = localStorage.getItem('drive_token');
-      if (!saved) {
-        const legacy = sessionStorage.getItem('drive_token');
-        if (legacy) { localStorage.setItem('drive_token', legacy); sessionStorage.removeItem('drive_token'); saved = legacy; }
-      }
-      let savedTok = null;
-      if (saved) { try { savedTok = JSON.parse(saved); } catch (e) {} }
-      const autoLogin = localStorage.getItem('drive_auto_login') === 'true';
-      this.userEmail = savedTok?.email || localStorage.getItem('drive_user_email') || '';
-
-      // ① 아직 유효한 토큰이 남아있으면 그대로 복원
-      if (savedTok && savedTok.expiresAt > Date.now() + 30000) {
-        this.accessToken = savedTok.accessToken;
-        this.tokenExpiresAt = savedTok.expiresAt;
-        this.userEmail = savedTok.email || this.userEmail;
-        this._scheduleSilentRefresh();
-        hideLoginGate();
-        updateSyncUI('복원된 세션', 'synced');
-        this.pullFromDrive(true).then(() => syncPendingPODeliveryReminders()).catch(e => console.warn(e));
-        return;
-      }
-
-      // ② 이전에 로그인한 적 있으면 — 블로킹 게이트 띄우지 말고 낙관적으로 앱 사용
-      //    (로컬 데이터 그대로 보여주고, 백그라운드에서 조용히 토큰 재발급. 실패해도 계속 사용 가능)
-      if (autoLogin) {
-        if (savedTok && savedTok.email) this.userEmail = savedTok.email;
-        hideLoginGate();
-        this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
-        return;
-      }
-
-      // ③ 게스트 모드 복원
-      if (localStorage.getItem('guest_mode') === 'true') {
-        hideLoginGate();
-        showGuestBanner();
-        updateSyncUI('게스트 모드 · 로컬 저장', 'offline');
-        return;
-      }
-      // ④ 한 번도 로그인 안 함 → 최초 1회만 로그인 화면
-      showLoginGate('login');
-      updateSyncUI('로그인 필요', 'idle');
-    } catch (e) {
-      console.error(e);
-      updateSyncUI('초기화 실패: ' + e.message, 'error');
-    }
-  },
-
-  login() {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('여기에_CLIENT_ID_붙여넣기')) {
-      alert('⚠ Client ID가 설정되지 않았습니다.\n❓ 버튼을 눌러 설정 가이드를 확인하세요.');
-      showSetupGuide();
-      return;
-    }
-    if (!this.tokenClient) { this.init(); setTimeout(() => this.login(), 800); return; }
-    updateSyncUI('로그인 중...', 'syncing');
-    // 빈 prompt는 최초 승인 때만 동의를 묻고, 이후에는 같은 계정으로 빠르게 재연결한다.
-    // login_hint를 주면 여러 Google 계정이 로그인된 브라우저에서도 계정 선택 실수를 줄인다.
-    const request = { prompt: '' };
-    if (this.userEmail) request.login_hint = this.userEmail;
-    this.tokenClient.requestAccessToken(request);
-  },
-
-  async _onToken(resp) {
-    if (resp.error) {
-      if (localStorage.getItem('drive_auto_login') === 'true') {
-        this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
-        return;
-      }
-      updateSyncUI('로그인 실패: ' + resp.error, 'error');
-      return;
-    }
-    const isRefresh = !!this.accessToken; // 기존 토큰 있었으면 갱신
-    this.accessToken = resp.access_token;
-    this.tokenExpiresAt = Date.now() + (resp.expires_in * 1000);
-    // 재연결 성공 → 재시도 카운터·가드 리셋
-    this._retryCount = 0;
-    if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
-    if (this._reauthGuard) { clearTimeout(this._reauthGuard); this._reauthGuard = null; }
-    this._scheduleSilentRefresh();
-
-    if (!isRefresh) {
-      // 사용자 이메일 조회 (첫 로그인 시에만)
-      try {
-        const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${this.accessToken}` }
-        });
-        const info = await r.json();
-        this.userEmail = info.email || '';
-      } catch (e) { this.userEmail = ''; }
-    }
-
-    localStorage.setItem('drive_token', JSON.stringify({
-      accessToken: this.accessToken,
-      expiresAt: this.tokenExpiresAt,
-      email: this.userEmail
-    }));
-    if (this.userEmail) localStorage.setItem('drive_user_email', this.userEmail);
-    localStorage.setItem('drive_auto_login', 'true');
-
-    if (isRefresh) {
-      // 토큰만 갱신하고 끝내면 다른 기기의 변경을 놓친다.
-      // 갱신 직후 원격 수정시간을 다시 확인하고 필요한 경우 pull 한다.
-      updateSyncUI('세션 갱신됨 · 변경 확인 중…', 'syncing');
-      this.pullFromDrive(false);
-      return;
-    }
-
-    // 게스트 → 로그인 전환 감지 (이관 처리용)
-    const wasGuest = localStorage.getItem('guest_mode') === 'true';
-    const hadLocalData = (state.todayTasks && state.todayTasks.length > 0) ||
-                         (state.archive && Object.keys(state.archive).length > 0) ||
-                         (state.contacts && state.contacts.length > 0) ||
-                         (state.phrases && state.phrases.length > 0) ||
-                         (state.meetings && state.meetings.length > 0) ||
-                         (state.purchaseOrders && state.purchaseOrders.length > 0) ||
-                         (state.poDeletedOrderIds && Object.keys(state.poDeletedOrderIds).length > 0);
-    this._justUpgradedFromGuest = wasGuest && hadLocalData;
-    localStorage.removeItem('guest_mode');
-    hideGuestBanner();
-
-    hideLoginGate();
-    updateSyncUI('로그인 완료, 동기화 중...', 'syncing');
-    await this.pullFromDrive(true);
-    await syncPendingPODeliveryReminders();
-  },
-
-  _scheduleSilentRefresh() {
-    if (this._refreshTimer) clearTimeout(this._refreshTimer);
-    // GIS 브라우저 토큰은 자동 갱신이 보장되지 않고 새 토큰 발급에 사용자 동작이 필요하다.
-    // 만료 직전에 상태와 재연결 버튼만 정확히 표시한다 (기록은 계속 로컬 저장).
-    const delay = Math.max(1000, this.tokenExpiresAt - Date.now() - 10000);
-    this._refreshTimer = setTimeout(() => {
-      this._markReconnectRequired('구글 세션 만료 · 재연결하면 자동 동기화');
-    }, delay);
-  },
-
-  _markReconnectRequired(message) {
-    if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }
-    this.accessToken = null;
-    this.tokenExpiresAt = 0;
-    localStorage.removeItem('drive_token');
-    hideLoginGate();
-    updateSyncUI(message || '구글 재연결 필요 · 로컬 저장은 정상', 'offline');
-  },
-
-  // 이전 버전 호출 호환: 브라우저가 막을 수 있는 무동작 팝업 대신 재연결 버튼을 표시한다.
-  _silentReauth() {
-    this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
-  },
-
-  // 이전 버전 호출 호환: 자동 팝업 재시도 대신 사용자가 누를 수 있는 재연결 상태 유지.
-  _scheduleRetry() {
-    this._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
-  },
-
-  logout() {
-    if (this.accessToken && window.google?.accounts?.oauth2) {
-      google.accounts.oauth2.revoke(this.accessToken, () => {});
-    }
-    // 대기 중인 타이머/업로드/갱신 전부 정리 (유령 재로그인·스테일 푸시 방지)
-    if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }
-    if (this.pendingUpload) { clearTimeout(this.pendingUpload); this.pendingUpload = null; }
-    this._pendingRefresh = null;
-    this.accessToken = null;
-    this.tokenExpiresAt = 0;
-    this.userEmail = '';
-    this.fileId = null;
-    this.lastRemoteModified = 0;
-    localStorage.removeItem('drive_token');
-    localStorage.removeItem('drive_user_email');
-    sessionStorage.removeItem('drive_token'); // 이전 버전 잔존분 정리
-    localStorage.removeItem('drive_auto_login');
-    localStorage.removeItem('guest_mode');
-    hideGuestBanner();
-    updateSyncUI('로그아웃됨', 'idle');
-    showLoginGate('login');
-  },
-
-  _checkToken() {
-    if (!this.accessToken) throw new Error('구글 재연결 필요');
-    if (this.tokenExpiresAt >= Date.now() + 10000) return;
-    this._markReconnectRequired('구글 세션 만료 · 재연결하면 자동 동기화');
-    throw new Error('구글 세션 만료 · 재연결 필요');
-  },
-
-  async _apiFetch(url, opts = {}) {
-    await this._checkToken();
-    const res = await fetch(url, {
-      ...opts,
-      headers: { ...(opts.headers || {}), Authorization: `Bearer ${this.accessToken}` }
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      if (res.status === 401) this._markReconnectRequired('구글 세션 만료 · 재연결하면 자동 동기화');
-      throw new Error(`Drive API ${res.status}: ${text.slice(0, 200)}`);
-    }
-    return res;
-  },
-
-  async findFile() {
-    // fileId를 이미 알아도 modifiedTime은 매번 새로 읽어야 한다.
-    // 그렇지 않으면 다른 기기에서 갱신된 파일을 오래된 것으로 오판해
-    // 현재 기기의 로컬 데이터로 다시 덮어쓸 수 있다.
-    if (this.fileId) {
-      const metaRes = await this._apiFetch(
-        `https://www.googleapis.com/drive/v3/files/${this.fileId}?fields=id,modifiedTime`
-      );
-      const meta = await metaRes.json();
-      this.lastRemoteModified = new Date(meta.modifiedTime).getTime();
-      return this.fileId;
-    }
-    const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
-    const res = await this._apiFetch(
-      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,modifiedTime)&spaces=drive&orderBy=modifiedTime%20desc&pageSize=10`
-    );
-    const data = await res.json();
-    if (data.files && data.files.length > 0) {
-      this.fileId = data.files[0].id;
-      this.lastRemoteModified = new Date(data.files[0].modifiedTime).getTime();
-      return this.fileId;
-    }
-    return null;
-  },
-
-  async createFile(content) {
-    const boundary = 'wd_boundary_' + Date.now();
-    const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
-    const body =
-      `--${boundary}\r\n` +
-      `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
-      JSON.stringify(metadata) + `\r\n` +
-      `--${boundary}\r\n` +
-      `Content-Type: application/json\r\n\r\n` +
-      content + `\r\n` +
-      `--${boundary}--`;
-    const res = await this._apiFetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-        body
-      }
-    );
-    const data = await res.json();
-    this.fileId = data.id;
-    this.lastRemoteModified = new Date(data.modifiedTime).getTime();
-    return data;
-  },
-
-  async updateFile(content) {
-    const res = await this._apiFetch(
-      `https://www.googleapis.com/upload/drive/v3/files/${this.fileId}?uploadType=media&fields=id,modifiedTime`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: content
-      }
-    );
-    const data = await res.json();
-    this.lastRemoteModified = new Date(data.modifiedTime).getTime();
-    return data;
-  },
-
-  async downloadFile() {
-    if (!this.fileId) return null;
-    const res = await this._apiFetch(
-      `https://www.googleapis.com/drive/v3/files/${this.fileId}?alt=media`
-    );
-    return res.text();
-  },
-
+  tokenClient: null, accessToken: null, tokenExpiresAt: 0, userEmail: '',
+  pendingUpload: null, lastSyncedAt: 0, status: 'idle',
   // ===== 이미지 파일: Drive 별도 파일로 저장 (v2.1) =====
   async uploadImage(dataUrl, name) {
     const res0 = await fetch(dataUrl);
@@ -3295,261 +2873,7 @@ const Drive = {
     } catch (e) { console.warn('이미지 삭제 실패:', fileId, e); }
   },
 
-  async pullFromDrive(isInitial = false) {
-    if (!this.accessToken) return;
-    // 이미 진행 중인 pull이 있으면 그걸 대기 (동시 실행 방지)
-    if (this._pullInFlight) return this._pullInFlight;
-    this._pullInFlight = this._doPull(isInitial).finally(() => { this._pullInFlight = null; });
-    return this._pullInFlight;
-  },
-
-  async _doPull(isInitial = false) {
-    try {
-      if (!this.accessToken) return; // 로그아웃 등으로 중단된 경우 조용히 종료
-      updateSyncUI('Drive에서 불러오는 중...', 'syncing');
-      await this.findFile();
-      if (!this.accessToken) return; // 진행 중 로그아웃 감지
-      if (!this.fileId) {
-        // 원격에 파일 없음 → 현재 로컬 데이터를 첫 업로드
-        if (Object.keys(state.archive).length > 0 || state.todayTasks.length > 0 ||
-            (state.contacts || []).length > 0 || (state.phrases || []).length > 0 ||
-            (state.meetings || []).length > 0 || (state.purchaseOrders || []).length > 0 ||
-            Object.keys(state.poDeletedOrderIds || {}).length > 0) {
-          await this.pushToDrive(true);
-          if (this._justUpgradedFromGuest) {
-            this._justUpgradedFromGuest = false;
-            setTimeout(() => alert(
-              '✅ 게스트 모드에서 사용하던 기록이\n' +
-              'Google Drive로 이관되었습니다.\n\n' +
-              '이제 다른 기기에서도 같은 계정으로 로그인하면\n' +
-              '같은 기록을 볼 수 있습니다.'
-            ), 400);
-          }
-        } else {
-          updateSyncUI('Drive에 처음 연결됨', 'synced');
-        }
-        return;
-      }
-      const text = await this.downloadFile();
-      const remote = JSON.parse(text);
-      const localMod = parseInt(localStorage.getItem(STORAGE_KEY + '_mod') || '0');
-
-      // 병합으로 state가 바뀌기 전의 실제 로컬 상태를 기준으로 판단한다.
-      const localEmpty = Object.keys(state.archive).length === 0 && state.todayTasks.length === 0 &&
-                         (state.contacts || []).length === 0 && (state.phrases || []).length === 0 &&
-                         (state.meetings || []).length === 0 && (state.purchaseOrders || []).length === 0 &&
-                         Object.keys(state.poDeletedOrderIds || {}).length === 0;
-
-      // 발주는 통파일 덮어쓰기 전에 먼저 레코드 단위로 합친다.
-      // 어느 기기에만 있는 발주도 보존하고, 사용자가 직접 삭제한 발주만 삭제 기록으로 제거한다.
-      const localPOSignature = purchaseOrderSyncSignature(state);
-      const remotePOSignature = purchaseOrderSyncSignature(remote.state || {});
-      const mergedPO = mergePurchaseOrderSync(
-        state,
-        remote.state || {},
-        localMod,
-        remote.lastModified || this.lastRemoteModified
-      );
-      const mergedPOSignature = purchaseOrderSyncSignature({
-        purchaseOrders: mergedPO.orders,
-        poDeletedOrderIds: mergedPO.deleted
-      });
-      const poChangedLocal = localPOSignature !== mergedPOSignature;
-      const poChangedRemote = remotePOSignature !== mergedPOSignature;
-      if (poChangedLocal) backupPurchaseOrders('Drive 병합 전');
-      applyMergedPurchaseOrders(mergedPO, Math.max(localMod, remote.lastModified || this.lastRemoteModified || 0));
-      if (!remote.state) remote.state = {};
-      remote.state.purchaseOrders = mergedPO.orders;
-      remote.state.poDeletedOrderIds = mergedPO.deleted;
-
-      // 초기 로딩이고 로컬이 비어있으면 무조건 원격 사용
-      if (isInitial && localEmpty) {
-        applyRemoteState(remote);
-        this.lastSyncedAt = Date.now();
-        updateSyncUI('Drive에서 불러옴', 'synced');
-        warmImageCache();
-        if (poChangedRemote) await this.pushToDrive(true);
-        return;
-      }
-
-      // 게스트에서 로그인 전환 시 특별 처리: 병합 옵션 제공
-      if (this._justUpgradedFromGuest && !localEmpty) {
-        this._justUpgradedFromGuest = false;
-        const choice = confirm(
-          '📥 기존 Drive에 저장된 기록이 있습니다.\n\n' +
-          `원격 데이터 (${new Date(this.lastRemoteModified).toLocaleDateString()})\n\n` +
-          '확인 → Drive 기록 사용 (게스트 기록은 무시)\n' +
-          '취소 → 게스트 기록으로 덮어쓰기 (Drive 원본 교체)'
-        );
-        if (choice) {
-          applyRemoteState(remote);
-          this.lastSyncedAt = Date.now();
-          updateSyncUI('Drive 기록 불러옴', 'synced');
-          warmImageCache();
-          if (poChangedRemote) await this.pushToDrive(true);
-        } else {
-          await this.pushToDrive(true);
-          setTimeout(() => alert('✅ 게스트 기록으로 Drive를 덮어썼습니다.'), 300);
-        }
-        return;
-      }
-
-      // 일반 충돌 검사: 원격이 로컬보다 새로 업데이트됨? (서버-로컬 시계 차이 대비 10초 오차 허용)
-      if (this.lastRemoteModified - localMod > 10000 && !localEmpty) {
-        const useRemote = confirm(
-          `⚠ 다른 기기에서 업데이트된 데이터가 있습니다.\n\n` +
-          `원격 수정: ${new Date(this.lastRemoteModified).toLocaleString()}\n` +
-          `로컬 수정: ${new Date(localMod).toLocaleString()}\n\n` +
-          `확인 → 원격 덮어쓰기 (로컬 작업분 사라질 수 있음)\n` +
-          `취소 → 로컬 유지 (다음 저장 시 원격 덮어씀)`
-        );
-        if (useRemote) {
-          applyRemoteState(remote);
-          this.lastSyncedAt = Date.now();
-          updateSyncUI('원격으로 덮어쓰기 완료', 'synced');
-          if (poChangedRemote) await this.pushToDrive(true);
-          return;
-        } else {
-          // 발주 병합분까지 포함한 현재 로컬 상태를 즉시 Drive에 저장한다.
-          await this.pushToDrive(true);
-          return;
-        }
-      }
-      // 원격과 로컬이 사실상 같은 시점이면 불필요하게 다시 업로드하지 않는다.
-      // 로컬이 확실히 더 최신일 때만 원격으로 보낸다.
-      if (poChangedRemote || localMod - this.lastRemoteModified > 10000) {
-        await this.pushToDrive(true);
-      } else {
-        this.lastSyncedAt = Date.now();
-        updateSyncUI('최신 상태', 'synced');
-      }
-    } catch (e) {
-      console.error(e);
-      updateSyncUI('동기화 오류: ' + e.message, 'error');
-    }
-  },
-
-  schedulePush() {
-    if (!this.accessToken) return;
-    if (this.pendingUpload) clearTimeout(this.pendingUpload);
-    this.pendingUpload = setTimeout(() => {
-      this.pendingUpload = null;
-      this.pushToDrive();
-    }, 4000); // 4초 디바운스
-  },
-
-  pushToDrive(silent = false) {
-    if (!this.accessToken) return Promise.resolve();
-    // 실행 중이면 "다음 턴"에 실행 예약 (coalescing: 대기 중 호출은 전부 같은 다음 push 공유)
-    if (this._pushInFlight) {
-      if (!this._pushQueued) {
-        this._pushQueued = this._pushInFlight.catch(() => {}).then(() => {
-          this._pushQueued = null;
-          return this._runPush(silent);
-        });
-      }
-      return this._pushQueued;
-    }
-    return this._runPush(silent);
-  },
-
-  _runPush(silent) {
-    this._pushInFlight = this._doPush(silent).finally(() => { this._pushInFlight = null; });
-    return this._pushInFlight;
-  },
-
-  async _doPush(silent = false) {
-    try {
-      if (!this.accessToken) return; // 로그아웃 등으로 중단
-      if (!silent) updateSyncUI('업로드 중...', 'syncing');
-      if (!this.fileId) await this.findFile();
-      if (!this.accessToken) return; // 진행 중 로그아웃 감지
-
-      // 저장 직전에도 Drive의 최신 발주와 한 번 더 병합한다.
-      // 오래 열어 둔 PC/휴대폰이 상대 기기의 발주를 통째로 지우는 것을 막는다.
-      if (this.fileId) {
-        const remoteText = await this.downloadFile();
-        const latestRemote = JSON.parse(remoteText);
-        const localMod = parseInt(localStorage.getItem(STORAGE_KEY + '_mod') || '0');
-        const beforeSignature = purchaseOrderSyncSignature(state);
-        const mergedPO = mergePurchaseOrderSync(
-          state,
-          latestRemote.state || {},
-          localMod,
-          latestRemote.lastModified || this.lastRemoteModified
-        );
-        const afterSignature = purchaseOrderSyncSignature({
-          purchaseOrders: mergedPO.orders,
-          poDeletedOrderIds: mergedPO.deleted
-        });
-        if (beforeSignature !== afterSignature) {
-          backupPurchaseOrders('Drive 업로드 전');
-          applyMergedPurchaseOrders(mergedPO, Math.max(localMod, latestRemote.lastModified || this.lastRemoteModified || 0));
-        }
-      }
-
-      const payload = {
-        version: 3,
-        lastModified: Date.now(),
-        state: state
-      };
-      const json = JSON.stringify(payload);
-      if (this.fileId) await this.updateFile(json);
-      else await this.createFile(json);
-      // Drive 서버가 찍은 modifiedTime을 기준으로 맞춘다 (서버 시계와 로컬 시계 차이로 인한 가짜 충돌 경고 방지)
-      localStorage.setItem(STORAGE_KEY + '_mod', String(this.lastRemoteModified || payload.lastModified));
-      this.lastSyncedAt = Date.now();
-      updateSyncUI(silent ? '동기화됨' : '업로드 완료', 'synced');
-    } catch (e) {
-      console.error(e);
-      updateSyncUI('업로드 실패: ' + e.message, 'error');
-    }
-  }
 };
-
-function applyRemoteState(remote) {
-  if (!remote || !remote.state) return;
-  // 원격 구조를 로컬에 적용
-  const r = remote.state;
-  state.currentDate = r.currentDate || todayStr();
-  state.todayTasks = r.todayTasks || [];
-  state.todayMemo = r.todayMemo || '';
-  state.todayAttachments = r.todayAttachments || [];
-  state.archive = r.archive || {};
-  state.archiveMemos = r.archiveMemos || {};
-  state.archiveAttachments = r.archiveAttachments || {};
-  state.userName = r.userName || '';
-  state.linkGroups = r.linkGroups || [{ id: 'g_default', name: '자주 찾는 링크', collapsed: false, links: [] }];
-  state.contacts = r.contacts || [];
-  state.phrases = r.phrases || [];
-  state.meetings = r.meetings || [];
-  state.meetingCollapsedMonths = r.meetingCollapsedMonths || {};
-  state.meetingView = r.meetingView || 'calendar';
-  state.meetingCalMonth = r.meetingCalMonth || '';
-  state.meetingSelectedDay = r.meetingSelectedDay || '';
-  state.purchaseOrders = r.purchaseOrders || [];
-  state.poDeletedOrderIds = r.poDeletedOrderIds || {};
-  state.poDefaultReminderRecipients = Array.isArray(r.poDefaultReminderRecipients) ? r.poDefaultReminderRecipients : [];
-  state.poVendorCollapsed = r.poVendorCollapsed || {};
-  state.poFilter = r.poFilter || 'all';
-  state.poView = r.poView || 'calendar';
-  state.poCalendarMonth = r.poCalendarMonth || '';
-  state.fxRates = r.fxRates || { KRW: 1, USD: null, CNY: null, JPY: null, updatedAt: 0 };
-  state.calculatorData = r.calculatorData || { cost: {}, stock: {} };
-  if (!state.calculatorData.cost) state.calculatorData.cost = {};
-  if (!state.calculatorData.stock) state.calculatorData.stock = {};
-  state.rightPanelTab = r.rightPanelTab || 'links';
-  state.rightPanelOpen = r.rightPanelOpen !== false;
-  state.calendarId = r.calendarId || null;
-  state.defaultReminderMinutes = (typeof r.defaultReminderMinutes === 'number') ? r.defaultReminderMinutes : 10;
-  // 누락 필드 보정
-  state.todayTasks.forEach(t => { if (!t.images) t.images = []; if (t.selected === undefined) t.selected = false; });
-  Object.values(state.archive).forEach(arr => arr.forEach(t => { if (!t.images) t.images = []; }));
-  // 로컬 저장 (무한 루프 방지 위해 직접 호출)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  localStorage.setItem(STORAGE_KEY + '_mod', String(remote.lastModified || Date.now()));
-  render();
-}
 
 function updateSyncUI(text, status) {
   Drive.status = status;
@@ -3563,7 +2887,7 @@ function updateSyncUI(text, status) {
   dot.className = 'sync-dot ' + (status || '');
   txt.textContent = text || '';
   email.textContent = Drive.userEmail ? `· ${Drive.userEmail}` : '';
-  const loggedIn = !!Drive.accessToken && Drive.tokenExpiresAt > Date.now() + 10000;
+  const loggedIn = !!Drive.accessToken && Drive.tokenExpiresAt > Date.now();
   loginBtn.textContent = localStorage.getItem('drive_auto_login') === 'true'
     ? '☁️ 구글 재연결'
     : '☁️ 구글 로그인';
@@ -3573,22 +2897,7 @@ function updateSyncUI(text, status) {
 }
 
 function driveLogin() { Drive.login(); }
-function driveLogout() {
-  if (!confirm(
-    '로그아웃하시겠습니까?\n\n' +
-    '⚠ 이 기기의 로컬 기록(브라우저 저장분)은 모두 삭제됩니다.\n' +
-    '   (구글 Drive · 구글 캘린더에 저장된 기록은 안전하게 보존됩니다)\n\n' +
-    '다음 로그인 시 Drive에서 자동으로 복원됩니다.'
-  )) return;
-  // 로컬 데이터 완전 삭제
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_KEY + '_mod');
-  } catch (e) {}
-  Drive.logout();
-  // 상태 초기화 후 재로딩
-  location.reload();
-}
+function driveLogout() { Drive.logout(); }
 function driveSyncNow() { Drive.pullFromDrive(false); }
 
 // ===== 로그인 게이트 =====
@@ -4366,7 +3675,7 @@ function rolloverIfNeeded() {
     if (!state.archive[oldDate]) state.archive[oldDate] = [];
     completed.forEach(t => {
       state.archive[oldDate].push({
-        text: t.text, notes: t.notes || '', images: t.images || [],
+        id: t.id, text: t.text, notes: t.notes || '', images: t.images || [],
         carriedFrom: t.carriedFrom || null
       });
     });
@@ -4427,12 +3736,24 @@ function toggleExpand(id) {
 }
 function updateNotes(id, val) {
   const t = state.todayTasks.find(t => t.id === id); if (!t) return;
-  t.notes = val; saveData();
+  t.notes = val;
+  showTaskNoteSaveStatus(id, saveData());
 }
 function saveTaskNote(id) {
+  const t = state.todayTasks.find(t => t.id === id); if (!t) return false;
+  const input = document.querySelector(`textarea[data-task-id="${id}"]`);
+  if (input) t.notes = input.value;
+  const ok = saveData();
+  showTaskNoteSaveStatus(id, ok);
+  return ok;
+}
+function showTaskNoteSaveStatus(id, ok) {
   const el = document.getElementById(`noteStatus_${id}`);
-  if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-  saveData();
+  if (el) {
+    el.textContent = ok ? '✓ 이 기기에 저장됨' : '기기 저장 실패 · 복구 저장 상태를 확인해 주세요';
+    el.style.color = ok ? '' : '#c0392b';
+    el.classList.add('show');
+  }
 }
 function startEdit(id) {
   editingId = id; render();
@@ -4674,7 +3995,7 @@ function endOfDay() {
     if (!state.archive[today]) state.archive[today] = [];
     completed.forEach(t => {
       state.archive[today].push({
-        text: t.text, notes: t.notes || '', images: t.images || [],
+        id: t.id, text: t.text, notes: t.notes || '', images: t.images || [],
         carriedFrom: t.carriedFrom || null
       });
     });
@@ -5893,6 +5214,24 @@ function toggleCalcFullscreen() {
   if (btn) btn.textContent = box.classList.contains('fullscreen') ? '🗗 원래 크기' : '⛶ 전체화면';
 }
 function closeCalcFrame() {
+  // Read the child's latest saved values before removing it. The old polling
+  // bridge could otherwise miss edits made during its final 1.5 seconds.
+  const frame = document.getElementById('calcFrameIframe');
+  const prefix = _currentCalcFrameKind === 'stock' ? 'inv_' : _currentCalcFrameKind === 'cost' ? 'calc-' : null;
+  if (prefix && frame?.contentWindow) {
+    try {
+      const childUrl = new URL(frame.contentWindow.location.href);
+      if (childUrl.origin === location.origin && childUrl.searchParams.get('synced') === '1') {
+        const storage = frame.contentWindow.localStorage, data = {};
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i);
+          if (key?.startsWith(prefix)) data[key] = storage.getItem(key);
+        }
+        handleCalculatorMessage({source: frame.contentWindow, origin: location.origin,
+          data: {type: 'calc-data-update', kind: _currentCalcFrameKind, data}});
+      }
+    } catch (e) { console.warn('계산기 마지막 저장 확인 실패:', e); }
+  }
   document.getElementById('calcFrameModal').classList.remove('show');
   _currentCalcFrameKind = null;
   // iframe 메모리/사운드 해제 위해 src 비움
@@ -5901,11 +5240,13 @@ function closeCalcFrame() {
 }
 
 // 계산기(iframe)에서 오는 메시지 처리
-window.addEventListener('message', function (ev) {
+function handleCalculatorMessage(ev) {
   const d = ev.data;
   if (!d || typeof d !== 'object') return;
   const iframe = document.getElementById('calcFrameIframe');
-  const sendToFrame = (msg) => { if (iframe && iframe.contentWindow) iframe.contentWindow.postMessage(msg, '*'); };
+  if (!iframe || ev.source !== iframe.contentWindow || ev.origin !== location.origin) return;
+  if (d.kind && d.kind !== _currentCalcFrameKind) return;
+  const sendToFrame = (msg) => { if (iframe.contentWindow) iframe.contentWindow.postMessage(msg, location.origin); };
 
   // 1) 재고소진계산기에 업무일지 거래처 자동 동기화
   if (d.type === 'stock-ready' && _currentCalcFrameKind === 'stock') {
@@ -5993,7 +5334,8 @@ window.addEventListener('message', function (ev) {
     saveData();
     if (contactsChanged) refreshAfterVendorChange();
   }
-});
+}
+window.addEventListener('message', handleCalculatorMessage);
 
 // ===== 거래처 ↔ 발주일지 실시간 연동 도우미 =====
 // 거래처 변경 시 발주 목록·발주 폼·우측 패널 + 열려있는 재고계산기까지 한 번에 갱신
@@ -7830,6 +7172,8 @@ function renderTask(t) {
   const remindBadge = remindTxt ? `<span class="remind-badge">${remindTxt}</span>` : '';
   const escText = escapeHtml(t.text);
   const escNotes = escapeHtml(t.notes || '');
+  const noteText = (t.notes || '').trim();
+  const notePreview = noteText ? `<button type="button" class="task-note-preview" onclick="toggleExpand(${t.id})" aria-label="${escapeHtml(t.text)} 메모 펼치기">📝 메모 ${noteText.length}자 · 눌러서 전체 보기\n${escapeHtml(noteText.slice(0, 180))}${noteText.length > 180 ? '…' : ''}</button>` : '';
   const imgs = (t.images || []).map((img, i) => {
     const src = getImgSrc(img);
     if (!src && typeof img === 'object' && img && img.driveId) queueLazyLoad(img.driveId);
@@ -7853,7 +7197,7 @@ function renderTask(t) {
     : `<div class="task-text">${carried}${imgBadge}${remindBadge}${escText}</div>
        <button class="edit-btn" onclick="startEdit(${t.id})" title="업무명 수정">✏ 수정</button>
        <button class="remind-btn ${t.calendarEventId ? 'active' : ''}" onclick="openReminderModal(${t.id})" title="${remindBtnTitle}">⏰ ${t.remindAt ? '알림 수정' : '알림'}</button>
-       <button class="expand-btn" onclick="toggleExpand(${t.id})">${t.expanded ? '▲ 접기' : '▼ 해결방안/결과'}</button>
+       <button class="expand-btn" onclick="toggleExpand(${t.id})" aria-expanded="${!!t.expanded}" aria-controls="taskDetails_${t.id}">${t.expanded ? '▲ 접기' : noteText ? '▼ 메모 보기 · ' + noteText.length + '자' : '▼ 해결방안/결과'}</button>
        <button class="danger small" onclick="deleteTask(${t.id})">삭제</button>`;
 
   return `
@@ -7863,14 +7207,15 @@ function renderTask(t) {
         <input type="checkbox" title="완료" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})" />
         ${textZone}
       </div>
-      <div class="task-body" data-task-id="${t.id}">
+      ${notePreview}
+      <div class="task-body" id="taskDetails_${t.id}" data-task-id="${t.id}">
         <label>업무 해결방안 및 결과 (다운로드 시 함께 정리됩니다)</label>
         <textarea data-task-id="${t.id}"
           placeholder="어떻게 진행했는지, 어떤 결과가 나왔는지 기록하세요. Ctrl+V로 스크린샷 붙여넣기 가능."
           oninput="updateNotes(${t.id}, this.value)">${escNotes}</textarea>
         <div class="save-row">
           <button class="ghost small" onclick="saveTaskNote(${t.id})">💾 저장</button>
-          <span class="save-status" id="noteStatus_${t.id}">✓ 저장됨</span>
+          <span class="save-status" id="noteStatus_${t.id}" role="status" aria-live="polite"></span>
         </div>
         <div class="paste-hint">💡 Ctrl+V로 스크린샷 붙여넣기 · 드래그&드롭 · 파일 선택 모두 지원 (장수 제한 없음)</div>
         <div class="img-tools">
@@ -8183,7 +7528,7 @@ function collectExportData() {
   dates.forEach(date => {
     if (state.archive[date]) {
       all[date] = state.archive[date].map(t => ({
-        text: t.text, notes: t.notes || '', images: t.images || [], carriedFrom: t.carriedFrom || null
+        id: t.id, text: t.text, notes: t.notes || '', images: t.images || [], carriedFrom: t.carriedFrom || null
       }));
     }
     if (state.archiveMemos[date]) memos[date] = state.archiveMemos[date];
@@ -8509,8 +7854,8 @@ function importBackup(e) {
       if (state.rightPanelOpen === undefined) state.rightPanelOpen = true;
       state.todayTasks.forEach(t => { if (!t.images) t.images = []; if (t.selected === undefined) t.selected = false; });
       Object.values(state.archive).forEach(arr => arr.forEach(t => { if (!t.images) t.images = []; }));
-      saveData(); rolloverIfNeeded(); render();
-      alert('불러오기 완료');
+      const saved = saveData(); rolloverIfNeeded(); render();
+      if (saved) alert('이 기기에 불러왔습니다. 구글 연결 시 다른 기기에도 반영됩니다.');
     } catch (err) { alert('파일 형식이 올바르지 않습니다: ' + err.message); }
   };
   reader.readAsText(file);
@@ -8519,12 +7864,13 @@ function importBackup(e) {
 function resetAll() {
   if (!confirm('모든 데이터가 삭제됩니다. 정말 초기화할까요?')) return;
   if (!confirm('마지막 확인: 복구할 수 없습니다. 계속?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  state = loadData(); selectedDays.clear();
-  render();
+  state = loadData(null); selectedDays.clear();
+  saveData(); forceDriveSync(); render();
 }
 
 // ===== 초기화 =====
+installCloudWorklog();
+installOptionalDrive();
 document.getElementById('newTask').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 document.getElementById('todayMemo').addEventListener('input', e => {
   state.todayMemo = e.target.value; saveData();
@@ -8539,7 +7885,8 @@ render();
 // ===== Drive 초기화 =====
 // GIS 스크립트 로드 후 Drive 초기화 (HTTPS 환경에서만 작동)
 // ===== PWA: Service Worker 등록 (오프라인 지원) =====
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+if ('serviceWorker' in navigator && location.protocol !== 'file:' &&
+    !['127.0.0.1','localhost','[::1]'].includes(location.hostname)) {
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
@@ -8555,7 +7902,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
           bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2c3e50;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;font-size:14px;display:flex;gap:12px;align-items:center;';
           bar.innerHTML = '📦 새 버전이 있습니다. <button id="swUpdateBtn" style="background:#3498db;color:#fff;border:0;padding:6px 14px;border-radius:4px;cursor:pointer;">새로고침</button><button id="swUpdateDismiss" style="background:transparent;color:#bbb;border:0;padding:6px 8px;cursor:pointer;">나중에</button>';
           document.body.appendChild(bar);
-          document.getElementById('swUpdateBtn').onclick = () => newSW.postMessage({ type: 'SKIP_WAITING' });
+          document.getElementById('swUpdateBtn').onclick = () => { if (saveData()) newSW.postMessage({ type: 'SKIP_WAITING' }); };
           document.getElementById('swUpdateDismiss').onclick = () => bar.remove();
         }
       };
@@ -8573,7 +7920,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       // 새 SW가 활성화되면 페이지 자동 리로드 (1회만, 최초 install엔 controller가 null이라 무시됨)
       let reloaded = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded) return;
+        if (reloaded || !navigator.serviceWorker.controller) return;
+        if (!saveData()) return;
         reloaded = true;
         location.reload();
       });
@@ -8598,16 +7946,8 @@ window.addEventListener('load', () => {
   }
   Drive.init();
 });
-// 창 포커스 복귀 시 원격 변경 확인
-window.addEventListener('focus', () => {
-  if (localStorage.getItem('drive_auto_login') !== 'true' || !Drive.tokenClient) return;
-  // 만료된 토큰은 자동 팝업으로 갱신할 수 없으므로 재연결 버튼을 정확히 표시한다.
-  if (!Drive.accessToken || Drive.tokenExpiresAt < Date.now() + 60000) {
-    Drive._markReconnectRequired('구글 재연결 필요 · 로컬 저장은 정상');
-  } else if (Date.now() - Drive.lastSyncedAt > 60000) {
-    Drive.pullFromDrive(false);
-  }
-});
+// 창 복귀 시 유효한 연결을 유지하고 대기 저장 / 다른 기기 변경 확인
+window.addEventListener('focus', () => Drive.resume());
 
 // ===== 자동 저장 & 자동 롤오버 =====
 // 1) 창 복귀 시 날짜 변경 확인

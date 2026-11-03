@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true;
+    }
+    function recordShape(d) {
+      return d.keys().hasOnly(['key','descriptor','payload','deleted','revision','operationId','updatedAt'])
+        && d.key is string && d.descriptor is string && d.payload is string
+        && d.payload.size() <= 850000 && d.descriptor.size() <= 12000
+        && d.deleted is bool && d.revision is int && d.operationId is string
+        && d.updatedAt == request.time;
+    }
+    match /users/{uid}/records/{recordId} {
+      allow read: if owner(uid);
+      function hasHistory() {
+        let history = getAfter(/databases/$(database)/documents/users/$(uid)/records/$(recordId)/history/$(request.resource.data.operationId)).data;
+        return history == request.resource.data;
+      }
+      allow create: if owner(uid) && recordShape(request.resource.data)
+        && request.resource.data.revision == 1 && hasHistory();
+      allow update: if owner(uid) && recordShape(request.resource.data)
+        && request.resource.data.key == resource.data.key
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.operationId != resource.data.operationId && hasHistory();
+      allow delete: if false;
+      match /history/{operationId} {
+        allow read: if owner(uid);
+        allow create: if owner(uid) && recordShape(request.resource.data)
+          && request.resource.data.operationId == operationId
+          && getAfter(/databases/$(database)/documents/users/$(uid)/records/$(recordId)).data == request.resource.data;
+        allow update, delete: if false;
+      }
+    }
+    match /users/{uid}/operations/{operationId} {
+      allow read: if owner(uid);
+      allow create: if owner(uid) && request.resource.data.keys().hasOnly(['key','status','revision','createdAt'])
+        && request.resource.data.key is string
+        && request.resource.data.status in ['applied','conflict']
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+    match /users/{uid}/conflicts/{conflictId} {
+      allow read: if owner(uid);
+      allow create: if owner(uid)
+        && request.resource.data.keys().hasOnly(['key','recordId','base','baseDeleted','local','remote','paths','resolved','createdAt'])
+        && request.resource.data.key is string && request.resource.data.recordId is string
+        && request.resource.data.base is string && request.resource.data.baseDeleted is bool
+        && request.resource.data.local is string && request.resource.data.remote is string
+        && request.resource.data.paths is list && request.resource.data.resolved == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if owner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resolved','resolvedAt'])
+        && request.resource.data.resolved == true && request.resource.data.resolvedAt == request.time;
+      allow delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
