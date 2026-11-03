@@ -5,7 +5,7 @@ window.installCloudWorklog=function(){
   const saved=state._cloudV5;let owner=saved?.owner||null,email=saved?.email||localStorage.getItem('drive_user_email')||'';
   let engine=new R.Engine(state,saved,id,actor),user=null,backend=null,readyAuth=false,serverSeen=false;
   state=R.join(engine.model,state);
-  let sequence=saved?.sequence||0,bootSequence=sequence,localOK=true,syncing=false,syncAgain=false,paused=false,epoch=0,retries=0,lastSync=0,lastError='';
+  let sequence=saved?.sequence||0,bootSequence=sequence,localOK=true,flushing=false,syncing=false,syncAgain=false,paused=false,epoch=0,retries=0,lastSync=0,lastError='';
   let timer=null,stopRecords=null,stopConflicts=null,deferredRecords=null,renderPending=false,authBusy=false;
   let durable=Promise.resolve(),databasePromise;
   function database(){
@@ -52,7 +52,7 @@ window.installCloudWorklog=function(){
     else if(!user)text='이 기기 저장됨 · 로그인 후 서버에 전송';
     else if(conflicts){text=`수정 충돌 ${conflicts}건 · 양쪽 내용 보관됨`;kind='error';}
     else if(navigator.onLine===false)text='이 기기 저장됨 · 인터넷 연결 후 전송';
-    else if(syncing||pending){text=`이 기기 저장됨 · 서버 전송 ${pending}건 대기`;kind='syncing';}
+    else if(syncing||pending){text=pending?`이 기기 저장됨 · 서버 전송 ${pending}건 대기`:'이 기기 저장됨 · 서버 저장 확인 중';kind='syncing';}
     else if(!serverSeen)text='이 기기 저장됨 · 서버 연결 확인 중';
     else{text='서버 저장 완료 · '+new Date(lastSync||Date.now()).toLocaleTimeString('ko-KR');kind='synced';}
     if(txt)txt.textContent=text;if(dot)dot.className='sync-dot '+kind;
@@ -90,27 +90,40 @@ window.installCloudWorklog=function(){
   }
   async function flush(){
     if(!user||!backend||paused||navigator.onLine===false){status();return false;}
-    if(syncing){syncAgain=true;return false;}
-    syncing=true;let completed=false;const attemptEpoch=epoch,uid=user.uid;lastError='';status();
+    if(flushing){syncAgain=true;return false;}
+    clearTimeout(timer);timer=null;flushing=true;
+    let completed=false;const attemptEpoch=epoch,uid=user.uid;
     try{
-      capture();persist();if(!await durable)throw new Error('기기 복구 저장을 완료하지 못했습니다. 백업을 먼저 보관해 주세요.');
+      if(capture())persist();
+      if(!await durable)throw new Error('기기 복구 저장을 완료하지 못했습니다. 백업을 먼저 보관해 주세요.');
       const journal=await drafts(),operations=new Map();
-      for(const entry of journal)for(const op of Object.values(entry._cloudV5.queue||{}))if(!op.blocked&&!localStorage.getItem('worklog-v5:ack:'+accountKey()+':'+op.id))operations.set(op.id,{op,source:entry._draftKey});
-      for(const op of engine.pending())operations.set(op.id,{op:R.clone(op),source:draftKey()});
-      for(const {op,source} of [...operations.values()].sort((a,b)=>a.op.createdAt-b.op.createdAt)){
+      const collect=(op,source)=>{
+        if(!operations.has(op.id))operations.set(op.id,{op:R.clone(op),sources:new Set()});
+        const entry=operations.get(op.id);entry.sources.add(source);return entry;
+      };
+      for(const entry of journal)for(const op of Object.values(entry._cloudV5.queue||{}))if(!op.blocked&&!localStorage.getItem('worklog-v5:ack:'+accountKey()+':'+op.id))collect(op,entry._draftKey);
+      for(const op of engine.pending())collect(op,draftKey()).op=R.clone(op);
+      // An idle check must not publish a new snapshot or flash an upload state.
+      // Rewriting KEY here makes other tabs request another identical check.
+      if(!operations.size){completed=true;return Object.keys(engine.queue).length===0;}
+      syncing=true;lastError='';status();
+      for(const {op,sources} of [...operations.values()].sort((a,b)=>a.op.createdAt-b.op.createdAt)){
         if(attemptEpoch!==epoch)return false;
         const result=await backend.commit(uid,op);
         if(attemptEpoch!==epoch)return false;
         capture();engine.acknowledge(op,result);sequence++;state=R.join(engine.model,state);persist();await durable;
-        await clearDraftOperation(source,op);
+        for(const source of sources)await clearDraftOperation(source,op);
         if(op.resolvesConflict&&!result.conflict)await backend.resolveConflict(uid,op.resolvesConflict);
       }
       retries=0;lastSync=Date.now();serverSeen=true;completed=true;redraw();return Object.keys(engine.queue).length===0;
     }catch(e){status(e.code==='permission-denied'?'서버 접근 설정을 확인해야 합니다 · 기기 기록은 보존됨':e.code==='unauthenticated'?'로그인 확인이 필요합니다 · 기기 기록은 보존됨':'서버 저장 대기 · '+e.message);retry(e);return false;}
-    finally{syncing=false;status();if(syncAgain){syncAgain=false;schedule();}else if(completed&&engine.pending().length)schedule();}
+    finally{flushing=false;syncing=false;status();if(syncAgain){syncAgain=false;schedule();}else if(completed&&engine.pending().length)schedule();}
   }
   function receive(records,fromServer){
     if(editing()){deferredRecords={records,fromServer};return;}
+    if(records.every(record=>R.eq(engine.server[record.key],record))){
+      if(fromServer){serverSeen=true;if(!lastSync)lastSync=Date.now();}status();return;
+    }
     capture();engine.receive(records);if(fromServer){serverSeen=true;lastSync=Date.now();}state=R.join(engine.model,state);sequence++;persist();redraw();status();
   }
   document.addEventListener('focusout',()=>setTimeout(()=>{
@@ -187,7 +200,11 @@ window.installCloudWorklog=function(){
     if(ev.key!==KEY)return;
     // Each tab keeps its own pending drafts; server transactions arbitrate edits.
     // Never adopt another tab's entire snapshot or credentials.
-    if(user)schedule(0);
+    if(!user||!ev.newValue)return;
+    try{
+      const incoming=JSON.parse(ev.newValue)._cloudV5;
+      if(incoming?.owner===owner&&Object.values(incoming.queue||{}).some(op=>!op.blocked))schedule(0);
+    }catch(_){}
   });
   exportBackup=function(){capture();persist();download('업무일지_백업_'+todayStr()+'.json',envelope());};
   function download(name,value){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
