@@ -1,10 +1,16 @@
 // 업무일지 Service Worker (v1)
 // 오프라인 지원 + 앱 쉘 캐싱
 
-const CACHE = 'worklog-v46';
+const CACHE = 'worklog-v51';
 const ASSETS = [
   './',
   './index.html',
+  './sync-core.js?v=51',
+  './cloud-config.js?v=51',
+  './cloud-core.js?v=51',
+  './cloud-backend.js?v=51',
+  './cloud-runtime.js?v=51',
+  './drive-optional.js?v=51',
   './cost.html',
   './stock.html',
   './remit.html',
@@ -26,8 +32,7 @@ self.addEventListener('install', e => {
       ASSETS.filter(a => !a.startsWith('http')).map(a => c.add(a))
     ))
   );
-  // 새 SW 즉시 활성화 (옛 SW·옛 HTML에 갇힌 사용자 자가 복구 경로 보장)
-  self.skipWaiting();
+  // Existing tabs keep their version until the user chooses the update button.
 });
 
 // 페이지에서 SKIP_WAITING 요청 오면 새 SW 즉시 활성화
@@ -37,26 +42,28 @@ self.addEventListener('message', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('worklog-') && k !== CACHE).map(k => caches.delete(k))))
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  if (e.request.method !== 'GET') return;
 
   // 구글 API·로그인은 네트워크 우선 (캐싱 X)
   if (
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('accounts.google.com') ||
     url.hostname.includes('google.com') ||
-    url.hostname.includes('gstatic.com')
+    (url.hostname.includes('gstatic.com') && !url.pathname.startsWith('/firebasejs/'))
   ) {
     return; // 기본 동작
   }
 
   // HTML(페이지 이동)은 network-first — 새 버전 즉시 반영, 오프라인이면 캐시 폴백
-  if (e.request.mode === 'navigate' || e.request.destination === 'document') {
+  if (e.request.mode === 'navigate' || e.request.destination === 'document' ||
+      (url.origin === self.location.origin && url.pathname.endsWith('/cloud-config.js'))) {
     e.respondWith(
       fetch(e.request).then(resp => {
         if (resp && resp.status === 200) {
@@ -64,7 +71,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone)).catch(() => {});
         }
         return resp;
-      }).catch(() => caches.match(e.request).then(c => c || caches.match('./index.html')))
+      }).catch(() => caches.match(e.request, {ignoreSearch:true}).then(c => c || new Response('오프라인에서 이 도구를 열 수 없습니다. 인터넷 연결 후 다시 시도해 주세요.', {status:503, headers:{'Content-Type':'text/plain; charset=utf-8'}})))
     );
     return;
   }
