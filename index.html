@@ -7902,7 +7902,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:' &&
           bar.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2c3e50;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:9999;font-size:14px;display:flex;gap:12px;align-items:center;';
           bar.innerHTML = '📦 새 버전이 있습니다. <button id="swUpdateBtn" style="background:#3498db;color:#fff;border:0;padding:6px 14px;border-radius:4px;cursor:pointer;">새로고침</button><button id="swUpdateDismiss" style="background:transparent;color:#bbb;border:0;padding:6px 8px;cursor:pointer;">나중에</button>';
           document.body.appendChild(bar);
-          document.getElementById('swUpdateBtn').onclick = () => { if (saveData()) newSW.postMessage({ type: 'SKIP_WAITING' }); };
+          document.getElementById('swUpdateBtn').onclick = () => { const waiting = reg.waiting || newSW; if (saveData()) waiting.postMessage({ type: 'SKIP_WAITING' }); };
           document.getElementById('swUpdateDismiss').onclick = () => bar.remove();
         }
       };
